@@ -1,0 +1,23 @@
+---
+description: Project context and constraints for the Azure DevOps AI PR reviewer
+alwaysApply: true
+---
+
+# Project context: Azure DevOps AI PR Reviewer
+
+## Goal
+- Build a **web app** that helps automate **Azure DevOps pull request reviews** by generating **ready-to-post** review comments.
+- Reduce manual reviewer workload while keeping review quality consistent and aligned with **team-specific standards**.
+
+## Core idea
+- Connect to Azure DevOps, fetch PR changes, run an AI review, and produce high-signal findings that can be published back as PR comment threads.
+- The reviewer provides and maintains the **review standards** (architecture rules, naming, error handling, testing expectations, etc.).
+
+## Constraints / assumptions (current)
+- Primary platform: **Azure DevOps** (repos + PRs + comments).
+- The AI review engine should be **pluggable**:
+  - Prefer **CodeRabbit** when available.
+  - Fall back to a direct LLM provider when CodeRabbit is not available/suitable.
+- Output should be **actionable and concrete**: point to specific files/locations when possible, propose fixes, avoid generic advice.
+- Keep scope incremental: focus on an MVP path (review → preview → publish), then iterate.
+
