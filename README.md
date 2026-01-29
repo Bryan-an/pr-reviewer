@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PR Reviewer (Azure DevOps + AI)
 
-## Getting Started
+## Overview
 
-First, run the development server:
+This project aims to **automate pull request reviews in Azure DevOps** using AI, generating high-signal review comments while enforcing **team-specific coding standards**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+It is designed for scenarios where a single reviewer (or a small group) receives many PRs and must review them manually, repeatedly checking for the same classes of issues: correctness, maintainability, security, consistency, and adherence to internal conventions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## The idea
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Build a **web app** that connects to Azure DevOps, fetches the set of changes in a pull request, runs an AI review, and then produces **ready-to-post comments** (general and file-scoped, and later line-scoped) that you can publish back to the PR.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The reviewer should be able to provide their own standards (architecture rules, naming, error handling, testing expectations, etc.) so the AI review is aligned with the team’s expectations rather than generic advice.
 
-## Learn More
+## AI approach (high level)
 
-To learn more about Next.js, take a look at the following resources:
+The review engine is intended to be **pluggable**:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Prefer using **CodeRabbit** (when available) to leverage its review capabilities and standards enforcement.
+- Fall back to a direct LLM provider when CodeRabbit is not available or not suitable.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## What “done” looks like for the MVP
 
-## Deploy on Vercel
+- Select a PR from Azure DevOps
+- Generate an AI review aligned with your standards
+- Preview the findings
+- Publish the comments back to Azure DevOps as PR threads
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Early stage: repository scaffolding and documentation in progress.
