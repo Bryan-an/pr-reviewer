@@ -1,0 +1,32 @@
+---
+description: Git workflow rules (GitHub Flow + Conventional Commits)
+alwaysApply: false
+---
+
+# Git workflow (GitHub Flow)
+
+Use **GitHub Flow** (trunk-based development) for this repo.
+
+## Branching
+
+- Keep **`main`** as the only long-lived branch and keep it in a working state.
+- Create short-lived branches from `main` using these prefixes:
+  - `feat/<short-slug>`: new functionality
+  - `fix/<short-slug>`: bug fixes
+  - `chore/<short-slug>`: maintenance/refactors/tooling
+  - `docs/<short-slug>`: documentation-only changes
+
+## Commits
+
+- Use **Conventional Commits** (enforced by commitlint).
+  - Examples: `feat: add PR selection UI`, `fix: handle missing repo permissions`, `chore: refactor review engine interface`
+
+## Pull requests & merging
+
+- Prefer opening PRs early (draft is fine) and keep them small and focused.
+- Prefer **squash merge** into `main`.
+- Avoid merging directly to `main` without a PR.
+
+## Releases (optional)
+
+- Tag releases from `main` for stable milestones (e.g., `v0.1.0`, `v0.2.0`).

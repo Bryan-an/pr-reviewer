@@ -97,6 +97,40 @@ We use **Husky** to enforce quality checks locally before code reaches the remot
 - **commit-msg**: validates commit messages with **commitlint** (Conventional Commits). Max-length rules are disabled to allow AI-generated messages.
 - **pre-push**: runs `pnpm build`
 
+## Git workflow (recommended)
+
+We use **GitHub Flow** (trunk-based development): keep `main` stable and integrate changes via short-lived branches and PRs.
+
+### Branching
+
+- **`main`**: the only long-lived branch; always kept in a working state.
+- Create short-lived branches from `main`:
+  - `feat/<short-slug>`: new functionality
+  - `fix/<short-slug>`: bug fixes
+  - `chore/<short-slug>`: maintenance/refactors/tooling
+  - `docs/<short-slug>`: documentation-only changes
+
+### Commits
+
+- Use **Conventional Commits** (enforced by commitlint). Examples:
+  - `feat: add PR selection UI`
+  - `fix: handle missing repo permissions`
+  - `chore: refactor review engine interface`
+
+### Pull requests
+
+- Open a PR early (draft is fine) and keep it small and focused.
+- Prefer descriptive PR titles and include a brief summary + test notes.
+
+### Merging
+
+- Prefer **squash merge** into `main` (keeps history readable).
+- Avoid merging directly to `main` without a PR.
+
+### Releases (optional)
+
+- Tag releases from `main` when you want stable milestones (e.g., `v0.1.0`, `v0.2.0`).
+
 ### Logging, testing, and quality (planned)
 
 - **Logging**: `pino`
