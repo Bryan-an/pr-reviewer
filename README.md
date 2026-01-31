@@ -81,6 +81,14 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
 - Store Azure DevOps PATs **encrypted at rest** (using Node’s `crypto`, e.g. AES-256-GCM) with an `APP_ENCRYPTION_KEY`.
 - Never commit secrets; keep them in environment variables and/or encrypted storage.
 
+### Linting & formatting
+
+- **Linting**: ESLint
+  - Run: `pnpm lint`
+- **Formatting**: Prettier (with Tailwind plugin)
+  - Format: `pnpm format`
+  - Check (CI): `pnpm format:check`
+
 ### Logging, testing, and quality (planned)
 
 - **Logging**: `pino`

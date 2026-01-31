@@ -1,0 +1,17 @@
+---
+description: Linting (ESLint) and formatting (Prettier) commands for this repo
+alwaysApply: true
+---
+
+# Linting & formatting
+
+## Linting
+
+- Use **ESLint** for linting.
+- Run: `pnpm lint`
+
+## Formatting
+
+- Use **Prettier** for formatting (with Tailwind plugin enabled via Prettier config).
+- Format: `pnpm format`
+- Check (CI): `pnpm format:check`
