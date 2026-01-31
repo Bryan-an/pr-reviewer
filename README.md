@@ -19,6 +19,27 @@ The review engine is intended to be **pluggable**:
 - Prefer using **CodeRabbit** (when available) to leverage its review capabilities and standards enforcement.
 - Fall back to a direct LLM provider when CodeRabbit is not available or not suitable.
 
+## CodeRabbit
+
+This repository is configured to use CodeRabbit for **automatic PR reviews** via `/.coderabbit.yaml`.
+
+### When reviews run
+
+- CodeRabbit reviews **non-draft PRs** automatically.
+- CodeRabbit re-runs reviews on **new commits** pushed to the PR.
+
+### Manual review commands
+
+On a PR, comment:
+
+- `@coderabbitai review` for a standard review
+- `@coderabbitai full review` for a more comprehensive review
+
+### How this repo is tuned
+
+- Review guidance is derived from our local standards in `/.cursor/rules/*` (plus `README.md`).
+- Noisy files (like `pnpm-lock.yaml` and static assets) are excluded from review commentary via `reviews.path_filters` in `/.coderabbit.yaml`.
+
 ## What “done” looks like for the MVP
 
 - Select a PR from Azure DevOps

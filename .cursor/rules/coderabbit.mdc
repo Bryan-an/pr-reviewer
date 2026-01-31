@@ -1,0 +1,25 @@
+---
+description: CodeRabbit usage and repo tuning notes
+alwaysApply: false
+---
+
+# CodeRabbit (repo defaults)
+
+This repository is configured to use CodeRabbit for **automatic PR reviews** via `/.coderabbit.yaml`.
+
+## When reviews run
+
+- CodeRabbit reviews **non-draft PRs** automatically.
+- CodeRabbit re-runs reviews on **new commits** pushed to the PR.
+
+## Manual review commands
+
+On a PR, comment:
+
+- `@coderabbitai review` for a standard review
+- `@coderabbitai full review` for a more comprehensive review
+
+## How this repo is tuned
+
+- Review guidance is derived from local standards in `/.cursor/rules/*` (plus `README.md`).
+- Noisy files (like `pnpm-lock.yaml` and static assets) are excluded from review commentary via `reviews.path_filters` in `/.coderabbit.yaml`.

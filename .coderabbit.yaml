@@ -1,0 +1,71 @@
+language: en-US
+
+# Keep reviews professional and standards-focused.
+tone_instructions: "Be concise and actionable. Prefer file-scoped, concrete suggestions with brief rationale. Avoid generic advice. Call out correctness/security/perf risks. Suggest a Next.js App Router + TypeScript-friendly fix."
+
+reviews:
+  profile: chill
+  request_changes_workflow: true
+  high_level_summary: true
+  review_status: true
+  review_details: false
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: false
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  in_progress_fortune: false
+  poem: false
+  enable_prompt_for_ai_agents: true
+
+  # Reduce noise from generated / binary / asset changes.
+  # Patterns are standard globs; exclude patterns start with '!'.
+  path_filters:
+    - "!pnpm-lock.yaml"
+    - "!public/**"
+    - "!app/favicon.ico"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.webp"
+    - "!**/*.svg"
+
+  path_instructions:
+    - path: "app/**"
+      instructions: >
+        This is a Next.js App Router codebase. Prefer server components by default and use client
+        components only when necessary. Keep route handlers deterministic and validate inputs at
+        boundaries. Favor small, composable components and clear data flow.
+    - path: "**/*.{ts,tsx}"
+      instructions: >
+        Prefer strict typing and explicit return types at module boundaries. Avoid `any`.
+        Flag unsafe patterns, missing error handling, and inconsistent naming.
+    - path: "**/*.{md,mdx}"
+      instructions: >
+        Keep documentation in clear English. Prefer short sections and bullet lists, and ensure
+        commands use pnpm (not npm/yarn).
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+
+chat:
+  auto_reply: false
+
+knowledge_base:
+  opt_out: false
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/.cursor/rules/*"
+      - "README.md"
