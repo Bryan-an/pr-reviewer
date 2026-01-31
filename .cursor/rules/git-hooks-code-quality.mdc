@@ -1,0 +1,15 @@
+---
+description: Enforce local code quality via Husky hooks (lint-staged, type-check, commitlint, and build gates)
+alwaysApply: false
+---
+
+# Git hooks (code quality)
+
+Use **Husky** to enforce quality checks locally before code reaches the remote.
+
+## Hooks
+
+- **pre-commit**: run `lint-staged` and `pnpm type-check`
+- **commit-msg**: validate commit messages with **commitlint** (Conventional Commits)
+  - Max-length rules are disabled to allow AI-generated messages.
+- **pre-push**: run `pnpm build`

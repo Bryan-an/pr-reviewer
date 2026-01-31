@@ -89,6 +89,14 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
   - Format: `pnpm format`
   - Check (CI): `pnpm format:check`
 
+### Git hooks (code quality)
+
+We use **Husky** to enforce quality checks locally before code reaches the remote:
+
+- **pre-commit**: runs `lint-staged` + `pnpm type-check`
+- **commit-msg**: validates commit messages with **commitlint** (Conventional Commits). Max-length rules are disabled to allow AI-generated messages.
+- **pre-push**: runs `pnpm build`
+
 ### Logging, testing, and quality (planned)
 
 - **Logging**: `pino`
