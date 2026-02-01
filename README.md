@@ -47,6 +47,64 @@ On a PR, comment:
 - Preview the findings
 - Publish the comments back to Azure DevOps as PR threads
 
+## One-page MVP Spec (v1)
+
+### Problem statement
+
+Reviewing Azure DevOps pull requests repeatedly for the same classes of issues is time-consuming. This app generates **high-signal, ready-to-post** review comment threads aligned to **team-specific standards**.
+
+### Happy path (v1) — single PR only
+
+- Provide Azure DevOps org + project + repo and a PR identifier (PR id or PR URL).
+- Server fetches PR metadata from Azure DevOps.
+- Server generates a **unified diff locally** from the PR branches (source of truth for review context).
+- Server runs an **AI review engine** (CodeRabbit preferred, LLM fallback) and normalizes results into structured findings.
+- UI previews findings grouped by file and severity.
+- User publishes findings back to Azure DevOps as PR comment threads.
+
+### Inputs (v1)
+
+- **From UI**:
+  - Azure DevOps organization
+  - Azure DevOps project
+  - Repository identifier (name or id)
+  - Pull request identifier (id or URL)
+  - Standards profile selection (optional; default profile if omitted)
+- **Secrets (server-only)**:
+  - Azure DevOps PAT (provided via server environment variable; never entered in the browser)
+
+### Outputs (v1)
+
+- **Previewable findings** (deterministic schema) grouped by:
+  - file path
+  - severity (e.g. info/warn/error)
+  - category (e.g. correctness/security/maintainability)
+- **Publishable PR threads** in Azure DevOps:
+  - general comments and file-scoped comments (line anchoring is a non-goal for v1)
+- Minimal run metadata:
+  - timestamp, PR reference, engine used, counts by severity
+
+### Success criteria (definition of done)
+
+- Can publish at least one generated comment thread to the intended Azure DevOps PR.
+- Findings are produced in a **structured, deterministic format** suitable for publishing (not free-form text only).
+- PAT is **never sent to the client** and is never logged.
+- Local unified diff is the **source of truth** for review context.
+
+### Non-goals (v1)
+
+- Browsing/listing PRs (user supplies a PR id or PR URL).
+- Line-level anchoring (file-level only; line anchoring can be added later).
+- Persisting PATs in the database (when added later, it must be encrypted at rest with `APP_ENCRYPTION_KEY`).
+- Multi-org/multi-repo management UI, teams/roles, SSO, and enterprise policy management.
+- Full standards editor UI (v1 may use a default or a small, fixed set).
+
+### Key constraints / assumptions
+
+- **Secrets are server-only**; server modules live under `server/` and must not be imported by Client Components.
+- **Pluggable AI engine** behind a stable interface (CodeRabbit preferred, LLM fallback).
+- Avoid publishing or logging raw diffs by default (diffs may contain sensitive content).
+
 ## Status
 
 Early stage: repository scaffolding and documentation in progress.
