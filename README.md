@@ -51,6 +51,126 @@ On a PR, comment:
 
 Early stage: repository scaffolding and documentation in progress.
 
+## Architecture, strategy, and repository structure
+
+### Architecture goals
+
+- **High-signal, deterministic output**: AI findings must be structured, actionable, and easy to publish back to Azure DevOps as comment threads.
+- **Pluggable review engines**: support multiple engines (CodeRabbit preferred, LLM fallback) behind a stable interface.
+- **Server-only handling of secrets**: Azure DevOps PATs and encryption keys never reach the browser.
+- **Thin UI, strong domain layer**: Next.js routes and UI components orchestrate; the review pipeline owns the business logic.
+
+### High-level component model
+
+- **UI layer (Next.js App Router)**: pages, layouts, forms, and preview screens.
+- **Server boundary (Route Handlers / Server Actions)**: validates input, calls domain use-cases, returns DTOs.
+- **Domain layer (review pipeline)**: converts PR metadata + diffs into review “findings”, independent of any specific AI provider.
+- **Integrations**:
+  - **Azure DevOps adapter**: PR metadata, files, and publishing comment threads (via `azure-devops-node-api`).
+  - **Git adapter**: clone/fetch and generate unified diffs locally (`git diff ...` via `execa`).
+  - **AI engines**: CodeRabbit CLI runner and/or LLM provider runner.
+- **Persistence**: Prisma models for settings, standards, credentials metadata, review runs, findings, and publish history.
+
+### Data flow (MVP)
+
+1. **Select PR** (org/project/repo/PR id).
+2. **Fetch PR metadata** from Azure DevOps.
+3. **Generate unified diff locally** using `git` (source of truth for review context).
+4. **Run AI engine** (CodeRabbit first; fallback to LLM) to produce structured findings.
+5. **Preview** findings in the UI (grouped by file / severity).
+6. **Publish** findings back to Azure DevOps as PR comment threads.
+
+### Repository structure (target)
+
+This is the structure we’ll follow as features land. Not every folder exists yet.
+
+```text
+.
+├── app/                          # Next.js routes (App Router)
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── (dashboard)/              # Optional route group (no URL segment)
+│   ├── api/                      # Route handlers (server endpoints)
+│   │   └── .../route.ts
+│   └── _components/              # Route-scoped components (non-routing)
+├── components/
+│   ├── ui/                       # shadcn/ui components (kebab-case files)
+│   └── ...                       # shared, reusable components
+├── lib/
+│   ├── config/                   # env parsing, feature flags
+│   ├── validation/               # zod schemas for inputs/DTOs
+│   ├── utils/                    # small pure helpers (no side effects)
+│   └── crypto/                   # encryption helpers (server-only)
+├── server/                       # server-only modules (no React imports)
+│   ├── azure-devops/             # SDK client + publishing threads
+│   ├── git/                      # clone/fetch/diff generation
+│   ├── ai/                       # engines + normalization to findings
+│   ├── review/                   # domain orchestration (use-cases)
+│   └── db/                       # prisma client + repositories
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+├── scripts/                      # one-off scripts and maintenance tasks
+├── public/
+└── ...
+```
+
+### Module boundaries (important)
+
+- **Server-only code** goes in `server/` and must never be imported by Client Components.
+  - Use `import "server-only";` at the top of server-only modules as a guardrail.
+- **React Server Components** may call server-only modules; **Client Components** may not.
+- Prefer calling the domain layer directly from Server Components / Server Actions instead of creating “internal-only” HTTP APIs.
+
+### Conventions and best practices
+
+#### Code organization
+
+- **Co-locate feature code** when it improves readability:
+  - route-specific UI in `app/**/_components/`
+  - shared UI in `components/`
+  - domain/integrations always outside `app/` in `server/`
+- Keep route handlers and server actions **thin**: validate → call use-case → format response.
+
+#### Naming
+
+- **Routes & folders**: `kebab-case` (URL-friendly).
+- **Files**: `kebab-case.ts` / `kebab-case.tsx`.
+- **React component exports**: `PascalCase`.
+- **Types**: `PascalCase` for interfaces/types; `camelCase` for values and functions.
+
+#### TypeScript and validation
+
+- Keep `strict` mode enabled (already configured).
+- Avoid `any`. Prefer `unknown` + Zod parsing at boundaries.
+- Validate at boundaries:
+  - incoming requests (route handlers / actions)
+  - persisted data read/write (repositories)
+  - AI engine output (structured JSON → Zod)
+
+#### Error handling
+
+- Prefer **typed domain errors** (e.g. `AuthError`, `NotFoundError`, `ValidationError`) and map them to user-facing messages at the edge.
+- Never swallow errors from external systems (Azure DevOps, git, AI). Capture context and surface a safe summary.
+
+#### Security (credentials)
+
+- PATs are treated as secrets:
+  - stored encrypted at rest (AES-256-GCM) using `APP_ENCRYPTION_KEY`
+  - never logged, never sent to the client
+- Use environment variables for secrets; never commit `.env*`.
+
+#### Logging and observability
+
+- Prefer structured logging (planned: `pino`) with correlation ids for a review run.
+- Log **events**, not raw secrets or full diffs by default (diffs can contain sensitive data).
+
+#### Formatting and linting
+
+- Format with `pnpm format`; enforce with `pnpm format:check`.
+- Lint with `pnpm lint`.
+- Don’t disable ESLint rules unless there’s a documented reason.
+
 ## Tech stack (recommended)
 
 - **Web app**: Next.js (App Router) + TypeScript

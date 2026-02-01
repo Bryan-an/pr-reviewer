@@ -1,0 +1,45 @@
+---
+description: Project architecture, folder structure, and coding standards (always apply)
+alwaysApply: true
+---
+
+# Architecture & Standards (Azure DevOps AI PR Reviewer)
+
+## Goals
+
+- Produce **high-signal, deterministic** review output (structured findings → publishable comment threads).
+- Keep the AI layer **pluggable** (CodeRabbit preferred, LLM fallback) behind a stable interface.
+- Ensure **secrets are server-only** (Azure DevOps PATs, encryption keys never reach the browser).
+- Keep **UI thin**; put business logic in a **domain/review pipeline**.
+
+## Layering & boundaries
+
+- **UI layer** (Next.js App Router): pages/layouts/forms/preview.
+- **Server boundary** (Route Handlers / Server Actions): validate input → call use-case → return DTOs.
+- **Domain layer** (`server/review`): orchestrates review pipeline; no UI concerns.
+- **Integrations**:
+  - Azure DevOps adapter (`server/azure-devops`) via `azure-devops-node-api`
+  - Git adapter (`server/git`) for local clone/fetch + unified diffs (`git diff ...` via `execa`)
+  - AI engines (`server/ai`) normalize engine output → structured findings
+- **Persistence** (`server/db` + `prisma/`): Prisma models for settings/standards/runs/findings/publish history.
+
+**Hard rule**: server-only modules live under `server/` and must not be imported by Client Components.
+Add `import "server-only";` to server-only modules as a guardrail.
+
+## Repository structure (target)
+
+- `app/`: routes, layouts, route handlers (`app/api/**/route.ts`), route-scoped UI in `app/**/_components/`
+- `components/`: shared React components; `components/ui/` reserved for shadcn/ui
+- `lib/`: shared utilities (config/env parsing, validation schemas, crypto helpers, pure utils)
+- `server/`: server-only domain + integrations (azure-devops/git/ai/review/db)
+- `prisma/`: schema + migrations
+- `scripts/`: maintenance/one-off scripts
+
+## Conventions & best practices
+
+- **Naming**: folders/routes/files in `kebab-case`; React exports in `PascalCase`; values/functions in `camelCase`.
+- **Validation**: validate at boundaries (requests, persistence, AI output). Prefer `unknown` + Zod over `any`.
+- **Error handling**: use typed domain errors; never swallow external errors; surface safe summaries at the edge.
+- **Security**: encrypt PATs at rest (AES-256-GCM using `APP_ENCRYPTION_KEY`); never log or send secrets to client.
+- **Logging**: structured, event-focused logs; avoid logging raw diffs by default.
+- **Quality**: keep ESLint/Prettier on; don’t disable rules without a documented reason.
