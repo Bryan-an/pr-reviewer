@@ -22,9 +22,13 @@
     ]
   },
   "dependencies": {
+    "azure-devops-node-api": "^15.1.2",
+    "execa": "^9.6.1",
     "next": "16.1.6",
+    "parse-diff": "^0.11.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.0",

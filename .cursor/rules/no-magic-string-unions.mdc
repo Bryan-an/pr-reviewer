@@ -1,0 +1,36 @@
+---
+description: Prefer object constants over string-literal unions for enums
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Prefer object constants over string-literal unions
+
+Avoid defining “magic string” union types directly (e.g. `type Severity = "info" | "warn"`).
+
+## Rule
+
+- Define a **`const` object** (not an array) with `as const`
+- Derive the type from the object values
+- Use the exported object values elsewhere to avoid typos
+
+## Example
+
+```ts
+// ✅ GOOD
+export const SEVERITY = {
+  Info: "info",
+  Warn: "warn",
+  Error: "error",
+} as const;
+
+export type Severity = (typeof SEVERITY)[keyof typeof SEVERITY];
+
+// Usage:
+// severity: SEVERITY.Warn
+```
+
+```ts
+// ❌ BAD
+export type Severity = "info" | "warn" | "error";
+```
