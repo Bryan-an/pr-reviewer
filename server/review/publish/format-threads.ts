@@ -101,7 +101,7 @@ export function formatThreads(params: {
   findings: Finding[];
   cap?: number;
 }): FormatThreadsResult {
-  const cap = params.cap ?? DEFAULT_THREAD_CAP;
+  const cap = Math.max(1, params.cap ?? DEFAULT_THREAD_CAP);
   const unscopedFindings = params.findings.filter((f) => !f.filePath);
   const fileGroups = groupByFilePath(params.findings);
 
