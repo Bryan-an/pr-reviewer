@@ -67,7 +67,9 @@ function groupByFilePath(findings: Finding[]): Map<string, Finding[]> {
 
   for (const f of findings) {
     if (!f.filePath) continue;
-    const key = normalizeFilePath(f.filePath);
+    const trimmedFilePath = f.filePath.trim();
+    if (trimmedFilePath === "") continue;
+    const key = normalizeFilePath(trimmedFilePath);
     const list = map.get(key) ?? [];
     list.push(f);
     map.set(key, list);
