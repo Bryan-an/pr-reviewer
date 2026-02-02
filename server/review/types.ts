@@ -1,24 +1,6 @@
 import "server-only";
 
-export const SEVERITY = {
-  Info: "info",
-  Warn: "warn",
-  Error: "error",
-} as const;
-
-export type Severity = (typeof SEVERITY)[keyof typeof SEVERITY];
-
-export const FINDING_CATEGORY = {
-  Correctness: "correctness",
-  Security: "security",
-  Maintainability: "maintainability",
-  Performance: "performance",
-  Testing: "testing",
-  DX: "dx",
-  Style: "style",
-} as const;
-
-export type FindingCategory = (typeof FINDING_CATEGORY)[keyof typeof FINDING_CATEGORY];
+import type { FindingCategory, Severity } from "@/lib/validation/finding";
 
 export type Finding = {
   id: string;

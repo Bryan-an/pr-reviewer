@@ -109,6 +109,15 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 
 Early stage: repository scaffolding and documentation in progress.
 
+## Publishing (current behavior)
+
+The review preview page can publish findings back to Azure DevOps as **PR comment threads**:
+
+- **One summary thread**: basic run metadata (engine name, counts).
+- **File-scoped threads**: one thread per file (no line anchoring in v1).
+- **Idempotency**: published threads include hidden markers so re-publishing does not duplicate threads.
+- **Fallback**: if Azure DevOps rejects file-scoped context without positions, the app falls back to posting a general thread that includes the file path in the content.
+
 ## Architecture, strategy, and repository structure
 
 ### Architecture goals
