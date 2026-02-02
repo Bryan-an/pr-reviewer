@@ -7,6 +7,25 @@ import { execa } from "execa";
 
 import { getEnv } from "@/lib/config/env";
 
+function toOriginRemoteTrackingRef(refName: string): {
+  fetchRefspec?: string;
+  ref: string;
+} {
+  const headsPrefix = "refs/heads/";
+
+  if (refName.startsWith(headsPrefix)) {
+    const branchName = refName.slice(headsPrefix.length);
+    const remoteTrackingRef = `refs/remotes/origin/${branchName}`;
+
+    return {
+      fetchRefspec: `+${refName}:${remoteTrackingRef}`,
+      ref: remoteTrackingRef,
+    };
+  }
+
+  return { ref: refName };
+}
+
 async function pathExists(filePath: string): Promise<boolean> {
   try {
     await stat(filePath);
@@ -64,12 +83,19 @@ export async function generateUnifiedDiff(params: {
   targetRefName: string;
   sourceRefName: string;
 }): Promise<string> {
-  // Fetch the refs explicitly in case they're not in the default fetch refspec.
-  await execa("git", ["fetch", "--no-tags", "origin", params.targetRefName, params.sourceRefName], {
-    cwd: params.repoDir,
-  });
+  const target = toOriginRemoteTrackingRef(params.targetRefName);
+  const source = toOriginRemoteTrackingRef(params.sourceRefName);
 
-  const diffRange = `${params.targetRefName}...${params.sourceRefName}`;
+  const refspecs = [target.fetchRefspec, source.fetchRefspec].filter(
+    (value): value is string => typeof value === "string",
+  );
+
+  if (refspecs.length > 0) {
+    // Fetch PR refs into stable local names that `git diff` can resolve.
+    await execa("git", ["fetch", "--no-tags", "origin", ...refspecs], { cwd: params.repoDir });
+  }
+
+  const diffRange = `${target.ref}...${source.ref}`;
 
   const { stdout } = await execa(
     "git",
