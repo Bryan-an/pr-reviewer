@@ -100,6 +100,7 @@ export function formatThreads(params: {
   cap?: number;
 }): FormatThreadsResult {
   const cap = params.cap ?? DEFAULT_THREAD_CAP;
+  const unscopedFindings = params.findings.filter((f) => !f.filePath);
   const fileGroups = groupByFilePath(params.findings);
 
   const summaryMarker = threadMarker(`summary:pr:${params.pr.prId}`);
@@ -135,6 +136,27 @@ export function formatThreads(params: {
     },
   ];
 
+  const generalMarker = threadMarker(`general:pr:${params.pr.prId}`);
+  const hasGeneralThread = unscopedFindings.length > 0;
+
+  if (hasGeneralThread && cap >= 2) {
+    const sorted = sortFindingsForThread(unscopedFindings);
+
+    const lines: string[] = [
+      `General findings`,
+      "",
+      ...sorted.map(formatFinding),
+      "",
+      generalMarker,
+    ];
+
+    threads.push({
+      threadMarker: generalMarker,
+      content: lines.join("\n"),
+      findingIds: sorted.map((f) => f.id),
+    });
+  }
+
   const fileThreadCandidates = [...fileGroups.entries()].map(([filePath, findings]) => {
     const sorted = sortFindingsForThread(findings);
     const max = maxSeverity(findings);
@@ -155,9 +177,12 @@ export function formatThreads(params: {
     return a.filePath.localeCompare(b.filePath);
   });
 
-  const maxFileThreads = Math.max(0, cap - 1);
+  const reservedThreads = 1 + (hasGeneralThread && cap >= 2 ? 1 : 0);
+  const maxFileThreads = Math.max(0, cap - reservedThreads);
   const selectedFileThreads = fileThreadCandidates.slice(0, maxFileThreads);
-  const wasCapped = fileThreadCandidates.length > selectedFileThreads.length;
+
+  const wasCapped =
+    fileThreadCandidates.length > selectedFileThreads.length || (hasGeneralThread && cap < 2);
 
   for (const t of selectedFileThreads) {
     const marker = threadMarker(`file:${t.filePath}:pr:${params.pr.prId}`);
@@ -184,7 +209,7 @@ export function formatThreads(params: {
       ...threads[0],
       content:
         `${threads[0].content}\n\n` +
-        `Note: thread publishing was capped to ${cap}. Remaining file-scoped findings were not posted.\n` +
+        `Note: thread publishing was capped to ${cap}. Some findings may not have been posted.\n` +
         `Category hint: ${FINDING_CATEGORY.Maintainability}\n`,
     };
   }
