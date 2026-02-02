@@ -7,7 +7,7 @@ import { FindingSchema } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { ReviewRequest } from "@/lib/validation/review-request";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
-import { runStubEngine } from "@/server/ai/stub-engine";
+import { selectReviewEngine } from "@/server/ai/select-engine";
 import { ensureRepoCheckedOut, generateUnifiedDiff } from "@/server/git/repo";
 import { DomainValidationError, type FindingValidationFailure } from "@/server/review/errors";
 import type { Finding, ReviewRunResult } from "@/server/review/types";
@@ -47,7 +47,34 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
   });
 
   const parsed = parseDiff(unifiedDiff);
-  const rawFindings: unknown[] = runStubEngine(parsed) as unknown[];
+
+  const changedFiles = parsed
+    .map((f) => f.to ?? "")
+    .map((v) => v.trim())
+    .filter((v) => v !== "");
+
+  const engine = selectReviewEngine();
+
+  const engineResult = await engine.run({
+    request,
+    repoDir,
+    pr: {
+      org: pr.org,
+      project: pr.project,
+      repoId: pr.repo.id,
+      repoName: pr.repo.name,
+      prId: pr.pr.id,
+      title: pr.pr.title,
+      url: pr.pr.url,
+      targetRefName: pr.pr.targetRefName,
+      sourceRefName: pr.pr.sourceRefName,
+    },
+    unifiedDiff,
+    parsedDiff: parsed,
+    changedFiles,
+  });
+
+  const rawFindings: unknown[] = engineResult.findings as unknown[];
 
   const findings: Finding[] = [];
   const failures: FindingValidationFailure[] = [];
@@ -80,7 +107,7 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
       title: pr.pr.title,
       url: pr.pr.url,
     },
-    engine: { name: "stub" },
+    engine: { name: engineResult.engineName },
     summary: {
       totalFindings: findings.length,
       bySeverity: countBySeverity(findings),

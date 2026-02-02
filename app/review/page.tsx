@@ -98,9 +98,9 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         </h1>
 
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          Review failed. Ensure the PR URL is correct and{" "}
+          Review failed. Ensure the PR URL is correct,{" "}
           <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-900">AZURE_DEVOPS_PAT</code>{" "}
-          is set on the server.
+          is set on the server, and CodeRabbit CLI is installed + authenticated.
         </p>
 
         <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">

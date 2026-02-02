@@ -1,0 +1,32 @@
+---
+description: Define Zod enums via constants/types/values (no magic strings)
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Zod enums: no magic strings
+
+When a Zod schema needs an enum, **do not** inline string literals like `z.enum(["a", "b"])`.
+
+Instead, always define:
+
+- **A constants object** (`as const`)
+- **A derived union type** from that object
+- **A `values` array** used by `z.enum(values)`
+
+Example:
+
+```ts
+export const REVIEW_ENGINE = {
+  Coderabbit: "coderabbit",
+  Stub: "stub",
+} as const;
+
+export type ReviewEngine = (typeof REVIEW_ENGINE)[keyof typeof REVIEW_ENGINE];
+
+const reviewEngineValues = [REVIEW_ENGINE.Coderabbit, REVIEW_ENGINE.Stub] as const;
+
+export const schema = z.object({
+  engine: z.enum(reviewEngineValues),
+});
+```

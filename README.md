@@ -107,7 +107,9 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 
 ## Status
 
-Early stage: repository scaffolding and documentation in progress.
+MVP is progressing: you can generate a review preview and publish findings back to Azure DevOps as PR comment threads.
+
+AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
 
 ## Publishing (current behavior)
 
@@ -117,6 +119,27 @@ The review preview page can publish findings back to Azure DevOps as **PR commen
 - **File-scoped threads**: one thread per file (no line anchoring in v1).
 - **Idempotency**: published threads include hidden markers so re-publishing does not duplicate threads.
 - **Fallback**: if Azure DevOps rejects file-scoped context without positions, the app falls back to posting a general thread that includes the file path in the content.
+
+## Local setup
+
+### Required
+
+- **`AZURE_DEVOPS_PAT`**: Azure DevOps Personal Access Token available to the server runtime (never sent to the browser).
+- **CodeRabbit CLI** installed and authenticated on the machine running the Next.js server:
+  - Install: `curl -fsSL https://cli.coderabbit.ai/install.sh | sh`
+  - Authenticate: `coderabbit auth login`
+  - Docs: `https://docs.coderabbit.ai/cli`
+
+### Optional
+
+- **`REPOS_DIR`**: directory where the server caches cloned Azure DevOps repos (default: `.data/repos`).
+- **`CODERABBIT_BIN`**: override the CodeRabbit CLI binary path/name (default: `coderabbit`).
+- **`REVIEW_ENGINE`**: choose the engine (`coderabbit` or `stub`). Default: `coderabbit`.
+
+## Known limitations (v1)
+
+- Publishing is **file-scoped only** (no line anchoring).
+- CodeRabbit CLI output parsing is **best-effort**; some findings may be unscoped or less precise.
 
 ## Architecture, strategy, and repository structure
 
