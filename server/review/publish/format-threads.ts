@@ -1,6 +1,8 @@
 import "server-only";
 
-import { FINDING_CATEGORY, SEVERITY, type Finding, type Severity } from "@/server/review/types";
+import { FINDING_CATEGORY, SEVERITY } from "@/lib/validation/finding";
+import type { Severity } from "@/lib/validation/finding";
+import type { Finding } from "@/server/review/types";
 
 export type PublishableThread = {
   /**
@@ -29,6 +31,10 @@ export type FormatThreadsResult = {
 
 const DEFAULT_THREAD_CAP = 50;
 
+function assertNever(value: never): never {
+  throw new Error(`Unexpected value: ${String(value)}`);
+}
+
 function severityRank(severity: Severity): number {
   switch (severity) {
     case SEVERITY.Error:
@@ -37,6 +43,8 @@ function severityRank(severity: Severity): number {
       return 1;
     case SEVERITY.Info:
       return 2;
+    default:
+      return assertNever(severity);
   }
 }
 

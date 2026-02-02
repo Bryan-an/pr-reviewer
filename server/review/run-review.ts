@@ -3,11 +3,13 @@ import "server-only";
 import parseDiff from "parse-diff";
 
 import { parseAzureDevOpsPrUrl } from "@/lib/azure-devops/pr-url";
+import { FindingSchema } from "@/lib/validation/finding";
+import type { Severity } from "@/lib/validation/finding";
 import type { ReviewRequest } from "@/lib/validation/review-request";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
 import { runStubEngine } from "@/server/ai/stub-engine";
 import { ensureRepoCheckedOut, generateUnifiedDiff } from "@/server/git/repo";
-import type { ReviewRunResult, Severity } from "@/server/review/types";
+import type { Finding, ReviewRunResult } from "@/server/review/types";
 
 function countBySeverity(findings: { severity: Severity }[]): Record<Severity, number> {
   return findings.reduce<Record<Severity, number>>(
@@ -44,7 +46,15 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
   });
 
   const parsed = parseDiff(unifiedDiff);
-  const findings = runStubEngine(parsed);
+  const rawFindings: unknown[] = runStubEngine(parsed) as unknown[];
+
+  const findings: Finding[] = [];
+
+  for (const item of rawFindings) {
+    const parsedFinding = FindingSchema.safeParse(item);
+    if (!parsedFinding.success) continue;
+    findings.push(parsedFinding.data as Finding);
+  }
 
   return {
     pr: {

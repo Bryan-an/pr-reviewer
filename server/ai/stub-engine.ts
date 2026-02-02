@@ -2,7 +2,9 @@ import "server-only";
 
 import type { File, Chunk } from "parse-diff";
 
-import { FINDING_CATEGORY, SEVERITY, type Finding, type Severity } from "@/server/review/types";
+import { FINDING_CATEGORY, SEVERITY } from "@/lib/validation/finding";
+import type { Severity } from "@/lib/validation/finding";
+import type { Finding } from "@/server/review/types";
 
 function stableId(seed: string): string {
   // Deterministic (not random) and stable across runs.
