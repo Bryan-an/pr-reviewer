@@ -31,11 +31,34 @@ export async function fetchPullRequestById(params: {
 
   const pr: GitPullRequest = await gitApi.getPullRequestById(params.prId, params.project);
 
-  if (!pr.repository?.id || !pr.repository?.name || !pr.repository?.remoteUrl) {
+  const repoId = pr.repository?.id;
+  const repoName = pr.repository?.name;
+  const repoRemoteUrl = pr.repository?.remoteUrl;
+
+  if (
+    repoId == null ||
+    repoName == null ||
+    repoName.trim() === "" ||
+    repoRemoteUrl == null ||
+    repoRemoteUrl.trim() === ""
+  ) {
     throw new Error("Azure DevOps PR is missing repository information.");
   }
 
-  if (!pr.pullRequestId || !pr.title || !pr.sourceRefName || !pr.targetRefName) {
+  const pullRequestId = pr.pullRequestId;
+  const title = pr.title;
+  const sourceRefName = pr.sourceRefName;
+  const targetRefName = pr.targetRefName;
+
+  if (
+    pullRequestId == null ||
+    title == null ||
+    title.trim() === "" ||
+    sourceRefName == null ||
+    sourceRefName.trim() === "" ||
+    targetRefName == null ||
+    targetRefName.trim() === ""
+  ) {
     throw new Error("Azure DevOps PR is missing required metadata.");
   }
 
@@ -43,16 +66,16 @@ export async function fetchPullRequestById(params: {
     org: params.org,
     project: params.project,
     repo: {
-      id: pr.repository.id,
-      name: pr.repository.name,
-      remoteUrl: pr.repository.remoteUrl,
+      id: repoId,
+      name: repoName,
+      remoteUrl: repoRemoteUrl,
     },
     pr: {
-      id: pr.pullRequestId,
-      title: pr.title,
+      id: pullRequestId,
+      title,
       url: pr.url ?? undefined,
-      sourceRefName: pr.sourceRefName,
-      targetRefName: pr.targetRefName,
+      sourceRefName,
+      targetRefName,
     },
   };
 }
