@@ -109,52 +109,122 @@ function bestEffortFilePath(text: string, changedFiles: string[]): string | unde
   return undefined;
 }
 
-function splitIntoBlocks(text: string): string[] {
-  const normalized = text.replaceAll("\r\n", "\n").trim();
+const sectionSeparatorRegex = /^={10,}\s*$/gm;
 
-  if (!normalized) return [];
+function normalizeText(text: string): string {
+  return text.replaceAll("\r\n", "\n");
+}
 
-  // Split on blank lines or horizontal rule-ish separators.
-  return normalized
-    .split(/\n{2,}|(?:^|\n)={3,}(?:\n|$)|(?:^|\n)-{3,}(?:\n|$)/g)
-    .map((b) => b.trim())
-    .filter(Boolean);
+function hasFindingsSections(text: string): boolean {
+  sectionSeparatorRegex.lastIndex = 0;
+  return sectionSeparatorRegex.test(text);
+}
+
+function splitIntoFindingSections(text: string): string[] {
+  const normalized = normalizeText(text);
+  if (!normalized.trim()) return [];
+
+  if (!hasFindingsSections(normalized)) return [];
+
+  // CodeRabbit uses long lines of '=' to separate findings.
+  // Everything before the first separator is preamble (status/progress) and should be ignored.
+  const parts = normalized.split(sectionSeparatorRegex).map((p) => p.trim());
+  return parts.slice(1).filter(Boolean);
+}
+
+function parseLabeledBlock(section: string, label: string): string | undefined {
+  const normalized = normalizeText(section);
+  const escaped = escapeRegExp(label);
+
+  const re = new RegExp(
+    String.raw`(?:^|\n)${escaped}\s*\n([\s\S]*?)(?=\n[A-Za-z][A-Za-z _-]*:\s*\n|\nReview completed|\s*$)`,
+    "i",
+  );
+
+  const match = re.exec(normalized);
+  return match?.[1]?.trim() || undefined;
+}
+
+function parseSingleLineValue(section: string, label: string): string | undefined {
+  const normalized = normalizeText(section);
+  const escaped = escapeRegExp(label);
+  const re = new RegExp(String.raw`(?:^|\n)${escaped}\s*(.+)\s*$`, "im");
+  const match = re.exec(normalized);
+  return match?.[1]?.trim() || undefined;
+}
+
+function severityFromType(typeValue: string | undefined, fallbackText: string): Severity {
+  const t = (typeValue ?? "").toLowerCase();
+
+  if (t.includes("critical") || t.includes("error") || t.includes("security"))
+    return SEVERITY.Error;
+
+  if (t.includes("nit") || t.includes("style") || t.includes("info")) return SEVERITY.Info;
+
+  if (t.includes("potential_issue") || t.includes("issue") || t.includes("warning"))
+    return SEVERITY.Warn;
+
+  return inferSeverity(fallbackText);
+}
+
+function isCleanNoFindingsOutput(text: string): boolean {
+  return /review completed/i.test(text) && !/\bFile:\s*/i.test(text) && !hasFindingsSections(text);
+}
+
+function parseSectionToFinding(section: string, changedFiles: string[]): Finding | null {
+  const fileLine = parseSingleLineValue(section, "File:");
+  const typeLine = parseSingleLineValue(section, "Type:");
+  const commentBlock = parseLabeledBlock(section, "Comment:");
+  const promptBlock = parseLabeledBlock(section, "Prompt for AI Agent:");
+
+  const commentLines = (commentBlock ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l !== "");
+
+  const title = normalizeWhitespace(commentLines[0] ?? "").slice(0, 160) || "CodeRabbit finding";
+
+  const message = normalizeWhitespace(
+    (commentLines.slice(1).join("\n").trim() || commentLines[0] || "").trim(),
+  );
+
+  const combined = [
+    fileLine ? `File: ${fileLine}` : "",
+    typeLine ? `Type: ${typeLine}` : "",
+    commentBlock ?? "",
+    promptBlock ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const filePath = fileLine
+    ? (bestEffortFilePath(fileLine, changedFiles) ?? fileLine.trim())
+    : bestEffortFilePath(combined, changedFiles);
+
+  return {
+    id: stableId({ filePath, title, message }),
+    severity: severityFromType(typeLine, combined),
+    category: inferCategory(combined),
+    title,
+    message,
+    filePath,
+    ...(promptBlock ? { recommendation: promptBlock } : {}),
+  };
 }
 
 export function parseCodeRabbitPlainOutput(params: {
   text: string;
   changedFiles: string[];
 }): Finding[] {
-  const blocks = splitIntoBlocks(params.text);
+  const normalized = normalizeText(params.text);
+  const sections = splitIntoFindingSections(normalized);
   const findings: Finding[] = [];
 
-  for (const block of blocks) {
-    const lines = block
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
+  if (isCleanNoFindingsOutput(normalized)) return [];
 
-    if (lines.length === 0) continue;
-
-    const title = normalizeWhitespace(lines[0]).slice(0, 160) || "CodeRabbit finding";
-
-    const message =
-      normalizeWhitespace(lines.slice(1).join(" ").trim()) || normalizeWhitespace(lines[0]);
-
-    const combined = `${title}\n${message}\n${block}`;
-
-    const filePath = bestEffortFilePath(combined, params.changedFiles);
-    const severity = inferSeverity(combined);
-    const category = inferCategory(combined);
-
-    findings.push({
-      id: stableId({ filePath, title, message }),
-      severity,
-      category,
-      title,
-      message,
-      filePath,
-    });
+  for (const section of sections) {
+    const finding = parseSectionToFinding(section, params.changedFiles);
+    if (finding) findings.push(finding);
   }
 
   if (findings.length === 0) {
