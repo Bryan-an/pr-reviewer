@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { reviewRequestSchema } from "@/lib/validation/review-request";
+import { publishReview } from "@/server/review/publish/publish-review";
 import { runReview } from "@/server/review/run-review";
 
 type ReviewPageProps = Readonly<{
@@ -12,9 +14,45 @@ function getFirst(value: string | string[] | undefined): string | undefined {
   return value;
 }
 
+async function publishAction(formData: FormData) {
+  "use server";
+  const value = formData.get("prUrl");
+  const prUrl = typeof value === "string" ? value.trim() : "";
+
+  if (!prUrl) {
+    redirect("/review?publishError=1");
+  }
+
+  const encodedPrUrl = encodeURIComponent(prUrl);
+
+  let result: Awaited<ReturnType<typeof publishReview>>;
+
+  try {
+    result = await publishReview({ prUrl });
+  } catch {
+    redirect(`/review?prUrl=${encodedPrUrl}&publishError=1`);
+  }
+
+  redirect(
+    `/review?prUrl=${encodedPrUrl}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
+  );
+}
+
 export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const params = await searchParams;
   const prUrl = getFirst(params.prUrl);
+  const published = getFirst(params.published) === "1";
+  const publishError = getFirst(params.publishError) === "1";
+  const publishedThreads = Number(getFirst(params.publishedThreads) ?? "0");
+  const skippedThreads = Number(getFirst(params.skippedThreads) ?? "0");
+  const totalThreads = Number(getFirst(params.totalThreads) ?? "0");
+  const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
+  const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;
+
+  const skippedMessage =
+    skippedThreads > 0
+      ? ` (skipped ${skippedThreads} already-posted ${skippedThreadsLabel}).`
+      : ".";
 
   if (!prUrl) {
     return (
@@ -79,6 +117,19 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
           Review preview
         </h1>
 
+        {published ? (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+            Published {publishedThreads} {publishedThreadsLabel}
+            {skippedMessage} Total threads considered: {totalThreads}.
+          </div>
+        ) : null}
+
+        {publishError ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+            Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.
+          </div>
+        ) : null}
+
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
           <span className="font-medium text-zinc-900 dark:text-zinc-50">{result.pr.repoName}</span>{" "}
           · PR{" "}
@@ -91,6 +142,23 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
           Engine: <span className="font-medium">{result.engine.name}</span> · Findings:{" "}
           <span className="font-medium">{result.summary.totalFindings}</span>
         </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <form action={publishAction} className="flex items-center gap-3">
+          <input type="hidden" name="prUrl" value={prUrl} />
+
+          <button
+            type="submit"
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            Publish to Azure DevOps
+          </button>
+        </form>
+
+        <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
+          New review
+        </Link>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -127,9 +195,9 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Findings</h2>
 
-          <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
-            New review
-          </Link>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            Publishing is file-scoped only (no line anchoring in v1).
+          </span>
         </div>
 
         {result.findings.length === 0 ? (
