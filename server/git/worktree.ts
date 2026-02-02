@@ -6,6 +6,8 @@ import { mkdir, rm } from "node:fs/promises";
 
 import { execa } from "execa";
 
+import { toOriginRemoteTrackingRef } from "@/server/git/refs";
+
 function sanitizePathSegment(value: string): string {
   return value.replaceAll(/[^a-zA-Z0-9._-]/g, "_");
 }
@@ -58,8 +60,20 @@ export async function withTempWorktree<T>(
   let created = false;
 
   try {
-    const baseSha = await revParse(params.repoDir, params.baseRef);
-    const headSha = await revParse(params.repoDir, params.headRef);
+    const base = toOriginRemoteTrackingRef(params.baseRef);
+    const head = toOriginRemoteTrackingRef(params.headRef);
+
+    const refspecs = [base.fetchRefspec, head.fetchRefspec].filter(
+      (value): value is string => typeof value === "string",
+    );
+
+    if (refspecs.length > 0) {
+      // Ensure PR refs exist as remote-tracking refs inside the cached clone.
+      await execa("git", ["fetch", "--no-tags", "origin", ...refspecs], { cwd: params.repoDir });
+    }
+
+    const baseSha = await revParse(params.repoDir, base.ref);
+    const headSha = await revParse(params.repoDir, head.ref);
 
     // Create (or move) lightweight local branches for tooling to reference.
     await execa("git", ["branch", "-f", baseBranch, baseSha], { cwd: params.repoDir });
