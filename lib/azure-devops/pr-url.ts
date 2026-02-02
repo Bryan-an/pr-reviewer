@@ -21,6 +21,14 @@ const httpsUrlSchema = z.string().refine(
   { message: "URL must be a valid https URL." },
 );
 
+function decodePathSegment(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    throw new Error("Invalid Azure DevOps PR URL: malformed percent-encoding.");
+  }
+}
+
 /**
  * Parse an Azure DevOps PR URL like:
  * https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{prId}
@@ -42,7 +50,14 @@ export function parseAzureDevOpsPrUrl(input: string): AzureDevOpsPrUrlParts {
     throw new Error("Invalid Azure DevOps PR URL path.");
   }
 
-  const [org, project, gitLiteral, repo, pullRequestLiteral, prIdRaw] = segments.slice(0, 6);
+  const [orgRaw, projectRaw, gitLiteralRaw, repoRaw, pullRequestLiteralRaw, prIdRaw] =
+    segments.slice(0, 6);
+
+  const org = decodePathSegment(orgRaw);
+  const project = decodePathSegment(projectRaw);
+  const gitLiteral = decodePathSegment(gitLiteralRaw);
+  const repo = decodePathSegment(repoRaw);
+  const pullRequestLiteral = decodePathSegment(pullRequestLiteralRaw);
 
   if (gitLiteral !== "_git") {
     throw new Error("Invalid Azure DevOps PR URL: missing _git segment.");
