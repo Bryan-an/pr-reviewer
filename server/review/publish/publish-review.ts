@@ -2,8 +2,11 @@ import "server-only";
 
 import type { GitPullRequestCommentThread } from "azure-devops-node-api/interfaces/GitInterfaces";
 
+import { parseAzureDevOpsPrUrl } from "@/lib/azure-devops/pr-url";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
+import type { Finding } from "@/server/review/types";
 import { createPullRequestThread, listPullRequestThreads } from "@/server/azure-devops/threads";
+import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
 import { formatThreads } from "@/server/review/publish/format-threads";
 import { runReview } from "@/server/review/run-review";
 
@@ -43,32 +46,42 @@ function safeErrorMessage(error: unknown): string {
   return "Publish failed.";
 }
 
-export async function publishReview(params: { prUrl: string }): Promise<PublishReviewResult> {
+export async function publishFindings(params: {
+  prUrl: string;
+  engineName: string;
+  findings: Finding[];
+}): Promise<PublishReviewResult> {
   const parsed = reviewRequestSchema.safeParse({ prUrl: params.prUrl });
 
   if (!parsed.success) {
     throw new Error("Invalid input.");
   }
 
-  const review = await runReview(parsed.data);
+  const prUrlParts = parseAzureDevOpsPrUrl(params.prUrl);
+
+  const pr = await fetchPullRequestById({
+    org: prUrlParts.org,
+    project: prUrlParts.project,
+    prId: prUrlParts.prId,
+  });
 
   const { threads, wasCapped, cap } = formatThreads({
     pr: {
-      org: review.pr.org,
-      project: review.pr.project,
-      repoName: review.pr.repoName,
-      prId: review.pr.prId,
-      title: review.pr.title,
+      org: pr.org,
+      project: pr.project,
+      repoName: pr.repo.name,
+      prId: pr.pr.id,
+      title: pr.pr.title,
     },
-    engineName: review.engine.name,
-    findings: review.findings,
+    engineName: params.engineName,
+    findings: params.findings,
   });
 
   const existing = await listPullRequestThreads({
-    org: review.pr.org,
-    project: review.pr.project,
-    repoId: review.pr.repoId,
-    prId: review.pr.prId,
+    org: pr.org,
+    project: pr.project,
+    repoId: pr.repo.id,
+    prId: pr.pr.id,
   });
 
   const existingContents = collectExistingCommentContent(existing);
@@ -83,10 +96,10 @@ export async function publishReview(params: { prUrl: string }): Promise<PublishR
     }
 
     const createParamsBase = {
-      org: review.pr.org,
-      project: review.pr.project,
-      repoId: review.pr.repoId,
-      prId: review.pr.prId,
+      org: pr.org,
+      project: pr.project,
+      repoId: pr.repo.id,
+      prId: pr.pr.id,
       content: t.content,
     };
 
@@ -112,11 +125,27 @@ export async function publishReview(params: { prUrl: string }): Promise<PublishR
   }
 
   return {
-    totalFindings: review.findings.length,
+    totalFindings: params.findings.length,
     totalThreads: threads.length,
     publishedThreads,
     skippedThreads,
     wasCapped,
     cap,
   };
+}
+
+export async function publishReview(params: { prUrl: string }): Promise<PublishReviewResult> {
+  const parsed = reviewRequestSchema.safeParse({ prUrl: params.prUrl });
+
+  if (!parsed.success) {
+    throw new Error("Invalid input.");
+  }
+
+  const review = await runReview(parsed.data);
+
+  return await publishFindings({
+    prUrl: params.prUrl,
+    engineName: review.engine.name,
+    findings: review.findings,
+  });
 }

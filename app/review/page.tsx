@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
+import { FindingSchema } from "@/lib/validation/finding";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
-import { publishReview } from "@/server/review/publish/publish-review";
+import { publishFindings } from "@/server/review/publish/publish-review";
 import { runReview } from "@/server/review/run-review";
 
 type ReviewPageProps = Readonly<{
@@ -21,21 +22,45 @@ async function publishAction(formData: FormData) {
   const prUrl = typeof value === "string" ? value.trim() : "";
 
   if (!prUrl) {
-    redirect("/review?publishError=1");
+    redirect("/review/published?publishError=1");
   }
 
   const encodedPrUrl = encodeURIComponent(prUrl);
+  const findingsPayload = formData.get("findingsPayload");
+  const engineNameValue = formData.get("engineName");
 
-  let result: Awaited<ReturnType<typeof publishReview>>;
+  const engineName = typeof engineNameValue === "string" ? engineNameValue.trim() : "";
+  const encodedEngineName = encodeURIComponent(engineName);
+
+  if (typeof findingsPayload !== "string" || findingsPayload.trim() === "") {
+    redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
+  }
+
+  let parsedFindings: unknown;
 
   try {
-    result = await publishReview({ prUrl });
+    const json = Buffer.from(findingsPayload, "base64url").toString("utf8");
+    parsedFindings = JSON.parse(json) as unknown;
   } catch {
-    redirect(`/review?prUrl=${encodedPrUrl}&publishError=1`);
+    redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
+  }
+
+  const findingsResult = FindingSchema.array().safeParse(parsedFindings);
+
+  if (!findingsResult.success) {
+    redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
+  }
+
+  let result: Awaited<ReturnType<typeof publishFindings>>;
+
+  try {
+    result = await publishFindings({ prUrl, engineName, findings: findingsResult.data });
+  } catch {
+    redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
   }
 
   redirect(
-    `/review?prUrl=${encodedPrUrl}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
+    `/review/published?prUrl=${encodedPrUrl}&engineName=${encodedEngineName}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
   );
 }
 
@@ -148,6 +173,14 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
       <div className="flex items-center justify-between gap-3">
         <form action={publishAction} className="flex items-center gap-3">
           <input type="hidden" name="prUrl" value={prUrl} />
+
+          <input
+            type="hidden"
+            name="findingsPayload"
+            value={Buffer.from(JSON.stringify(result.findings), "utf8").toString("base64url")}
+          />
+
+          <input type="hidden" name="engineName" value={result.engine.name} />
 
           <button
             type="submit"
