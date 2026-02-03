@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model ReviewRun {
+  id            String   @id @default(cuid())
+  prUrl         String
+  org           String
+  project       String
+  repoId        String
+  repoName      String
+  prId          Int
+  title         String
+  sourceRefName String
+  targetRefName String
+  baseSha       String
+  headSha       String
+  engineName    String
+  createdAt     DateTime @default(now())
+
+  findings Finding[]
+
+  @@index([prUrl, createdAt])
+}
+
+model Finding {
+  id             String   @id @default(cuid())
+  reviewRunId    String
+  findingKey     String
+  severity       String
+  category       String
+  title          String
+  message        String
+  filePath       String?
+  recommendation String?
+
+  createdAt DateTime @default(now())
+
+  reviewRun ReviewRun @relation(fields: [reviewRunId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewRunId, findingKey])
+}
+

@@ -16,6 +16,7 @@ const envSchema = z.object({
   REPOS_DIR: z.string().min(1).optional(),
   CODERABBIT_BIN: z.string().min(1).optional(),
   REVIEW_ENGINE: z.enum(reviewEngineValues).optional(),
+  DATABASE_URL: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

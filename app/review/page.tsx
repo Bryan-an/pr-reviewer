@@ -5,7 +5,7 @@ import { Markdown } from "@/components/markdown";
 import { FindingSchema } from "@/lib/validation/finding";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { publishFindings } from "@/server/review/publish/publish-review";
-import { runReview } from "@/server/review/run-review";
+import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
 
 type ReviewPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -20,36 +20,32 @@ async function publishAction(formData: FormData) {
   "use server";
   const value = formData.get("prUrl");
   const prUrl = typeof value === "string" ? value.trim() : "";
+  const runIdValue = formData.get("runId");
+  const runId = typeof runIdValue === "string" ? runIdValue.trim() : "";
 
   if (!prUrl) {
     redirect("/review/published?publishError=1");
   }
 
   const encodedPrUrl = encodeURIComponent(prUrl);
-  const findingsPayload = formData.get("findingsPayload");
   const engineNameValue = formData.get("engineName");
 
   const engineName = typeof engineNameValue === "string" ? engineNameValue.trim() : "";
   const encodedEngineName = encodeURIComponent(engineName);
 
-  if (typeof findingsPayload !== "string" || findingsPayload.trim() === "") {
+  if (!runId) {
     redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
   }
 
-  let parsedFindings: unknown;
+  // We now publish from cached run findings (avoid rerunning review and avoid large payloads).
+  const cached = await getCachedReviewRun({ prUrl, runId });
 
-  try {
-    const json = Buffer.from(findingsPayload, "base64url").toString("utf8");
-    parsedFindings = JSON.parse(json) as unknown;
-  } catch {
+  if (!cached) {
     redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
   }
 
-  const findingsResult = FindingSchema.array().safeParse(parsedFindings);
-
-  if (!findingsResult.success) {
-    redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
-  }
+  const findingsResult = FindingSchema.array().safeParse(cached.result.findings);
+  if (!findingsResult.success) redirect(`/review/published?prUrl=${encodedPrUrl}&publishError=1`);
 
   let result: Awaited<ReturnType<typeof publishFindings>>;
 
@@ -64,9 +60,23 @@ async function publishAction(formData: FormData) {
   );
 }
 
+async function rerunAction(formData: FormData) {
+  "use server";
+  const value = formData.get("prUrl");
+  const prUrl = typeof value === "string" ? value.trim() : "";
+  if (!prUrl) redirect("/review");
+
+  const parsed = reviewRequestSchema.safeParse({ prUrl });
+  if (!parsed.success) redirect("/review");
+
+  const { runId } = await runAndPersistReview(parsed.data);
+  redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
+}
+
 export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const params = await searchParams;
   const prUrl = getFirst(params.prUrl);
+  const runId = getFirst(params.runId);
   const published = getFirst(params.published) === "1";
   const publishError = getFirst(params.publishError) === "1";
   const publishedThreads = Number(getFirst(params.publishedThreads) ?? "0");
@@ -114,7 +124,13 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     );
   }
 
-  const result = await runReview(parsed.data).catch(() => null);
+  const cached = await getCachedReviewRun({ prUrl, runId });
+
+  const { result, effectiveRunId } = cached
+    ? { result: cached.result, effectiveRunId: cached.runId }
+    : await runAndPersistReview(parsed.data)
+        .then((r) => ({ result: r.result, effectiveRunId: r.runId }))
+        .catch(() => ({ result: null, effectiveRunId: undefined }));
 
   if (!result) {
     return (
@@ -171,24 +187,32 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <form action={publishAction} className="flex items-center gap-3">
-          <input type="hidden" name="prUrl" value={prUrl} />
+        <div className="flex items-center gap-3">
+          <form action={publishAction} className="flex items-center gap-3">
+            <input type="hidden" name="prUrl" value={prUrl} />
+            {effectiveRunId ? <input type="hidden" name="runId" value={effectiveRunId} /> : null}
 
-          <input
-            type="hidden"
-            name="findingsPayload"
-            value={Buffer.from(JSON.stringify(result.findings), "utf8").toString("base64url")}
-          />
+            <input type="hidden" name="engineName" value={result.engine.name} />
 
-          <input type="hidden" name="engineName" value={result.engine.name} />
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Publish to Azure DevOps
+            </button>
+          </form>
 
-          <button
-            type="submit"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Publish to Azure DevOps
-          </button>
-        </form>
+          <form action={rerunAction}>
+            <input type="hidden" name="prUrl" value={prUrl} />
+
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+            >
+              Re-run review
+            </button>
+          </form>
+        </div>
 
         <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
           New review

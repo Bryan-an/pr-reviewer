@@ -44,13 +44,16 @@ export default async function ReviewPublishedPage({ searchParams }: PublishedPag
 
       {prUrl ? (
         <Link
-          className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
+          className="w-fit self-start text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
           href={`/review?prUrl=${encodeURIComponent(prUrl)}`}
         >
           Back to preview
         </Link>
       ) : (
-        <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
+        <Link
+          className="w-fit self-start text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
+          href="/"
+        >
           New review
         </Link>
       )}
