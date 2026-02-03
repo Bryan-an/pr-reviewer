@@ -25,6 +25,135 @@ function normalizeWhitespace(value: string): string {
   return value.replaceAll(/\s+/g, " ").trim();
 }
 
+function trimLineEndingsPreserveNewlines(text: string): string {
+  return text
+    .replaceAll("\r\n", "\n")
+    .split("\n")
+    .map((l) => l.replaceAll(/\s+$/g, ""))
+    .join("\n")
+    .trim();
+}
+
+function looksLikeCode(line: string): boolean {
+  const l = line.trim();
+  if (l === "") return false;
+  if (/^(import|export|const|let|var|function|class|interface|type)\b/.test(l)) return true;
+  if (/(?:=>|;\s*$)/.test(l)) return true;
+  if (/^\s*[{}()[\]]\s*$/.test(l)) return true;
+  if (/\/\/|\/\*/.test(l)) return true;
+  return false;
+}
+
+function looksLikeDiffLine(line: string): boolean {
+  const l = line.trim();
+  if (!/^[+-]\s+/.test(l)) return false;
+  // Avoid treating markdown list items like "- foo" as diff unless they look code-ish.
+  return looksLikeCode(l.slice(1));
+}
+
+function consumeWhile<T>(
+  items: T[],
+  startIndex: number,
+  predicate: (value: T, index: number) => boolean,
+): { end: number } {
+  let i = startIndex;
+  while (i < items.length && predicate(items[i], i)) i += 1;
+  return { end: i };
+}
+
+function consumeDiffBlock(
+  lines: string[],
+  start: number,
+): { end: number; block: string[]; isDiff: boolean } {
+  let plus = 0;
+  let minus = 0;
+
+  const { end } = consumeWhile(lines, start, (v) => looksLikeDiffLine(v));
+  const block = lines.slice(start, end);
+
+  for (const line of block) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("+")) plus += 1;
+    if (trimmed.startsWith("-")) minus += 1;
+  }
+
+  const isDiff = block.length >= 2 && (plus > 0 || minus > 0);
+  return { end, block, isDiff };
+}
+
+function consumeCodeBlock(lines: string[], start: number): { end: number; block: string[] } {
+  let i = start;
+  let nonBlankCodeLines = 0;
+
+  for (; i < lines.length; i += 1) {
+    const current = lines[i] ?? "";
+
+    if (looksLikeCode(current)) {
+      nonBlankCodeLines += 1;
+      continue;
+    }
+
+    // Allow blank lines only after we have at least two code lines (avoid wrapping single-line snippets).
+    if (current.trim() === "" && nonBlankCodeLines >= 2) continue;
+
+    break;
+  }
+
+  return { end: i, block: lines.slice(start, i) };
+}
+
+function appendDiffBlock(out: string[], params: { block: string[]; isDiff: boolean }) {
+  if (params.isDiff) out.push("```diff");
+  out.push(...params.block);
+  if (params.isDiff) out.push("```");
+}
+
+function appendCodeBlock(out: string[], params: { block: string[] }) {
+  const nonBlank = params.block.filter((l) => l.trim() !== "");
+
+  if (nonBlank.length >= 2) {
+    out.push("```ts", ...nonBlank, "```");
+    return;
+  }
+
+  out.push(...params.block);
+}
+
+function wrapCodeLikeBlocksAsMarkdown(text: string): string {
+  const normalized = trimLineEndingsPreserveNewlines(text);
+  if (!normalized) return normalized;
+
+  const lines = normalized.split("\n");
+  const out: string[] = [];
+
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i] ?? "";
+
+    if (looksLikeDiffLine(line)) {
+      const { end, block, isDiff } = consumeDiffBlock(lines, i);
+      i = end;
+
+      appendDiffBlock(out, { block, isDiff });
+      continue;
+    }
+
+    if (looksLikeCode(line)) {
+      const { end, block } = consumeCodeBlock(lines, i);
+      i = end;
+
+      appendCodeBlock(out, { block });
+      continue;
+    }
+
+    out.push(line);
+    i += 1;
+  }
+
+  return out.join("\n").trim();
+}
+
 function inferSeverity(text: string): Severity {
   const t = text.toLowerCase();
 
@@ -177,16 +306,17 @@ function parseSectionToFinding(section: string, changedFiles: string[]): Finding
   const commentBlock = parseLabeledBlock(section, "Comment:");
   const promptBlock = parseLabeledBlock(section, "Prompt for AI Agent:");
 
-  const commentLines = (commentBlock ?? "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l !== "");
+  const commentText = trimLineEndingsPreserveNewlines(commentBlock ?? "");
+  const commentLines = commentText.split("\n").filter((l) => l.trim() !== "");
 
   const title = normalizeWhitespace(commentLines[0] ?? "").slice(0, 160) || "CodeRabbit finding";
 
-  const message = normalizeWhitespace(
-    (commentLines.slice(1).join("\n").trim() || commentLines[0] || "").trim(),
-  );
+  const messageBody = trimLineEndingsPreserveNewlines(commentLines.slice(1).join("\n"));
+  const message = wrapCodeLikeBlocksAsMarkdown(messageBody || commentLines[0] || "");
+
+  const recommendation = promptBlock
+    ? wrapCodeLikeBlocksAsMarkdown(trimLineEndingsPreserveNewlines(promptBlock))
+    : undefined;
 
   const combined = [
     fileLine ? `File: ${fileLine}` : "",
@@ -208,7 +338,7 @@ function parseSectionToFinding(section: string, changedFiles: string[]): Finding
     title,
     message,
     filePath,
-    ...(promptBlock ? { recommendation: promptBlock } : {}),
+    ...(recommendation ? { recommendation } : {}),
   };
 }
 

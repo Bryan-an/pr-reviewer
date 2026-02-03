@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Markdown } from "@/components/markdown";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { publishReview } from "@/server/review/publish/publish-review";
 import { runReview } from "@/server/review/run-review";
@@ -232,14 +233,19 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
                     {f.title}
                   </div>
 
-                  <div className="text-sm text-zinc-600 dark:text-zinc-300">{f.message}</div>
+                  <Markdown
+                    className="text-sm text-zinc-600 dark:text-zinc-300"
+                    content={f.message}
+                  />
 
                   {f.recommendation ? (
                     <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
                       <span className="font-medium text-zinc-900 dark:text-zinc-50">
                         Recommendation:
                       </span>{" "}
-                      {f.recommendation}
+                      <div className="mt-1">
+                        <Markdown content={f.recommendation} />
+                      </div>
                     </div>
                   ) : null}
                 </div>
