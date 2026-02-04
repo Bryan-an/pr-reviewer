@@ -25,6 +25,25 @@ export function adoHr(): string {
   return "\n\n---\n\n";
 }
 
+export function adoNormalizeNewlines(text: string): string[] {
+  return text.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
+}
+
+/**
+ * Wrap lines in a Markdown blockquote.
+ *
+ * - Non-empty lines are prefixed with `> `.
+ * - Empty lines become `>` to preserve paragraph breaks.
+ */
+export function adoBlockquote(lines: string[]): string {
+  return lines
+    .map((line) => {
+      if (line === "") return ">";
+      return `> ${line}`;
+    })
+    .join("\n");
+}
+
 /**
  * Join lines with Markdown hard-breaks.
  *

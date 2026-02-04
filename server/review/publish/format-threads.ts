@@ -3,7 +3,13 @@ import "server-only";
 import { SEVERITY } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
-import { adoBold, adoInlineCode, adoJoinLines } from "@/server/review/publish/ado-markdown";
+import {
+  adoBlockquote,
+  adoBold,
+  adoInlineCode,
+  adoJoinLines,
+  adoNormalizeNewlines,
+} from "@/server/review/publish/ado-markdown";
 
 export type PublishableThread = {
   /**
@@ -52,19 +58,29 @@ function severityRank(severity: Severity): number {
 function formatFinding(f: Finding): string {
   const severityAndCategory = `[${f.severity}/${f.category}]`;
 
-  const lines: string[] = [
-    `- ${adoBold(severityAndCategory)} ${f.title}`,
-    `  ${adoBold("Message:")} ${f.message}`,
-  ];
+  const headerLine = `#### ${adoBold(severityAndCategory)} ${f.title}`;
 
-  if (f.recommendation) {
-    lines.push(`  ${adoBold("Recommendation:")} ${f.recommendation}`);
-  }
+  const messageLines = adoNormalizeNewlines(f.message);
+  const messageBlock = adoBlockquote([`${adoBold("Message:")}`, "", ...messageLines]);
 
-  // Stable marker for idempotency per finding.
-  lines.push(`  <!-- pr-reviewer:finding:${f.id} -->`);
+  const recommendationBlock = f.recommendation
+    ? adoBlockquote([
+        `${adoBold("Recommendation:")}`,
+        "",
+        ...adoNormalizeNewlines(f.recommendation),
+      ])
+    : undefined;
 
-  return adoJoinLines(lines);
+  const markerLine = `<!-- pr-reviewer:finding:${f.id} -->`;
+
+  return [
+    headerLine,
+    "",
+    messageBlock,
+    ...(recommendationBlock ? ["", recommendationBlock] : []),
+    "",
+    markerLine,
+  ].join("\n");
 }
 
 function threadMarker(marker: string): string {
