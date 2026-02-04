@@ -182,29 +182,25 @@ async function rerunAction(formData: FormData) {
   } catch (err) {
     const correlationId = crypto.randomUUID();
 
-    const wrapped = new ReviewRunError({
+    const wrapped = toReviewRunError({
+      error: err,
       message: "runAndPersistReview failed in rerunAction.",
       correlationId,
-      cause: err,
     });
+
+    const originalErrorToLog = toErrorForLogging(err, "rerunAction failed.");
 
     logger.error(
       {
         correlationId,
         prUrl,
         err: wrapped,
+        originalError: originalErrorToLog,
       },
       "rerunAction failed",
     );
 
-    let message = "Review re-run failed.";
-
-    if (err instanceof Error && err.message.trim() !== "") {
-      message = err.message;
-    } else if (typeof err === "string" && err.trim() !== "") {
-      message = err;
-    }
-
+    const message = "Review re-run failed.";
     redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&error=${encodeURIComponent(message)}`);
   }
 
