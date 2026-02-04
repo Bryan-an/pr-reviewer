@@ -51,7 +51,7 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
   const changedFiles = parsed
     .map((f) => f.to ?? "")
     .map((v) => v.trim())
-    .filter((v) => v !== "");
+    .filter((v) => v !== "" && v !== "/dev/null");
 
   const engine = selectReviewEngine();
 
