@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 
+import { getTrimmedStringFormField } from "@/lib/form-data";
+
 async function goToReview(formData: FormData) {
   "use server";
-  const value = formData.get("prUrl");
-  const prUrl = typeof value === "string" ? value.trim() : "";
+  const prUrl = getTrimmedStringFormField(formData, "prUrl");
   redirect(`/review?prUrl=${encodeURIComponent(prUrl)}`);
 }
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
+import { getTrimmedStringFormField } from "@/lib/form-data";
 import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { FindingSchema } from "@/lib/validation/finding";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
@@ -14,18 +15,15 @@ type ReviewPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-async function publishAction(formData: FormData) {
-  "use server";
-  const correlationIdValue = formData.get("correlationId");
+function getCorrelationIdFromFormData(formData: FormData): string {
+  const correlationId = getTrimmedStringFormField(formData, "correlationId");
+  return correlationId === "" ? crypto.randomUUID() : correlationId;
+}
 
-  const correlationId =
-    typeof correlationIdValue === "string" && correlationIdValue.trim() !== ""
-      ? correlationIdValue.trim()
-      : crypto.randomUUID();
-
+function createRedirectToPublishError(correlationId: string) {
   const encodedCorrelationId = encodeURIComponent(correlationId);
 
-  const redirectToPublishError = (params?: { prUrl?: string }): never => {
+  return (params?: { prUrl?: string }): never => {
     const base = "/review/published?";
 
     const prUrlPart =
@@ -35,50 +33,108 @@ async function publishAction(formData: FormData) {
 
     redirect(`${base}${prUrlPart}publishError=1&correlationId=${encodedCorrelationId}`);
   };
+}
 
-  const value = formData.get("prUrl");
-  const prUrl = typeof value === "string" ? value.trim() : "";
-  const runIdValue = formData.get("runId");
-  const runId = typeof runIdValue === "string" ? runIdValue.trim() : "";
+function toReviewRunError(params: {
+  error: unknown;
+  message: string;
+  correlationId: string;
+}): ReviewRunError {
+  if (params.error instanceof ReviewRunError) return params.error;
+
+  return new ReviewRunError({
+    message: params.message,
+    correlationId: params.correlationId,
+    cause: params.error,
+  });
+}
+
+function requireCachedReviewRun(
+  cached: Awaited<ReturnType<typeof getCachedReviewRun>>,
+  prUrl: string,
+  redirectToPublishError: (params?: { prUrl?: string }) => never,
+): NonNullable<Awaited<ReturnType<typeof getCachedReviewRun>>> {
+  if (cached) return cached;
+  return redirectToPublishError({ prUrl });
+}
+
+function parseCachedFindingsOrRedirect(
+  cached: NonNullable<Awaited<ReturnType<typeof getCachedReviewRun>>>,
+  prUrl: string,
+  redirectToPublishError: (params?: { prUrl?: string }) => never,
+) {
+  const findingsResult = FindingSchema.array().safeParse(cached.result.findings);
+  if (!findingsResult.success) return redirectToPublishError({ prUrl });
+  return findingsResult.data;
+}
+
+function toErrorForLogging(err: unknown, fallbackMessage: string): Error {
+  if (err instanceof Error) return err;
+  if (typeof err === "string" && err.trim() !== "") return new Error(err);
+  return new Error(fallbackMessage);
+}
+
+async function publishFindingsOrRedirect(params: {
+  prUrl: string;
+  runId: string;
+  engineName: string;
+  correlationId: string;
+  findings: Parameters<typeof publishFindings>[0]["findings"];
+  redirectToPublishError: (params?: { prUrl?: string }) => never;
+}): Promise<Awaited<ReturnType<typeof publishFindings>>> {
+  try {
+    return await publishFindings({
+      prUrl: params.prUrl,
+      engineName: params.engineName,
+      findings: params.findings,
+    });
+  } catch (err) {
+    const errorToLog = toErrorForLogging(err, "publishFindings failed.");
+
+    logger.error(
+      {
+        correlationId: params.correlationId,
+        prUrl: params.prUrl,
+        runId: params.runId,
+        engineName: params.engineName,
+        err: errorToLog,
+      },
+      "publishFindings failed",
+    );
+
+    return params.redirectToPublishError({ prUrl: params.prUrl });
+  }
+}
+
+async function publishAction(formData: FormData) {
+  "use server";
+  const correlationId = getCorrelationIdFromFormData(formData);
+  const redirectToPublishError = createRedirectToPublishError(correlationId);
+
+  const prUrl = getTrimmedStringFormField(formData, "prUrl");
+  const runId = getTrimmedStringFormField(formData, "runId");
 
   if (!prUrl) {
     return redirectToPublishError();
   }
 
-  const encodedPrUrl = encodeURIComponent(prUrl);
-  const engineNameValue = formData.get("engineName");
-
-  const engineName = typeof engineNameValue === "string" ? engineNameValue.trim() : "";
-  const encodedEngineName = encodeURIComponent(engineName);
+  const engineName = getTrimmedStringFormField(formData, "engineName");
 
   if (!runId) {
     return redirectToPublishError({ prUrl });
   }
 
   // We now publish from cached run findings (avoid rerunning review and avoid large payloads).
-  const cached = await getCachedReviewRun({ prUrl, runId });
-
-  if (!cached) {
-    return redirectToPublishError({ prUrl });
-  }
-
-  const findingsResult = FindingSchema.array().safeParse(cached.result.findings);
-  if (!findingsResult.success) return redirectToPublishError({ prUrl });
-
-  let result: Awaited<ReturnType<typeof publishFindings>>;
+  let cached: Awaited<ReturnType<typeof getCachedReviewRun>>;
 
   try {
-    result = await publishFindings({ prUrl, engineName, findings: findingsResult.data });
+    cached = await getCachedReviewRun({ prUrl, runId });
   } catch (err) {
-    let errorToLog: Error;
-
-    if (err instanceof Error) {
-      errorToLog = err;
-    } else if (typeof err === "string" && err.trim() !== "") {
-      errorToLog = new Error(err);
-    } else {
-      errorToLog = new Error("publishFindings failed.");
-    }
+    const wrapped = toReviewRunError({
+      error: err,
+      message: "getCachedReviewRun failed in publishAction.",
+      correlationId,
+    });
 
     logger.error(
       {
@@ -86,23 +142,34 @@ async function publishAction(formData: FormData) {
         prUrl,
         runId,
         engineName,
-        err: errorToLog,
+        err: wrapped,
       },
-      "publishFindings failed",
+      "getCachedReviewRun failed",
     );
 
     return redirectToPublishError({ prUrl });
   }
 
+  const ensuredCached = requireCachedReviewRun(cached, prUrl, redirectToPublishError);
+  const findings = parseCachedFindingsOrRedirect(ensuredCached, prUrl, redirectToPublishError);
+
+  const result = await publishFindingsOrRedirect({
+    prUrl,
+    engineName,
+    findings,
+    correlationId,
+    runId,
+    redirectToPublishError,
+  });
+
   redirect(
-    `/review/published?prUrl=${encodedPrUrl}&engineName=${encodedEngineName}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
+    `/review/published?prUrl=${encodeURIComponent(prUrl)}&engineName=${encodeURIComponent(engineName)}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
   );
 }
 
 async function rerunAction(formData: FormData) {
   "use server";
-  const value = formData.get("prUrl");
-  const prUrl = typeof value === "string" ? value.trim() : "";
+  const prUrl = getTrimmedStringFormField(formData, "prUrl");
   if (!prUrl) redirect("/review");
 
   const parsed = reviewRequestSchema.safeParse({ prUrl });
