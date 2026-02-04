@@ -1,8 +1,44 @@
 import "server-only";
 
+import { createHash, randomUUID } from "node:crypto";
 import { execa } from "execa";
 
 import { getEnv } from "@/lib/config/env";
+import { logger } from "@/server/logging/logger";
+
+const MAX_ERROR_OUTPUT_CHARS = 1024;
+
+function normalizeText(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function sha256Hex(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
+
+function summarizeOutput(
+  output: string,
+  label: "stdout" | "stderr",
+): {
+  label: "stdout" | "stderr";
+  length: number;
+  sha256: string;
+  truncated: string;
+} {
+  const trimmed = output.trim();
+
+  const truncated =
+    trimmed.length > MAX_ERROR_OUTPUT_CHARS
+      ? `${trimmed.slice(0, MAX_ERROR_OUTPUT_CHARS)}...[truncated]`
+      : trimmed;
+
+  return {
+    label,
+    length: trimmed.length,
+    sha256: sha256Hex(trimmed),
+    truncated,
+  };
+}
 
 export type RunCodeRabbitCliParams = {
   cwd: string;
@@ -35,28 +71,80 @@ export async function runCodeRabbitCli(params: RunCodeRabbitCliParams): Promise<
   const result = await child;
 
   if (result.timedOut) {
-    const stderr = typeof result.stderr === "string" ? result.stderr : "";
-    const stdout = typeof result.stdout === "string" ? result.stdout : "";
-    const message = `CodeRabbit CLI timed out after ${timeoutMs}ms.`;
-    const combined = [message, stderr.trim(), stdout.trim()].filter(Boolean).join("\n");
+    const correlationId = randomUUID();
+    const stderr = normalizeText(result.stderr);
+    const stdout = normalizeText(result.stdout);
+    const stderrSummary = summarizeOutput(stderr, "stderr");
+    const stdoutSummary = summarizeOutput(stdout, "stdout");
+
+    logger.error(
+      {
+        correlationId,
+        timedOut: true,
+        timeoutMs,
+        exitCode: result.exitCode,
+        stdout,
+        stderr,
+      },
+      "CodeRabbit CLI timed out",
+    );
+
+    const message = `CodeRabbit CLI timed out after ${timeoutMs}ms (correlationId=${correlationId}).`;
+
+    const combined = [
+      message,
+      `stderr(len=${stderrSummary.length}, sha256=${stderrSummary.sha256})`,
+      stderrSummary.truncated,
+      `stdout(len=${stdoutSummary.length}, sha256=${stdoutSummary.sha256})`,
+      stdoutSummary.truncated,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     throw new Error(combined);
   }
 
   // Exit codes are not documented clearly for all failure modes (auth, rate limit, etc),
   // so treat any non-zero as an error, but include output to aid diagnosis upstream.
   if (typeof result.exitCode !== "number" || result.exitCode !== 0) {
+    const correlationId = randomUUID();
+
     const exitDescription =
       typeof result.exitCode === "number" ? `exit ${result.exitCode}` : "unknown exit code";
 
-    const message = `CodeRabbit CLI failed (${exitDescription}).`;
-    const stderr = typeof result.stderr === "string" ? result.stderr : "";
-    const stdout = typeof result.stdout === "string" ? result.stdout : "";
-    const combined = [message, stderr.trim(), stdout.trim()].filter(Boolean).join("\n");
+    const stderr = normalizeText(result.stderr);
+    const stdout = normalizeText(result.stdout);
+    const stderrSummary = summarizeOutput(stderr, "stderr");
+    const stdoutSummary = summarizeOutput(stdout, "stdout");
+
+    logger.error(
+      {
+        correlationId,
+        timedOut: false,
+        exitCode: result.exitCode,
+        stdout,
+        stderr,
+      },
+      "CodeRabbit CLI failed",
+    );
+
+    const message = `CodeRabbit CLI failed (${exitDescription}, correlationId=${correlationId}).`;
+
+    const combined = [
+      message,
+      `stderr(len=${stderrSummary.length}, sha256=${stderrSummary.sha256})`,
+      stderrSummary.truncated,
+      `stdout(len=${stdoutSummary.length}, sha256=${stdoutSummary.sha256})`,
+      stdoutSummary.truncated,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     throw new Error(combined);
   }
 
   return {
-    stdout: typeof result.stdout === "string" ? result.stdout : "",
-    stderr: typeof result.stderr === "string" ? result.stderr : "",
+    stdout: normalizeText(result.stdout),
+    stderr: normalizeText(result.stderr),
   };
 }
