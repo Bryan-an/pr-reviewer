@@ -90,30 +90,32 @@ function toDomainResult(params: {
 }
 
 export async function createReviewRun(input: CreateReviewRunInput): Promise<{ runId: string }> {
-  const run = await prisma.reviewRun.create({
-    data: {
-      prUrl: input.prUrl,
-      org: input.pr.org,
-      project: input.pr.project,
-      repoId: input.pr.repoId,
-      repoName: input.pr.repoName,
-      prId: input.pr.prId,
-      title: input.pr.title,
-      sourceRefName: input.pr.sourceRefName,
-      targetRefName: input.pr.targetRefName,
-      baseSha: input.baseSha,
-      headSha: input.headSha,
-      engineName: input.engineName,
-    },
-  });
-
-  if (input.findings.length > 0) {
-    await prisma.finding.createMany({
-      data: toFindingCreateMany(run.id, input.findings),
+  return prisma.$transaction(async (tx) => {
+    const run = await tx.reviewRun.create({
+      data: {
+        prUrl: input.prUrl,
+        org: input.pr.org,
+        project: input.pr.project,
+        repoId: input.pr.repoId,
+        repoName: input.pr.repoName,
+        prId: input.pr.prId,
+        title: input.pr.title,
+        sourceRefName: input.pr.sourceRefName,
+        targetRefName: input.pr.targetRefName,
+        baseSha: input.baseSha,
+        headSha: input.headSha,
+        engineName: input.engineName,
+      },
     });
-  }
 
-  return { runId: run.id };
+    if (input.findings.length > 0) {
+      await tx.finding.createMany({
+        data: toFindingCreateMany(run.id, input.findings),
+      });
+    }
+
+    return { runId: run.id };
+  });
 }
 
 export async function getLatestReviewRunByPrUrl(prUrl: string): Promise<{
