@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 
+import { getTrimmedStringFormField } from "@/lib/form-data";
+
 async function goToReview(formData: FormData) {
   "use server";
-  const value = formData.get("prUrl");
-  const prUrl = typeof value === "string" ? value.trim() : "";
+  const prUrl = getTrimmedStringFormField(formData, "prUrl");
   redirect(`/review?prUrl=${encodeURIComponent(prUrl)}`);
 }
 
@@ -17,7 +18,7 @@ export default function Home() {
 
         <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
           Paste an Azure DevOps pull request URL to generate a local-diff-backed review preview
-          (stub engine for now).
+          using the CodeRabbit CLI.
         </p>
 
         <form action={goToReview} className="mt-8 flex flex-col gap-3">
@@ -44,7 +45,8 @@ export default function Home() {
         <p className="mt-6 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
           Server requires{" "}
           <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-900">AZURE_DEVOPS_PAT</code>{" "}
-          in the environment. Secrets never reach the browser.
+          in the environment. Secrets never reach the browser. CodeRabbit CLI must be installed and
+          authenticated on the server.
         </p>
       </main>
     </div>

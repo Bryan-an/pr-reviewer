@@ -1,8 +1,15 @@
 import "server-only";
 
-import { FINDING_CATEGORY, SEVERITY } from "@/lib/validation/finding";
+import { SEVERITY } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
+import {
+  adoBlockquote,
+  adoBold,
+  adoInlineCode,
+  adoJoinLines,
+  adoNormalizeNewlines,
+} from "@/server/review/publish/ado-markdown";
 
 export type PublishableThread = {
   /**
@@ -49,14 +56,30 @@ function severityRank(severity: Severity): number {
 }
 
 function formatFinding(f: Finding): string {
-  const recommendationLine = f.recommendation ? [`  Recommendation: ${f.recommendation}`] : [];
+  const severityAndCategory = `[${f.severity}/${f.category}]`;
+
+  const headerLine = `#### ${adoBold(severityAndCategory)} ${f.title}`;
+
+  const messageLines = adoNormalizeNewlines(f.message);
+  const messageBlock = adoBlockquote([`${adoBold("Message:")}`, "", ...messageLines]);
+
+  const recommendationBlock = f.recommendation
+    ? adoBlockquote([
+        `${adoBold("Recommendation:")}`,
+        "",
+        ...adoNormalizeNewlines(f.recommendation),
+      ])
+    : undefined;
+
+  const markerLine = `<!-- pr-reviewer:finding:${f.id} -->`;
 
   return [
-    `- [${f.severity}/${f.category}] ${f.title}`,
-    `  ${f.message}`,
-    ...recommendationLine,
-    // Stable marker for idempotency per finding.
-    `  <!-- pr-reviewer:finding:${f.id} -->`,
+    headerLine,
+    "",
+    messageBlock,
+    ...(recommendationBlock ? ["", recommendationBlock] : []),
+    "",
+    markerLine,
   ].join("\n");
 }
 
@@ -124,13 +147,15 @@ export function formatThreads(params: {
   );
 
   const summaryLines: string[] = [
-    `PR Reviewer: findings summary`,
-    `Repo: ${params.pr.repoName}`,
-    `PR: #${params.pr.prId}`,
-    `Title: ${params.pr.title}`,
-    `Engine: ${params.engineName}`,
-    `Total findings: ${params.findings.length}`,
+    adoBold("PR Reviewer: findings summary"),
     "",
+    `- ${adoBold("Repo:")} ${params.pr.repoName}`,
+    `- ${adoBold("PR:")} #${params.pr.prId}`,
+    `- ${adoBold("Title:")} ${params.pr.title}`,
+    `- ${adoBold("Engine:")} ${adoInlineCode(params.engineName)}`,
+    `- ${adoBold("Total findings:")} ${params.findings.length}`,
+    "",
+    adoBold("Counts"),
     `- Errors: ${bySeverity.error}`,
     `- Warnings: ${bySeverity.warn}`,
     `- Info: ${bySeverity.info}`,
@@ -152,17 +177,15 @@ export function formatThreads(params: {
   if (hasGeneralThread && cap >= 2) {
     const sorted = sortFindingsForThread(unscopedFindings);
 
-    const lines: string[] = [
-      `General findings`,
-      "",
-      ...sorted.map(formatFinding),
-      "",
-      generalMarker,
-    ];
-
     threads.push({
       threadMarker: generalMarker,
-      content: lines.join("\n"),
+      content: [
+        adoBold("General findings"),
+        "",
+        sorted.map(formatFinding).join("\n\n"),
+        "",
+        generalMarker,
+      ].join("\n"),
       findingIds: sorted.map((f) => f.id),
     });
   }
@@ -197,18 +220,16 @@ export function formatThreads(params: {
   for (const t of selectedFileThreads) {
     const marker = threadMarker(`file:${t.filePath}:pr:${params.pr.prId}`);
 
-    const lines: string[] = [
-      `File: ${t.filePath}`,
-      "",
-      ...t.findings.map(formatFinding),
-      "",
-      marker,
-    ];
-
     threads.push({
       threadMarker: marker,
       filePath: t.filePath,
-      content: lines.join("\n"),
+      content: [
+        adoJoinLines([`${adoBold("File:")} ${adoInlineCode(t.filePath)}`]),
+        "",
+        t.findings.map(formatFinding).join("\n\n"),
+        "",
+        marker,
+      ].join("\n"),
       findingIds: t.findings.map((f) => f.id),
     });
   }
@@ -219,8 +240,7 @@ export function formatThreads(params: {
       ...threads[0],
       content:
         `${threads[0].content}\n\n` +
-        `Note: thread publishing was capped to ${cap}. Some findings may not have been posted.\n` +
-        `Category hint: ${FINDING_CATEGORY.Maintainability}\n`,
+        `> Note: thread publishing was capped to ${cap}. Some findings may not have been posted.\n`,
     };
   }
 

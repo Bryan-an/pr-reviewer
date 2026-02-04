@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // App-managed caches (git clones/worktrees, etc):
+    ".data/**",
   ]),
   // Always keep Prettier last: disables ESLint rules that conflict with Prettier.
   prettierConfig,

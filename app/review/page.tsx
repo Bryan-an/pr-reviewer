@@ -1,51 +1,223 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Markdown } from "@/components/markdown";
+import { getTrimmedStringFormField } from "@/lib/form-data";
+import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
+import { FindingSchema } from "@/lib/validation/finding";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
-import { publishReview } from "@/server/review/publish/publish-review";
-import { runReview } from "@/server/review/run-review";
+import { logger } from "@/server/logging/logger";
+import { publishFindings } from "@/server/review/publish/publish-review";
+import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
+import { ReviewRunError } from "@/server/review/errors";
 
 type ReviewPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-function getFirst(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
+function getCorrelationIdFromFormData(formData: FormData): string {
+  const correlationId = getTrimmedStringFormField(formData, "correlationId");
+  return correlationId === "" ? crypto.randomUUID() : correlationId;
+}
+
+function createRedirectToPublishError(correlationId: string) {
+  const encodedCorrelationId = encodeURIComponent(correlationId);
+
+  return (params?: { prUrl?: string }): never => {
+    const base = "/review/published?";
+
+    const prUrlPart =
+      typeof params?.prUrl === "string" && params.prUrl.trim() !== ""
+        ? `prUrl=${encodeURIComponent(params.prUrl)}&`
+        : "";
+
+    redirect(`${base}${prUrlPart}publishError=1&correlationId=${encodedCorrelationId}`);
+  };
+}
+
+function toReviewRunError(params: {
+  error: unknown;
+  message: string;
+  correlationId: string;
+}): ReviewRunError {
+  if (params.error instanceof ReviewRunError) return params.error;
+
+  return new ReviewRunError({
+    message: params.message,
+    correlationId: params.correlationId,
+    cause: params.error,
+  });
+}
+
+function requireCachedReviewRun(
+  cached: Awaited<ReturnType<typeof getCachedReviewRun>>,
+  prUrl: string,
+  redirectToPublishError: (params?: { prUrl?: string }) => never,
+): NonNullable<Awaited<ReturnType<typeof getCachedReviewRun>>> {
+  if (cached) return cached;
+  return redirectToPublishError({ prUrl });
+}
+
+function parseCachedFindingsOrRedirect(
+  cached: NonNullable<Awaited<ReturnType<typeof getCachedReviewRun>>>,
+  prUrl: string,
+  redirectToPublishError: (params?: { prUrl?: string }) => never,
+) {
+  const findingsResult = FindingSchema.array().safeParse(cached.result.findings);
+  if (!findingsResult.success) return redirectToPublishError({ prUrl });
+  return findingsResult.data;
+}
+
+function toErrorForLogging(err: unknown, fallbackMessage: string): Error {
+  if (err instanceof Error) return err;
+  if (typeof err === "string" && err.trim() !== "") return new Error(err);
+  return new Error(fallbackMessage);
+}
+
+async function publishFindingsOrRedirect(params: {
+  prUrl: string;
+  runId: string;
+  engineName: string;
+  correlationId: string;
+  findings: Parameters<typeof publishFindings>[0]["findings"];
+  redirectToPublishError: (params?: { prUrl?: string }) => never;
+}): Promise<Awaited<ReturnType<typeof publishFindings>>> {
+  try {
+    return await publishFindings({
+      prUrl: params.prUrl,
+      engineName: params.engineName,
+      findings: params.findings,
+    });
+  } catch (err) {
+    const errorToLog = toErrorForLogging(err, "publishFindings failed.");
+
+    logger.error(
+      {
+        correlationId: params.correlationId,
+        prUrl: params.prUrl,
+        runId: params.runId,
+        engineName: params.engineName,
+        err: errorToLog,
+      },
+      "publishFindings failed",
+    );
+
+    return params.redirectToPublishError({ prUrl: params.prUrl });
+  }
 }
 
 async function publishAction(formData: FormData) {
   "use server";
-  const value = formData.get("prUrl");
-  const prUrl = typeof value === "string" ? value.trim() : "";
+  const correlationId = getCorrelationIdFromFormData(formData);
+  const redirectToPublishError = createRedirectToPublishError(correlationId);
+
+  const prUrl = getTrimmedStringFormField(formData, "prUrl");
+  const runId = getTrimmedStringFormField(formData, "runId");
 
   if (!prUrl) {
-    redirect("/review?publishError=1");
+    return redirectToPublishError();
   }
 
-  const encodedPrUrl = encodeURIComponent(prUrl);
+  const engineName = getTrimmedStringFormField(formData, "engineName");
 
-  let result: Awaited<ReturnType<typeof publishReview>>;
+  if (!runId) {
+    return redirectToPublishError({ prUrl });
+  }
+
+  // We now publish from cached run findings (avoid rerunning review and avoid large payloads).
+  let cached: Awaited<ReturnType<typeof getCachedReviewRun>>;
 
   try {
-    result = await publishReview({ prUrl });
-  } catch {
-    redirect(`/review?prUrl=${encodedPrUrl}&publishError=1`);
+    cached = await getCachedReviewRun({ prUrl, runId });
+  } catch (err) {
+    const wrapped = toReviewRunError({
+      error: err,
+      message: "getCachedReviewRun failed in publishAction.",
+      correlationId,
+    });
+
+    logger.error(
+      {
+        correlationId,
+        prUrl,
+        runId,
+        engineName,
+        err: wrapped,
+      },
+      "getCachedReviewRun failed",
+    );
+
+    return redirectToPublishError({ prUrl });
   }
 
+  const ensuredCached = requireCachedReviewRun(cached, prUrl, redirectToPublishError);
+  const findings = parseCachedFindingsOrRedirect(ensuredCached, prUrl, redirectToPublishError);
+
+  const result = await publishFindingsOrRedirect({
+    prUrl,
+    engineName,
+    findings,
+    correlationId,
+    runId,
+    redirectToPublishError,
+  });
+
   redirect(
-    `/review?prUrl=${encodedPrUrl}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
+    `/review/published?prUrl=${encodeURIComponent(prUrl)}&engineName=${encodeURIComponent(engineName)}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
   );
+}
+
+async function rerunAction(formData: FormData) {
+  "use server";
+  const prUrl = getTrimmedStringFormField(formData, "prUrl");
+  if (!prUrl) redirect("/review");
+
+  const parsed = reviewRequestSchema.safeParse({ prUrl });
+  if (!parsed.success) redirect("/review");
+
+  let runId: string;
+
+  try {
+    ({ runId } = await runAndPersistReview(parsed.data));
+  } catch (err) {
+    const correlationId = crypto.randomUUID();
+
+    const wrapped = toReviewRunError({
+      error: err,
+      message: "runAndPersistReview failed in rerunAction.",
+      correlationId,
+    });
+
+    const originalErrorToLog = toErrorForLogging(err, "rerunAction failed.");
+
+    logger.error(
+      {
+        correlationId,
+        prUrl,
+        err: wrapped,
+        originalError: originalErrorToLog,
+      },
+      "rerunAction failed",
+    );
+
+    const message = "Review re-run failed.";
+    redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&error=${encodeURIComponent(message)}`);
+  }
+
+  redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
 }
 
 export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const params = await searchParams;
   const prUrl = getFirst(params.prUrl);
+  const runId = getFirst(params.runId);
+  const correlationId = crypto.randomUUID();
   const published = getFirst(params.published) === "1";
   const publishError = getFirst(params.publishError) === "1";
-  const publishedThreads = Number(getFirst(params.publishedThreads) ?? "0");
-  const skippedThreads = Number(getFirst(params.skippedThreads) ?? "0");
-  const totalThreads = Number(getFirst(params.totalThreads) ?? "0");
+  const error = getFirst(params.error);
+  const publishedThreads = parseNonNegativeIntParam(getFirst(params.publishedThreads), 0);
+  const skippedThreads = parseNonNegativeIntParam(getFirst(params.skippedThreads), 0);
+  const totalThreads = parseNonNegativeIntParam(getFirst(params.totalThreads), 0);
   const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
   const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;
 
@@ -88,7 +260,31 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     );
   }
 
-  const result = await runReview(parsed.data).catch(() => null);
+  const cached = await getCachedReviewRun({ prUrl, runId });
+
+  const { result, effectiveRunId } = cached
+    ? { result: cached.result, effectiveRunId: cached.runId }
+    : await runAndPersistReview(parsed.data)
+        .then((r) => ({ result: r.result, effectiveRunId: r.runId }))
+        .catch((error) => {
+          const wrapped = new ReviewRunError({
+            message: "runAndPersistReview failed.",
+            correlationId,
+            cause: error,
+          });
+
+          logger.error(
+            {
+              correlationId,
+              prUrl,
+              runId,
+              err: wrapped,
+            },
+            "runAndPersistReview failed",
+          );
+
+          return { result: null, effectiveRunId: undefined };
+        });
 
   if (!result) {
     return (
@@ -98,9 +294,9 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         </h1>
 
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          Review failed. Ensure the PR URL is correct and{" "}
+          Review failed. Ensure the PR URL is correct,{" "}
           <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-900">AZURE_DEVOPS_PAT</code>{" "}
-          is set on the server.
+          is set on the server, and CodeRabbit CLI is installed + authenticated.
         </p>
 
         <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
@@ -130,6 +326,12 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
           </div>
         ) : null}
 
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+            Review failed. {error}
+          </div>
+        ) : null}
+
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
           <span className="font-medium text-zinc-900 dark:text-zinc-50">{result.pr.repoName}</span>{" "}
           · PR{" "}
@@ -145,16 +347,33 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <form action={publishAction} className="flex items-center gap-3">
-          <input type="hidden" name="prUrl" value={prUrl} />
+        <div className="flex items-center gap-3">
+          <form action={publishAction} className="flex items-center gap-3">
+            <input type="hidden" name="prUrl" value={prUrl} />
+            {effectiveRunId ? <input type="hidden" name="runId" value={effectiveRunId} /> : null}
 
-          <button
-            type="submit"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Publish to Azure DevOps
-          </button>
-        </form>
+            <input type="hidden" name="engineName" value={result.engine.name} />
+            <input type="hidden" name="correlationId" value={correlationId} />
+
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Publish to Azure DevOps
+            </button>
+          </form>
+
+          <form action={rerunAction}>
+            <input type="hidden" name="prUrl" value={prUrl} />
+
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
+            >
+              Re-run review
+            </button>
+          </form>
+        </div>
 
         <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
           New review
@@ -232,14 +451,19 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
                     {f.title}
                   </div>
 
-                  <div className="text-sm text-zinc-600 dark:text-zinc-300">{f.message}</div>
+                  <Markdown
+                    className="text-sm text-zinc-600 dark:text-zinc-300"
+                    content={f.message}
+                  />
 
                   {f.recommendation ? (
                     <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
                       <span className="font-medium text-zinc-900 dark:text-zinc-50">
                         Recommendation:
                       </span>{" "}
-                      {f.recommendation}
+                      <div className="mt-1">
+                        <Markdown content={f.recommendation} />
+                      </div>
                     </div>
                   ) : null}
                 </div>

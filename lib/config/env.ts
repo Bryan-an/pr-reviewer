@@ -2,9 +2,22 @@ import "server-only";
 
 import { z } from "zod";
 
+export const REVIEW_ENGINE = {
+  Coderabbit: "coderabbit",
+  Stub: "stub",
+} as const;
+
+export type ReviewEngine = (typeof REVIEW_ENGINE)[keyof typeof REVIEW_ENGINE];
+
+const reviewEngineValues = [REVIEW_ENGINE.Coderabbit, REVIEW_ENGINE.Stub] as const;
+
 const envSchema = z.object({
   AZURE_DEVOPS_PAT: z.string().min(1),
   REPOS_DIR: z.string().min(1).optional(),
+  CODERABBIT_BIN: z.string().min(1).optional(),
+  CODERABBIT_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
+  REVIEW_ENGINE: z.enum(reviewEngineValues).optional(),
+  DATABASE_URL: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
