@@ -108,8 +108,37 @@ async function rerunAction(formData: FormData) {
   const parsed = reviewRequestSchema.safeParse({ prUrl });
   if (!parsed.success) redirect("/review");
 
-  const { runId } = await runAndPersistReview(parsed.data);
-  redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
+  try {
+    const { runId } = await runAndPersistReview(parsed.data);
+    redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
+  } catch (err) {
+    const correlationId = crypto.randomUUID();
+
+    const wrapped = new ReviewRunError({
+      message: "runAndPersistReview failed in rerunAction.",
+      correlationId,
+      cause: err,
+    });
+
+    logger.error(
+      {
+        correlationId,
+        prUrl,
+        err: wrapped,
+      },
+      "rerunAction failed",
+    );
+
+    let message = "Review re-run failed.";
+
+    if (err instanceof Error && err.message.trim() !== "") {
+      message = err.message;
+    } else if (typeof err === "string" && err.trim() !== "") {
+      message = err;
+    }
+
+    redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&error=${encodeURIComponent(message)}`);
+  }
 }
 
 export default async function ReviewPage({ searchParams }: ReviewPageProps) {
@@ -119,6 +148,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const correlationId = crypto.randomUUID();
   const published = getFirst(params.published) === "1";
   const publishError = getFirst(params.publishError) === "1";
+  const error = getFirst(params.error);
   const publishedThreads = parseNonNegativeIntParam(getFirst(params.publishedThreads), 0);
   const skippedThreads = parseNonNegativeIntParam(getFirst(params.skippedThreads), 0);
   const totalThreads = parseNonNegativeIntParam(getFirst(params.totalThreads), 0);
@@ -227,6 +257,12 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         {publishError ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
             Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+            Review failed. {error}
           </div>
         ) : null}
 
