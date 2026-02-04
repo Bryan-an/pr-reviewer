@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 import { Markdown } from "@/components/markdown";
 import { FindingSchema } from "@/lib/validation/finding";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
+import { logger } from "@/server/logging/logger";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
+import { ReviewRunError } from "@/server/review/errors";
 
 type ReviewPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -77,6 +79,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const params = await searchParams;
   const prUrl = getFirst(params.prUrl);
   const runId = getFirst(params.runId);
+  const correlationId = crypto.randomUUID();
   const published = getFirst(params.published) === "1";
   const publishError = getFirst(params.publishError) === "1";
   const publishedThreads = Number(getFirst(params.publishedThreads) ?? "0");
@@ -130,7 +133,25 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     ? { result: cached.result, effectiveRunId: cached.runId }
     : await runAndPersistReview(parsed.data)
         .then((r) => ({ result: r.result, effectiveRunId: r.runId }))
-        .catch(() => ({ result: null, effectiveRunId: undefined }));
+        .catch((error) => {
+          const wrapped = new ReviewRunError({
+            message: "runAndPersistReview failed.",
+            correlationId,
+            cause: error,
+          });
+
+          logger.error(
+            {
+              correlationId,
+              prUrl,
+              runId,
+              err: wrapped,
+            },
+            "runAndPersistReview failed",
+          );
+
+          return { result: null, effectiveRunId: undefined };
+        });
 
   if (!result) {
     return (

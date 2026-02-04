@@ -22,3 +22,18 @@ export class DomainValidationError extends Error {
 export function isDomainValidationError(error: unknown): error is DomainValidationError {
   return error instanceof DomainValidationError;
 }
+
+export class ReviewRunError extends Error {
+  public readonly name = "ReviewRunError";
+  public readonly code = "REVIEW_RUN_ERROR";
+  public readonly correlationId: string;
+
+  public constructor(params: { message: string; correlationId: string; cause?: unknown }) {
+    super(params.message, params.cause ? { cause: params.cause } : undefined);
+    this.correlationId = params.correlationId;
+  }
+}
+
+export function isReviewRunError(error: unknown): error is ReviewRunError {
+  return error instanceof ReviewRunError;
+}
