@@ -108,9 +108,10 @@ async function rerunAction(formData: FormData) {
   const parsed = reviewRequestSchema.safeParse({ prUrl });
   if (!parsed.success) redirect("/review");
 
+  let runId: string;
+
   try {
-    const { runId } = await runAndPersistReview(parsed.data);
-    redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
+    ({ runId } = await runAndPersistReview(parsed.data));
   } catch (err) {
     const correlationId = crypto.randomUUID();
 
@@ -139,6 +140,8 @@ async function rerunAction(formData: FormData) {
 
     redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&error=${encodeURIComponent(message)}`);
   }
+
+  redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
 }
 
 export default async function ReviewPage({ searchParams }: ReviewPageProps) {
