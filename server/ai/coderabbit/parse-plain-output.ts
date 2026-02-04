@@ -46,9 +46,9 @@ function looksLikeCode(line: string): boolean {
 
 function looksLikeDiffLine(line: string): boolean {
   const l = line.trim();
-  if (!/^[+-]\s+/.test(l)) return false;
+  if (!/^[+-]\s*/.test(l)) return false;
   // Avoid treating markdown list items like "- foo" as diff unless they look code-ish.
-  return looksLikeCode(l.slice(1));
+  return looksLikeCode(l.slice(1).trim());
 }
 
 function consumeWhile<T>(
