@@ -15,6 +15,7 @@ const envSchema = z.object({
   AZURE_DEVOPS_PAT: z.string().min(1),
   REPOS_DIR: z.string().min(1).optional(),
   CODERABBIT_BIN: z.string().min(1).optional(),
+  CODERABBIT_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   REVIEW_ENGINE: z.enum(reviewEngineValues).optional(),
   DATABASE_URL: z.string().min(1).optional(),
 });
