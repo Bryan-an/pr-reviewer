@@ -1,21 +1,18 @@
 import Link from "next/link";
 
+import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
+
 type PublishedPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
-
-function getFirst(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
 
 export default async function ReviewPublishedPage({ searchParams }: PublishedPageProps) {
   const params = await searchParams;
   const prUrl = getFirst(params.prUrl);
   const publishError = getFirst(params.publishError) === "1";
-  const publishedThreads = Number(getFirst(params.publishedThreads) ?? "0");
-  const skippedThreads = Number(getFirst(params.skippedThreads) ?? "0");
-  const totalThreads = Number(getFirst(params.totalThreads) ?? "0");
+  const publishedThreads = parseNonNegativeIntParam(getFirst(params.publishedThreads), 0);
+  const skippedThreads = parseNonNegativeIntParam(getFirst(params.skippedThreads), 0);
+  const totalThreads = parseNonNegativeIntParam(getFirst(params.totalThreads), 0);
 
   const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
   const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;

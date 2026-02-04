@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
+import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { FindingSchema } from "@/lib/validation/finding";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { logger } from "@/server/logging/logger";
@@ -12,11 +13,6 @@ import { ReviewRunError } from "@/server/review/errors";
 type ReviewPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
-
-function getFirst(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
 
 async function publishAction(formData: FormData) {
   "use server";
@@ -82,9 +78,9 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const correlationId = crypto.randomUUID();
   const published = getFirst(params.published) === "1";
   const publishError = getFirst(params.publishError) === "1";
-  const publishedThreads = Number(getFirst(params.publishedThreads) ?? "0");
-  const skippedThreads = Number(getFirst(params.skippedThreads) ?? "0");
-  const totalThreads = Number(getFirst(params.totalThreads) ?? "0");
+  const publishedThreads = parseNonNegativeIntParam(getFirst(params.publishedThreads), 0);
+  const skippedThreads = parseNonNegativeIntParam(getFirst(params.skippedThreads), 0);
+  const totalThreads = parseNonNegativeIntParam(getFirst(params.totalThreads), 0);
   const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
   const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;
 
