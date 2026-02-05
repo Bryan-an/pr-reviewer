@@ -43,6 +43,7 @@ function summarizeOutput(
 export type RunCodeRabbitCliParams = {
   cwd: string;
   baseBranch: string;
+  configFiles?: string[];
   timeoutMs?: number;
 };
 
@@ -54,19 +55,27 @@ export async function runCodeRabbitCli(params: RunCodeRabbitCliParams): Promise<
   const bin = env.CODERABBIT_BIN ?? "coderabbit";
   const timeoutMs = params.timeoutMs ?? env.CODERABBIT_TIMEOUT_MS ?? 10 * 60_000;
 
+  const configFiles = (params.configFiles ?? []).map((v) => v.trim()).filter(Boolean);
+
   // CodeRabbit CLI supports multiple output formats; we use `--plain` for a stable-ish
   // text output that we can best-effort parse into deterministic findings.
-  const child = execa(
-    bin,
-    ["--plain", "--type", "committed", "--base", params.baseBranch, "--no-color"],
-    {
-      cwd: params.cwd,
-      reject: false,
-      maxBuffer: 20 * 1024 * 1024,
-      timeout: timeoutMs,
-      killSignal: "SIGKILL",
-    },
-  );
+  const args = [
+    "--plain",
+    "--type",
+    "committed",
+    "--base",
+    params.baseBranch,
+    ...(configFiles.length > 0 ? ["--config", ...configFiles] : []),
+    "--no-color",
+  ];
+
+  const child = execa(bin, args, {
+    cwd: params.cwd,
+    reject: false,
+    maxBuffer: 20 * 1024 * 1024,
+    timeout: timeoutMs,
+    killSignal: "SIGKILL",
+  });
 
   const result = await child;
 

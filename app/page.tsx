@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
 
@@ -48,6 +49,15 @@ export default function Home() {
           in the environment. Secrets never reach the browser. CodeRabbit CLI must be installed and
           authenticated on the server.
         </p>
+
+        <div className="mt-6 flex items-center justify-between">
+          <Link
+            className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
+            href="/repos"
+          >
+            Manage repository rules
+          </Link>
+        </div>
       </main>
     </div>
   );

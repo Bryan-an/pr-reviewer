@@ -377,6 +377,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   ReviewRun: "ReviewRun",
   Finding: "Finding",
+  Repository: "Repository",
+  RepoRule: "RepoRule",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -396,7 +398,7 @@ export type TypeMap<
     omit: GlobalOmitOptions;
   };
   meta: {
-    modelProps: "reviewRun" | "finding";
+    modelProps: "reviewRun" | "finding" | "repository" | "repoRule";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -548,6 +550,154 @@ export type TypeMap<
         };
       };
     };
+    Repository: {
+      payload: Prisma.$RepositoryPayload<ExtArgs>;
+      fields: Prisma.RepositoryFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RepositoryFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RepositoryFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>;
+        };
+        findFirst: {
+          args: Prisma.RepositoryFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RepositoryFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>;
+        };
+        findMany: {
+          args: Prisma.RepositoryFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>[];
+        };
+        create: {
+          args: Prisma.RepositoryCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>;
+        };
+        createMany: {
+          args: Prisma.RepositoryCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.RepositoryCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>[];
+        };
+        delete: {
+          args: Prisma.RepositoryDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>;
+        };
+        update: {
+          args: Prisma.RepositoryUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>;
+        };
+        deleteMany: {
+          args: Prisma.RepositoryDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RepositoryUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.RepositoryUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>[];
+        };
+        upsert: {
+          args: Prisma.RepositoryUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepositoryPayload>;
+        };
+        aggregate: {
+          args: Prisma.RepositoryAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRepository>;
+        };
+        groupBy: {
+          args: Prisma.RepositoryGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RepositoryGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RepositoryCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RepositoryCountAggregateOutputType> | number;
+        };
+      };
+    };
+    RepoRule: {
+      payload: Prisma.$RepoRulePayload<ExtArgs>;
+      fields: Prisma.RepoRuleFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RepoRuleFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RepoRuleFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>;
+        };
+        findFirst: {
+          args: Prisma.RepoRuleFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RepoRuleFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>;
+        };
+        findMany: {
+          args: Prisma.RepoRuleFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>[];
+        };
+        create: {
+          args: Prisma.RepoRuleCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>;
+        };
+        createMany: {
+          args: Prisma.RepoRuleCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.RepoRuleCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>[];
+        };
+        delete: {
+          args: Prisma.RepoRuleDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>;
+        };
+        update: {
+          args: Prisma.RepoRuleUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>;
+        };
+        deleteMany: {
+          args: Prisma.RepoRuleDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RepoRuleUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.RepoRuleUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>[];
+        };
+        upsert: {
+          args: Prisma.RepoRuleUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RepoRulePayload>;
+        };
+        aggregate: {
+          args: Prisma.RepoRuleAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRepoRule>;
+        };
+        groupBy: {
+          args: Prisma.RepoRuleGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RepoRuleGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RepoRuleCountArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RepoRuleCountAggregateOutputType> | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -620,6 +770,34 @@ export const FindingScalarFieldEnum = {
 export type FindingScalarFieldEnum =
   (typeof FindingScalarFieldEnum)[keyof typeof FindingScalarFieldEnum];
 
+export const RepositoryScalarFieldEnum = {
+  id: "id",
+  org: "org",
+  project: "project",
+  adoRepoId: "adoRepoId",
+  name: "name",
+  remoteUrl: "remoteUrl",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RepositoryScalarFieldEnum =
+  (typeof RepositoryScalarFieldEnum)[keyof typeof RepositoryScalarFieldEnum];
+
+export const RepoRuleScalarFieldEnum = {
+  id: "id",
+  repositoryId: "repositoryId",
+  title: "title",
+  markdown: "markdown",
+  enabled: "enabled",
+  sortOrder: "sortOrder",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RepoRuleScalarFieldEnum =
+  (typeof RepoRuleScalarFieldEnum)[keyof typeof RepoRuleScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc",
@@ -652,6 +830,11 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "In
  * Reference to a field of type 'DateTime'
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "DateTime">;
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Boolean">;
 
 /**
  * Reference to a field of type 'Float'
@@ -763,6 +946,8 @@ export type PrismaClientOptions = (
 export type GlobalOmitConfig = {
   reviewRun?: Prisma.ReviewRunOmit;
   finding?: Prisma.FindingOmit;
+  repository?: Prisma.RepositoryOmit;
+  repoRule?: Prisma.RepoRuleOmit;
 };
 
 /* Types for Logging */

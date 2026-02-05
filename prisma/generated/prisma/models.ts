@@ -9,4 +9,6 @@
  */
 export type * from "./models/ReviewRun";
 export type * from "./models/Finding";
+export type * from "./models/Repository";
+export type * from "./models/RepoRule";
 export type * from "./commonInputTypes";

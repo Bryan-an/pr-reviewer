@@ -29,7 +29,7 @@ model ReviewRun {
 }
 
 model Finding {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   reviewRunId    String
   findingKey     String
   severity       String
@@ -46,3 +46,33 @@ model Finding {
   @@unique([reviewRunId, findingKey])
 }
 
+model Repository {
+  id        String   @id @default(cuid())
+  org       String
+  project   String
+  adoRepoId String
+  name      String
+  remoteUrl String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rules RepoRule[]
+
+  @@unique([org, project, adoRepoId])
+  @@index([org, project, name])
+}
+
+model RepoRule {
+  id           String   @id @default(cuid())
+  repositoryId String
+  title        String
+  markdown     String
+  enabled      Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, enabled, sortOrder, updatedAt])
+}

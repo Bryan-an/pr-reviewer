@@ -8,6 +8,7 @@ import type { Severity } from "@/lib/validation/finding";
 import type { ReviewRequest } from "@/lib/validation/review-request";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
 import { selectReviewEngine } from "@/server/ai/select-engine";
+import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { ensureRepoCheckedOut, generateUnifiedDiff } from "@/server/git/repo";
 import { DomainValidationError, type FindingValidationFailure } from "@/server/review/errors";
 import type { Finding, ReviewRunResult } from "@/server/review/types";
@@ -31,6 +32,15 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
     org: prUrlParts.org,
     project: prUrlParts.project,
     prId: prUrlParts.prId,
+  });
+
+  // Persist minimal repo metadata for rules mapping (listing remains live via Azure DevOps).
+  await upsertRepositoryFromAdoRepo({
+    org: pr.org,
+    project: pr.project,
+    adoRepoId: pr.repo.id,
+    name: pr.repo.name,
+    remoteUrl: pr.repo.remoteUrl,
   });
 
   const { repoDir } = await ensureRepoCheckedOut({

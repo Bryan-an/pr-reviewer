@@ -65,11 +65,9 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 ### Inputs (v1)
 
 - **From UI**:
-  - Azure DevOps organization
-  - Azure DevOps project
-  - Repository identifier (name or id)
-  - Pull request identifier (id or URL)
-  - Standards profile selection (optional; default profile if omitted)
+  - Azure DevOps pull request URL
+- **Optional review rules**:
+  - Repository-scoped Markdown rules are managed in the app (see “Repository rules (Markdown)” below). If a repo has no enabled rules, reviews run with the default/general behavior.
 - **Secrets (server-only)**:
   - Azure DevOps PAT (provided via server environment variable; never entered in the browser)
 
@@ -97,7 +95,7 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 - Line-level anchoring (file-level only; line anchoring can be added later).
 - Persisting PATs in the database (when added later, it must be encrypted at rest with `APP_ENCRYPTION_KEY`).
 - Multi-org/multi-repo management UI, teams/roles, SSO, and enterprise policy management.
-- Full standards editor UI (v1 may use a default or a small, fixed set).
+- Organization-wide policy management (beyond repository-scoped Markdown rules).
 
 ### Key constraints / assumptions
 
@@ -107,9 +105,11 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 
 ## Status
 
-MVP is progressing: you can generate a review preview and publish findings back to Azure DevOps as PR comment threads.
+MVP is progressing:
 
-AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
+- You can generate a review preview and publish findings back to Azure DevOps as PR comment threads.
+- You can manage **repository-scoped Markdown rules** in `/repos` and have enabled rules automatically applied during PR reviews.
+- AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
 
 ## Publishing (current behavior)
 
@@ -119,6 +119,36 @@ The review preview page can publish findings back to Azure DevOps as **PR commen
 - **File-scoped threads**: one thread per file (no line anchoring in v1).
 - **Idempotency**: published threads include hidden markers so re-publishing does not duplicate threads.
 - **Fallback**: if Azure DevOps rejects file-scoped context without positions, the app falls back to posting a general thread that includes the file path in the content.
+
+## Repository rules (Markdown)
+
+You can optionally define **repository-scoped review rules** as Markdown documents and have them automatically applied whenever you review a PR for that repo.
+
+### Dashboard
+
+- Open the rules dashboard at `/repos`.
+- Enter an Azure DevOps **organization**.
+- Select a **project** (required).
+- Browse repositories (the list is fetched live from Azure DevOps).
+
+### Managing rules
+
+For a selected repository you can:
+
+- Create, edit, preview, and delete Markdown rules.
+- Enable/disable rules.
+- Set an order (lower numbers apply first).
+
+### How rules are applied during review
+
+When you run a PR review, the app:
+
+- Detects the repo from PR metadata.
+- Loads **enabled** rules for that repo from the local database.
+- Writes each enabled rule to a temporary file inside the PR worktree.
+- Runs CodeRabbit CLI with those rule files passed via `--config`.
+
+If there are no enabled rules for the repo, the app runs CodeRabbit CLI without `--config` (general review behavior).
 
 ## Local setup
 
