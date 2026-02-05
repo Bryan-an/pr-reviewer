@@ -7,6 +7,7 @@ import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { createRepoRule } from "@/server/db/repo-rules";
+import { logger } from "@/server/logging/logger";
 import { MarkdownRuleEditor } from "@/app/repos/_components/markdown-rule-editor";
 
 type NewRulePageProps = Readonly<{
@@ -23,15 +24,51 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
   const sp = (await searchParams) ?? {};
   const showErrorBanner = getFirst(sp.error) === "1";
 
-  const repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
+  let repo: Awaited<ReturnType<typeof getAzureDevOpsRepository>>;
+  let storedRepo: Awaited<ReturnType<typeof upsertRepositoryFromAdoRepo>>;
 
-  const storedRepo = await upsertRepositoryFromAdoRepo({
-    org,
-    project,
-    adoRepoId: repo.id,
-    name: repo.name,
-    remoteUrl: repo.remoteUrl,
-  });
+  try {
+    repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
+
+    storedRepo = await upsertRepositoryFromAdoRepo({
+      org,
+      project,
+      adoRepoId: repo.id,
+      name: repo.name,
+      remoteUrl: repo.remoteUrl,
+    });
+  } catch (err) {
+    logger.error(
+      { err, org, project, adoRepoId },
+      "NewRulePage: getAzureDevOpsRepository/upsertRepositoryFromAdoRepo failed",
+    );
+
+    const backHref = `/repos?org=${encodeURIComponent(org)}&project=${encodeURIComponent(project)}`;
+
+    return (
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+            New rule
+          </h1>
+
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            {org} · {project} · <span className="font-mono text-xs">{adoRepoId}</span>
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          Unable to load repository details. Please verify your Azure DevOps access and try again.
+        </div>
+
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          <Link className="underline" href={backHref}>
+            Back
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   async function createAction(formData: FormData) {
     "use server";
