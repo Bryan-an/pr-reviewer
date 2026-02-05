@@ -1,8 +1,13 @@
 import "server-only";
 
 import type { GitRepository } from "azure-devops-node-api/interfaces/GitInterfaces";
+import { z } from "zod";
 
 import { createAzureDevOpsClient } from "@/server/azure-devops/client";
+
+const orgSchema = z.string().trim().min(1);
+const projectSchema = z.string().trim().min(1);
+const repoIdOrNameSchema = z.string().trim().min(1);
 
 export type AzureDevOpsRepository = {
   id: string;
@@ -16,10 +21,13 @@ export async function listAzureDevOpsRepositories(params: {
   org: string;
   project: string;
 }): Promise<{ repositories: AzureDevOpsRepository[] }> {
-  const webApi = createAzureDevOpsClient(params.org);
+  const org = orgSchema.parse(params.org);
+  const project = projectSchema.parse(params.project);
+
+  const webApi = createAzureDevOpsClient(org);
   const gitApi = await webApi.getGitApi();
 
-  const repos: GitRepository[] = await gitApi.getRepositories(params.project);
+  const repos: GitRepository[] = await gitApi.getRepositories(project);
 
   return {
     repositories: repos
@@ -39,10 +47,14 @@ export async function getAzureDevOpsRepository(params: {
   project: string;
   repoIdOrName: string;
 }): Promise<AzureDevOpsRepository> {
-  const webApi = createAzureDevOpsClient(params.org);
+  const org = orgSchema.parse(params.org);
+  const project = projectSchema.parse(params.project);
+  const repoIdOrName = repoIdOrNameSchema.parse(params.repoIdOrName);
+
+  const webApi = createAzureDevOpsClient(org);
   const gitApi = await webApi.getGitApi();
 
-  const repo = await gitApi.getRepository(params.repoIdOrName, params.project);
+  const repo = await gitApi.getRepository(repoIdOrName, project);
 
   const id = repo.id ?? "";
   const name = repo.name ?? "";
