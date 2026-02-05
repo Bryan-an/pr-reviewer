@@ -22,7 +22,20 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
   const adoRepoId = safeDecodeURIComponent(p.adoRepoId);
 
   const sp = (await searchParams) ?? {};
-  const showErrorBanner = getFirst(sp.error) === "1";
+  const errorCode = getFirst(sp.error);
+
+  const errorBannerMessage = (() => {
+    switch (errorCode) {
+      case "title":
+        return "Please provide a title for this rule.";
+      case "markdown":
+        return "Please provide markdown content for this rule.";
+      case "sortOrder":
+        return "Order must be a non-negative integer.";
+      default:
+        return undefined;
+    }
+  })();
 
   let repo: Awaited<ReturnType<typeof getAzureDevOpsRepository>>;
   let storedRepo: Awaited<ReturnType<typeof upsertRepositoryFromAdoRepo>>;
@@ -80,7 +93,19 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
 
     if (!title) {
       redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=1`,
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=title`,
+      );
+    }
+
+    if (!markdown) {
+      redirect(
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=markdown`,
+      );
+    }
+
+    if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
+      redirect(
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=sortOrder`,
       );
     }
 
@@ -111,9 +136,9 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
         </p>
       </div>
 
-      {showErrorBanner ? (
+      {errorBannerMessage ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-          Please provide a title for this rule.
+          {errorBannerMessage}
         </div>
       ) : null}
 
