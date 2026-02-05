@@ -26,3 +26,13 @@ export type ReviewRun = Prisma.ReviewRunModel;
  *
  */
 export type Finding = Prisma.FindingModel;
+/**
+ * Model Repository
+ *
+ */
+export type Repository = Prisma.RepositoryModel;
+/**
+ * Model RepoRule
+ *
+ */
+export type RepoRule = Prisma.RepoRuleModel;

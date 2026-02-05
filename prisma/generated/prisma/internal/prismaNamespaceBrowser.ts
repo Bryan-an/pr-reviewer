@@ -50,6 +50,8 @@ export const AnyNull = runtime.AnyNull;
 export const ModelName = {
   ReviewRun: "ReviewRun",
   Finding: "Finding",
+  Repository: "Repository",
+  RepoRule: "RepoRule",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -100,6 +102,34 @@ export const FindingScalarFieldEnum = {
 
 export type FindingScalarFieldEnum =
   (typeof FindingScalarFieldEnum)[keyof typeof FindingScalarFieldEnum];
+
+export const RepositoryScalarFieldEnum = {
+  id: "id",
+  org: "org",
+  project: "project",
+  adoRepoId: "adoRepoId",
+  name: "name",
+  remoteUrl: "remoteUrl",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RepositoryScalarFieldEnum =
+  (typeof RepositoryScalarFieldEnum)[keyof typeof RepositoryScalarFieldEnum];
+
+export const RepoRuleScalarFieldEnum = {
+  id: "id",
+  repositoryId: "repositoryId",
+  title: "title",
+  markdown: "markdown",
+  enabled: "enabled",
+  sortOrder: "sortOrder",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RepoRuleScalarFieldEnum =
+  (typeof RepoRuleScalarFieldEnum)[keyof typeof RepoRuleScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
