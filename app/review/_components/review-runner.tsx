@@ -78,9 +78,10 @@ function parseRunId(data: unknown): string | null {
 
 type ReviewRunnerProps = Readonly<{
   prUrl: string;
+  cacheLoadError?: string;
 }>;
 
-export function ReviewRunner({ prUrl }: ReviewRunnerProps) {
+export function ReviewRunner({ prUrl, cacheLoadError }: ReviewRunnerProps) {
   const router = useRouter();
   const statusId = useId();
 
@@ -203,6 +204,17 @@ export function ReviewRunner({ prUrl }: ReviewRunnerProps) {
             minutes.
           </CardDescription>
         </CardHeader>
+
+        {cacheLoadError ? (
+          <CardContent>
+            <div
+              role="alert"
+              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
+            >
+              {cacheLoadError}
+            </div>
+          </CardContent>
+        ) : null}
 
         <CardContent>
           <output className="text-muted-foreground sr-only" aria-live="polite">

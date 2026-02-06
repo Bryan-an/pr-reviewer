@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { FindingSchema } from "@/lib/validation/finding";
-import { reviewRequestSchema } from "@/lib/validation/review-request";
+import { reviewRequestSchema, runIdSchema } from "@/lib/validation/review-request";
 import { logger } from "@/server/logging/logger";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
@@ -255,37 +255,54 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     );
   }
 
-  // When a runId is present, try to load the cached review run and display results.
+  // When a runId is present, validate it and try to load the cached review run.
+  let cacheLoadError: string | undefined;
+  let cached: Awaited<ReturnType<typeof getCachedReviewRun>> = null;
+
   if (runId) {
-    let cached: Awaited<ReturnType<typeof getCachedReviewRun>> = null;
+    const runIdResult = runIdSchema.safeParse(runId);
 
-    try {
-      cached = await getCachedReviewRun({ prUrl, runId });
-    } catch (err) {
-      logger.error({ correlationId, prUrl, runId, err }, "getCachedReviewRun failed in ReviewPage");
-    }
+    if (runIdResult.success) {
+      try {
+        cached = await getCachedReviewRun({ prUrl, runId: runIdResult.data });
 
-    if (cached) {
-      return (
-        <ReviewResults
-          result={cached.result}
-          effectiveRunId={cached.runId}
-          prUrl={prUrl}
-          correlationId={correlationId}
-          published={published}
-          publishError={publishError}
-          error={error}
-          publishedThreads={publishedThreads}
-          skippedThreads={skippedThreads}
-          totalThreads={totalThreads}
-          publishAction={publishAction}
-          rerunAction={rerunAction}
-        />
-      );
+        if (!cached) {
+          cacheLoadError = "The previous review run was not found. Starting a new review.";
+        }
+      } catch (err) {
+        logger.error(
+          { correlationId, prUrl, runId, err },
+          "getCachedReviewRun failed in ReviewPage",
+        );
+
+        cacheLoadError = "Failed to load the previous review. Starting a new review.";
+      }
+    } else {
+      logger.error({ correlationId, prUrl, runId }, "Invalid runId format in ReviewPage");
+      cacheLoadError = "The review run ID is invalid. Starting a new review.";
     }
+  }
+
+  if (cached) {
+    return (
+      <ReviewResults
+        result={cached.result}
+        effectiveRunId={cached.runId}
+        prUrl={prUrl}
+        correlationId={correlationId}
+        published={published}
+        publishError={publishError}
+        error={error}
+        publishedThreads={publishedThreads}
+        skippedThreads={skippedThreads}
+        totalThreads={totalThreads}
+        publishAction={publishAction}
+        rerunAction={rerunAction}
+      />
+    );
   }
 
   // No cached result available -- render the client-side runner that fetches
   // the review asynchronously with loading feedback and cancel support.
-  return <ReviewRunner prUrl={prUrl} />;
+  return <ReviewRunner prUrl={prUrl} cacheLoadError={cacheLoadError} />;
 }
