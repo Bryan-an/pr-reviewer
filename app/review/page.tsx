@@ -257,7 +257,13 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
 
   // When a runId is present, try to load the cached review run and display results.
   if (runId) {
-    const cached = await getCachedReviewRun({ prUrl, runId });
+    let cached: Awaited<ReturnType<typeof getCachedReviewRun>> = null;
+
+    try {
+      cached = await getCachedReviewRun({ prUrl, runId });
+    } catch (err) {
+      logger.error({ correlationId, prUrl, runId, err }, "getCachedReviewRun failed in ReviewPage");
+    }
 
     if (cached) {
       return (
