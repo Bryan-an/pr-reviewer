@@ -1,7 +1,7 @@
 import "server-only";
 
 import path from "node:path";
-import { mkdir, stat } from "node:fs/promises";
+import { mkdir, rm, stat } from "node:fs/promises";
 
 import { execa } from "execa";
 
@@ -48,7 +48,10 @@ export async function ensureRepoCheckedOut(params: {
     // Ensure origin URL is correct (remoteUrl can include auth in other setups; we rely on the configured URL).
     await execa("git", ["remote", "set-url", "origin", params.remoteUrl], { cwd: repoDir });
   } else {
-    // Clone into the existing directory (created above).
+    // Wipe stale directory contents left by a previously failed clone.
+    await rm(repoDir, { recursive: true, force: true });
+    await mkdir(repoDir, { recursive: true });
+
     await execa("git", ["clone", "--no-tags", "--filter=blob:none", params.remoteUrl, "."], {
       cwd: repoDir,
     });

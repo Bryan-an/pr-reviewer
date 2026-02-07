@@ -10,7 +10,11 @@ import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
 import { selectReviewEngine } from "@/server/ai/select-engine";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { ensureRepoCheckedOut, generateUnifiedDiff } from "@/server/git/repo";
-import { DomainValidationError, type FindingValidationFailure } from "@/server/review/errors";
+import {
+  DomainValidationError,
+  EmptyDiffError,
+  type FindingValidationFailure,
+} from "@/server/review/errors";
 import type { Finding, ReviewRunResult } from "@/server/review/types";
 
 function countBySeverity(findings: { severity: Severity }[]): Record<Severity, number> {
@@ -62,6 +66,12 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
     .map((f) => f.to ?? "")
     .map((v) => v.trim())
     .filter((v) => v !== "" && v !== "/dev/null");
+
+  if (changedFiles.length === 0) {
+    throw new EmptyDiffError(
+      "The PR diff is empty -- source and target branches have no file differences. The review was skipped.",
+    );
+  }
 
   const engine = selectReviewEngine();
 
