@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { logger } from "@/server/logging/logger";
+import { isEmptyDiffError } from "@/server/review/errors";
 import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
 
 export async function POST(request: Request) {
@@ -44,6 +45,10 @@ export async function POST(request: Request) {
     const { runId } = await runAndPersistReview(parsed.data);
     return NextResponse.json({ runId });
   } catch (err) {
+    if (isEmptyDiffError(err)) {
+      return NextResponse.json({ error: err.message }, { status: 422 });
+    }
+
     const correlationId = crypto.randomUUID();
 
     logger.error({ correlationId, prUrl, err }, "runAndPersistReview failed in review/run route");

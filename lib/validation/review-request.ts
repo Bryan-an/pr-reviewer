@@ -6,4 +6,4 @@ export const reviewRequestSchema = z.object({
 
 export type ReviewRequest = z.infer<typeof reviewRequestSchema>;
 
-export const runIdSchema = z.uuid();
+export const runIdSchema = z.cuid();

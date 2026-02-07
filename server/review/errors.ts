@@ -37,3 +37,12 @@ export class ReviewRunError extends Error {
 export function isReviewRunError(error: unknown): error is ReviewRunError {
   return error instanceof ReviewRunError;
 }
+
+export class EmptyDiffError extends Error {
+  public readonly name = "EmptyDiffError";
+  public readonly code = "EMPTY_DIFF";
+}
+
+export function isEmptyDiffError(error: unknown): error is EmptyDiffError {
+  return error instanceof EmptyDiffError;
+}
