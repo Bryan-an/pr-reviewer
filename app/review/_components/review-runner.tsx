@@ -31,12 +31,15 @@ type Action =
   | { type: typeof RUNNER_STATUS.Loading }
   | { type: typeof RUNNER_STATUS.Error; message: string };
 
-function reducer(_state: State, action: Action): State {
+function reducer(state: State, action: Action): State {
   switch (action.type) {
     case RUNNER_STATUS.Loading:
       return { status: RUNNER_STATUS.Loading, errorMessage: null };
     case RUNNER_STATUS.Error:
       return { status: RUNNER_STATUS.Error, errorMessage: action.message };
+    default: {
+      return state;
+    }
   }
 }
 
