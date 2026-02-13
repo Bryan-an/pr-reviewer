@@ -1,6 +1,5 @@
 ---
 paths:
-  - "server/ai/**"
   - ".coderabbit.yaml"
 ---
 
