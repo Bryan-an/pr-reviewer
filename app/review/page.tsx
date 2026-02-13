@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { FindingSchema } from "@/lib/validation/finding";
@@ -223,16 +225,19 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
 
   if (!prUrl) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Review preview
-        </h1>
+      <div className="flex min-h-screen items-center justify-center px-6 py-10">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle className="text-xl">Review preview</CardTitle>
+            <CardDescription>Missing PR URL.</CardDescription>
+          </CardHeader>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">Missing PR URL.</p>
-
-        <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
-          Go back
-        </Link>
+          <CardFooter className="flex justify-center">
+            <Link className={buttonVariants({ variant: "outline" })} href="/">
+              Go back
+            </Link>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
@@ -241,16 +246,19 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
 
   if (!parsed.success) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Review preview
-        </h1>
+      <div className="flex min-h-screen items-center justify-center px-6 py-10">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle className="text-xl">Review preview</CardTitle>
+            <CardDescription>Invalid input.</CardDescription>
+          </CardHeader>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">Invalid input.</p>
-
-        <Link className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50" href="/">
-          Go back
-        </Link>
+          <CardFooter className="flex justify-center">
+            <Link className={buttonVariants({ variant: "outline" })} href="/">
+              Go back
+            </Link>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
