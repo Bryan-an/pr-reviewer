@@ -1,8 +1,3 @@
----
-paths:
-  - "**/*.{tsx,jsx}"
----
-
 # React ID Usage
 
 - **Hardcoded IDs**: only when element appears once per page with a stable, human-readable ID
