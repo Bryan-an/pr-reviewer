@@ -1,8 +1,3 @@
----
-paths:
-  - "**/*.{ts,tsx}"
----
-
 # Enum Pattern: No Magic String Unions
 
 Define enums as `as const` objects, derive the union type, and export a values array for Zod.
