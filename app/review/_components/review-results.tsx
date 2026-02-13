@@ -1,19 +1,14 @@
-import Link from "next/link";
-import { AlertCircleIcon, CheckCircle2Icon, FileIcon, RefreshCwIcon, SendIcon } from "lucide-react";
+import { AlertCircleIcon, CheckCircle2Icon, FileIcon } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Markdown } from "@/components/markdown";
 import type { ReviewRunResult } from "@/server/review/types";
+
+import { NewReviewLink } from "./new-review-link";
+import { ReviewActionFooter } from "./review-action-footer";
+import { ReviewActionsProvider } from "./review-actions-context";
 
 // ---------------------------------------------------------------------------
 // Severity → badge styling
@@ -72,181 +67,167 @@ export function ReviewResults({
       : ".";
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
-      {/* ── Page heading ─────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Review preview</h1>
+    <ReviewActionsProvider>
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
+        {/* ── Page heading ─────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">Review preview</h1>
 
-        <Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/">
-          New review
-        </Link>
-      </div>
-
-      {/* ── Status alerts ────────────────────────────────────────────── */}
-      {published ? (
-        <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200 [&>svg]:text-emerald-600 dark:[&>svg]:text-emerald-400">
-          <CheckCircle2Icon />
-          <AlertDescription>
-            Published {publishedThreads} {publishedThreadsLabel}
-            {skippedMessage} Total threads considered: {totalThreads}.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {publishError ? (
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertDescription>
-            Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {error ? (
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertDescription>Review failed. {error}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {/* ── PR info + actions ────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            {result.pr.repoName}{" "}
-            <span className="text-muted-foreground font-normal">#{result.pr.prId}</span>
-          </CardTitle>
-
-          <CardDescription>{result.pr.title}</CardDescription>
-
-          <p className="text-muted-foreground text-xs">
-            Engine: <span className="font-medium">{result.engine.name}</span> · Findings:{" "}
-            <span className="font-medium">{result.summary.totalFindings}</span>
-          </p>
-        </CardHeader>
-
-        <CardFooter className="flex flex-wrap gap-3">
-          <form action={publishAction}>
-            <input type="hidden" name="prUrl" value={prUrl} />
-            {effectiveRunId ? <input type="hidden" name="runId" value={effectiveRunId} /> : null}
-            <input type="hidden" name="engineName" value={result.engine.name} />
-            <input type="hidden" name="correlationId" value={correlationId} />
-
-            <Button type="submit">
-              <SendIcon />
-              Publish to Azure DevOps
-            </Button>
-          </form>
-
-          <form action={rerunAction}>
-            <input type="hidden" name="prUrl" value={prUrl} />
-
-            <Button type="submit" variant="outline">
-              <RefreshCwIcon />
-              Re-run review
-            </Button>
-          </form>
-        </CardFooter>
-      </Card>
-
-      {/* ── Summary ──────────────────────────────────────────────────── */}
-      <section aria-labelledby="summary-heading">
-        <h2 id="summary-heading" className="mb-3 text-sm font-semibold">
-          Summary
-        </h2>
-
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="gap-1 py-4">
-            <CardContent>
-              <span className="text-muted-foreground text-xs">Errors</span>
-              <p className="text-2xl font-semibold tabular-nums">
-                {result.summary.bySeverity.error}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="gap-1 py-4">
-            <CardContent>
-              <span className="text-muted-foreground text-xs">Warnings</span>
-              <p className="text-2xl font-semibold tabular-nums">
-                {result.summary.bySeverity.warn}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="gap-1 py-4">
-            <CardContent>
-              <span className="text-muted-foreground text-xs">Info</span>
-              <p className="text-2xl font-semibold tabular-nums">
-                {result.summary.bySeverity.info}
-              </p>
-            </CardContent>
-          </Card>
+          <NewReviewLink />
         </div>
-      </section>
 
-      {/* ── Findings ─────────────────────────────────────────────────── */}
-      <section aria-labelledby="findings-heading">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 id="findings-heading" className="text-sm font-semibold">
-            Findings
+        {/* ── Status alerts ────────────────────────────────────────────── */}
+        {published ? (
+          <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200 [&>svg]:text-emerald-600 dark:[&>svg]:text-emerald-400">
+            <CheckCircle2Icon />
+            <AlertDescription>
+              Published {publishedThreads} {publishedThreadsLabel}
+              {skippedMessage} Total threads considered: {totalThreads}.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {publishError ? (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertDescription>
+              Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {error ? (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertDescription>Review failed. {error}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {/* ── PR info + actions ────────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {result.pr.repoName}{" "}
+              <span className="text-muted-foreground font-normal">#{result.pr.prId}</span>
+            </CardTitle>
+
+            <CardDescription>{result.pr.title}</CardDescription>
+
+            <p className="text-muted-foreground text-xs">
+              Engine: <span className="font-medium">{result.engine.name}</span> · Findings:{" "}
+              <span className="font-medium">{result.summary.totalFindings}</span>
+            </p>
+          </CardHeader>
+
+          <ReviewActionFooter
+            prUrl={prUrl}
+            effectiveRunId={effectiveRunId}
+            engineName={result.engine.name}
+            correlationId={correlationId}
+            publishAction={publishAction}
+            rerunAction={rerunAction}
+          />
+        </Card>
+
+        {/* ── Summary ──────────────────────────────────────────────────── */}
+        <section aria-labelledby="summary-heading">
+          <h2 id="summary-heading" className="mb-3 text-sm font-semibold">
+            Summary
           </h2>
 
-          <span className="text-muted-foreground text-xs">
-            Publishing is file-scoped only (no line anchoring in v1).
-          </span>
-        </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="gap-1 py-4">
+              <CardContent>
+                <span className="text-muted-foreground text-xs">Errors</span>
+                <p className="text-2xl font-semibold tabular-nums">
+                  {result.summary.bySeverity.error}
+                </p>
+              </CardContent>
+            </Card>
 
-        {result.findings.length === 0 ? (
-          <Card>
-            <CardContent className="text-muted-foreground py-8 text-center text-sm">
-              No findings from the stub engine.
-            </CardContent>
-          </Card>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {result.findings.map((f) => (
-              <li key={f.id}>
-                <Card>
-                  <CardHeader className="gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className={SEVERITY_BADGE_STYLES[f.severity]}>
-                        {f.severity}
-                      </Badge>
+            <Card className="gap-1 py-4">
+              <CardContent>
+                <span className="text-muted-foreground text-xs">Warnings</span>
+                <p className="text-2xl font-semibold tabular-nums">
+                  {result.summary.bySeverity.warn}
+                </p>
+              </CardContent>
+            </Card>
 
-                      <Badge variant="secondary">{f.category}</Badge>
+            <Card className="gap-1 py-4">
+              <CardContent>
+                <span className="text-muted-foreground text-xs">Info</span>
+                <p className="text-2xl font-semibold tabular-nums">
+                  {result.summary.bySeverity.info}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
-                      {f.filePath ? (
-                        <span className="text-muted-foreground inline-flex items-center gap-1 truncate text-xs">
-                          <FileIcon className="size-3 shrink-0" />
-                          {f.filePath}
-                        </span>
-                      ) : null}
-                    </div>
+        {/* ── Findings ─────────────────────────────────────────────────── */}
+        <section aria-labelledby="findings-heading">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="findings-heading" className="text-sm font-semibold">
+              Findings
+            </h2>
 
-                    <CardTitle className="text-sm">{f.title}</CardTitle>
-                  </CardHeader>
+            <span className="text-muted-foreground text-xs">
+              Publishing is file-scoped only (no line anchoring in v1).
+            </span>
+          </div>
 
-                  <CardContent className="flex flex-col gap-3">
-                    <Markdown className="text-muted-foreground text-sm" content={f.message} />
+          {result.findings.length === 0 ? (
+            <Card>
+              <CardContent className="text-muted-foreground py-8 text-center text-sm">
+                No findings from the stub engine.
+              </CardContent>
+            </Card>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {result.findings.map((f) => (
+                <li key={f.id}>
+                  <Card>
+                    <CardHeader className="gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className={SEVERITY_BADGE_STYLES[f.severity]}>
+                          {f.severity}
+                        </Badge>
 
-                    {f.recommendation ? (
-                      <div className="border-l-2 border-blue-200 pl-3 dark:border-blue-800">
-                        <p className="text-xs font-medium">Recommendation</p>
+                        <Badge variant="secondary">{f.category}</Badge>
 
-                        <Markdown
-                          className="text-muted-foreground text-sm"
-                          content={f.recommendation}
-                        />
+                        {f.filePath ? (
+                          <span className="text-muted-foreground inline-flex items-center gap-1 truncate text-xs">
+                            <FileIcon className="size-3 shrink-0" />
+                            {f.filePath}
+                          </span>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </CardContent>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+
+                      <CardTitle className="text-sm">{f.title}</CardTitle>
+                    </CardHeader>
+
+                    <CardContent className="flex flex-col gap-3">
+                      <Markdown className="text-muted-foreground text-sm" content={f.message} />
+
+                      {f.recommendation ? (
+                        <div className="border-l-2 border-blue-200 pl-3 dark:border-blue-800">
+                          <p className="text-xs font-medium">Recommendation</p>
+
+                          <Markdown
+                            className="text-muted-foreground text-sm"
+                            content={f.recommendation}
+                          />
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </ReviewActionsProvider>
   );
 }
