@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircleIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -169,8 +170,12 @@ export function ReviewRunner({ prUrl, cacheLoadError }: ReviewRunnerProps) {
   if (state.status === RUNNER_STATUS.Error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 py-10">
-        <Card className="w-full max-w-md text-center">
+        <Card className="w-full max-w-md text-center" role="alert">
           <CardHeader>
+            <div className="text-destructive flex justify-center">
+              <AlertCircleIcon className="size-8" />
+            </div>
+
             <CardTitle className="text-xl">Review failed</CardTitle>
 
             <CardDescription>
