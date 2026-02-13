@@ -1,5 +1,9 @@
 import Link from "next/link";
+import { ArrowLeftIcon, CircleCheckIcon, CircleXIcon } from "lucide-react";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 
 type PublishedPageProps = Readonly<{
@@ -17,43 +21,50 @@ export default async function ReviewPublishedPage({ searchParams }: PublishedPag
   const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
   const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;
 
-  const skippedMessage =
-    skippedThreads > 0
-      ? ` (skipped ${skippedThreads} already-posted ${skippedThreadsLabel}).`
-      : ".";
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-        Publish result
-      </h1>
+    <div className="flex min-h-screen items-center justify-center px-6 py-10">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl tracking-tight">Publish result</CardTitle>
+        </CardHeader>
 
-      {publishError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-          Publish failed. Please generate a preview again and retry.
-        </div>
-      ) : (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
-          Published {publishedThreads} {publishedThreadsLabel}
-          {skippedMessage} Total threads considered: {totalThreads}.
-        </div>
-      )}
+        <CardContent>
+          {publishError ? (
+            <Alert variant="destructive">
+              <CircleXIcon />
+              <AlertTitle>Publish failed</AlertTitle>
+              <AlertDescription>
+                Something went wrong while posting comments. Please generate a new preview and try
+                again.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="border-emerald-200 text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-200 [&>svg]:text-emerald-600 dark:[&>svg]:text-emerald-400">
+              <CircleCheckIcon />
+              <AlertTitle>
+                Published {publishedThreads} {publishedThreadsLabel}
+              </AlertTitle>
+              <AlertDescription className="text-emerald-800 dark:text-emerald-300">
+                {skippedThreads > 0 && (
+                  <>
+                    Skipped {skippedThreads} already-posted {skippedThreadsLabel}.{" "}
+                  </>
+                )}
+                Total threads considered: {totalThreads}.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
 
-      {prUrl ? (
-        <Link
-          className="w-fit self-start text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-          href={`/review?prUrl=${encodeURIComponent(prUrl)}`}
-        >
-          Back to preview
-        </Link>
-      ) : (
-        <Link
-          className="w-fit self-start text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-          href="/"
-        >
-          New review
-        </Link>
-      )}
+        <CardFooter>
+          <Button variant="outline" asChild>
+            <Link href={prUrl ? `/review?prUrl=${encodeURIComponent(prUrl)}` : "/"}>
+              <ArrowLeftIcon />
+              {prUrl ? "Back to preview" : "New review"}
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
