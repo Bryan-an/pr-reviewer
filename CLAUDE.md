@@ -93,7 +93,7 @@ Required: `AZURE_DEVOPS_PAT`
 
 Optional: `REPOS_DIR`, `CODERABBIT_BIN`, `CODERABBIT_TIMEOUT_MS`, `REVIEW_ENGINE` (`coderabbit` | `stub`), `DATABASE_URL` (default: `file:./pr-reviewer.db`), `LOG_LEVEL`
 
-Env schema defined in `lib/config/env.ts` with Zod validation. `LOG_LEVEL` is read directly via `process.env` in `server/logging/logger.ts` (not in Zod schema).
+Env schema defined in `lib/config/env.ts` with Zod validation.
 
 ## Claude Code Tooling
 

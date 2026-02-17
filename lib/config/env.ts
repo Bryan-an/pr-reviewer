@@ -11,6 +11,28 @@ export type ReviewEngine = (typeof REVIEW_ENGINE)[keyof typeof REVIEW_ENGINE];
 
 const reviewEngineValues = [REVIEW_ENGINE.Coderabbit, REVIEW_ENGINE.Stub] as const;
 
+export const LOG_LEVEL = {
+  Fatal: "fatal",
+  Error: "error",
+  Warn: "warn",
+  Info: "info",
+  Debug: "debug",
+  Trace: "trace",
+  Silent: "silent",
+} as const;
+
+export type LogLevel = (typeof LOG_LEVEL)[keyof typeof LOG_LEVEL];
+
+const logLevelValues = [
+  LOG_LEVEL.Fatal,
+  LOG_LEVEL.Error,
+  LOG_LEVEL.Warn,
+  LOG_LEVEL.Info,
+  LOG_LEVEL.Debug,
+  LOG_LEVEL.Trace,
+  LOG_LEVEL.Silent,
+] as const;
+
 const envSchema = z.object({
   AZURE_DEVOPS_PAT: z.string().min(1),
   REPOS_DIR: z.string().min(1).optional(),
@@ -18,6 +40,7 @@ const envSchema = z.object({
   CODERABBIT_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   REVIEW_ENGINE: z.enum(reviewEngineValues).optional(),
   DATABASE_URL: z.string().min(1).optional(),
+  LOG_LEVEL: z.enum(logLevelValues).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
