@@ -61,7 +61,7 @@ export async function publishAction(formData: FormData) {
 
   const engineName = getTrimmedStringFormField(formData, "engineName");
 
-  if (!runId) {
+  if (!runId || !engineName) {
     return redirectToPublishError({ prUrl });
   }
 
