@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getTrimmedStringFormField } from "@/lib/form-data";
+import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 
 import { REVIEW_FORM_FIELD } from "./review/_lib/form-fields";
 import { reviewUrl } from "./review/_lib/routes";

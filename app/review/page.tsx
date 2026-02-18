@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
+import { getFirst, parseNonNegativeIntParam } from "@/lib/utils/search-params";
 import { reviewRequestSchema, runIdSchema } from "@/lib/validation/review-request";
 import { logger } from "@/server/logging/logger";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
