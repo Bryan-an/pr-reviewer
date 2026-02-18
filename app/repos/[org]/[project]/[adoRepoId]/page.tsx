@@ -38,7 +38,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
     repositoryId: storedRepo.id,
     org,
     project,
-    adoRepoId,
+    adoRepoId: repo.id,
   };
 
   const boundToggleAction = toggleRuleAction.bind(null, ruleActionContext);
