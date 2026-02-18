@@ -1,35 +1,21 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
-import { reposListUrl } from "@/app/repos/_lib/routes";
+import { ORG_COOKIE } from "@/app/repos/_lib/cookies";
 import { getFirst, getTrimmedFirst, parseNonNegativeIntParam } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { ProjectsAndRepos } from "@/app/repos/_components/projects-and-repos";
+import { setOrgAction } from "@/app/repos/_actions/set-org-action";
 
 type ReposPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
-
-const ORG_COOKIE = "ado_org";
-
-async function setOrgAction(formData: FormData) {
-  "use server";
-  const org = getTrimmedStringFormField(formData, REPOS_FORM_FIELD.Org);
-  if (!org) redirect("/repos");
-
-  const jar = await cookies();
-  jar.set(ORG_COOKIE, org, { sameSite: "lax", httpOnly: true });
-
-  redirect(reposListUrl({ org }));
-}
 
 export default async function ReposPage({ searchParams }: ReposPageProps) {
   const params = await searchParams;
