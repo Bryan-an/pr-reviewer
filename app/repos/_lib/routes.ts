@@ -35,9 +35,10 @@ export function repoEditRuleErrorUrl(
   project: string,
   repoId: string,
   ruleId: string,
+  errorCode: string,
 ): string {
   return buildUrl(repoEditRulePath(org, project, repoId, ruleId), {
-    [RULE_SEARCH_PARAM.Error]: "1",
+    [RULE_SEARCH_PARAM.Error]: errorCode,
   });
 }
 

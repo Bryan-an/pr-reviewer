@@ -25,7 +25,20 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
   const ruleId = safeDecodeURIComponent(p.ruleId);
 
   const sp = (await searchParams) ?? {};
-  const showErrorBanner = getFirst(sp[RULE_SEARCH_PARAM.Error]) === "1";
+  const errorCode = getFirst(sp[RULE_SEARCH_PARAM.Error]);
+
+  const errorBannerMessage = (() => {
+    switch (errorCode) {
+      case "title":
+        return "Please provide a title for this rule.";
+      case "markdown":
+        return "Please provide markdown content for this rule.";
+      case "sortOrder":
+        return "Order must be a non-negative integer.";
+      default:
+        return undefined;
+    }
+  })();
 
   const repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
 
@@ -49,7 +62,15 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
     const sortOrder = Number(sortOrderRaw);
 
     if (!title) {
-      redirect(repoEditRuleErrorUrl(org, project, repo.id, ruleId));
+      redirect(repoEditRuleErrorUrl(org, project, repo.id, ruleId, "title"));
+    }
+
+    if (!markdown) {
+      redirect(repoEditRuleErrorUrl(org, project, repo.id, ruleId, "markdown"));
+    }
+
+    if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
+      redirect(repoEditRuleErrorUrl(org, project, repo.id, ruleId, "sortOrder"));
     }
 
     const current = await getRepoRuleById({ id: ruleId });
@@ -83,9 +104,9 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
         </p>
       </div>
 
-      {showErrorBanner ? (
+      {errorBannerMessage ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-          Please provide a title for this rule.
+          {errorBannerMessage}
         </div>
       ) : null}
 
