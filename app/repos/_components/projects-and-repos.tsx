@@ -1,3 +1,16 @@
+import { AlertCircleIcon } from "lucide-react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { listAzureDevOpsProjects } from "@/server/azure-devops/projects";
 
@@ -22,57 +35,59 @@ export async function ProjectsAndRepos(props: ProjectsAndReposProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex flex-col gap-3">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Project</div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Project</CardTitle>
+        </CardHeader>
 
+        <CardContent className="flex flex-col gap-3">
           {projectError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-              Failed to load projects. {projectError}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircleIcon />
+              <AlertDescription>Failed to load projects. {projectError}</AlertDescription>
+            </Alert>
           ) : null}
 
-          <form method="GET" className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <form method="GET" className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <input type="hidden" name={REPOS_FORM_FIELD.Org} value={props.decodedOrg} />
 
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              <span className="font-medium text-zinc-900 dark:text-zinc-50">Project</span>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="project-select">Project</Label>
 
-              <select
+              <Select
                 name={REPOS_FORM_FIELD.Project}
-                defaultValue={props.decodedProject}
-                className="h-11 rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+                defaultValue={props.decodedProject || undefined}
                 required
               >
-                <option value="" disabled>
-                  Select a project…
-                </option>
-                {projects
-                  .slice()
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((p) => (
-                    <option key={p.id} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
+                <SelectTrigger id="project-select" className="w-full">
+                  <SelectValue placeholder="Select a project…" />
+                </SelectTrigger>
 
-            <button
-              type="submit"
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-            >
+                <SelectContent>
+                  {projects
+                    .slice()
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.name}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" variant="outline">
               Browse repos
-            </button>
+            </Button>
           </form>
 
           {projectSelected ? null : (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="text-muted-foreground text-sm">
               Select a project to list its repositories.
             </p>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {projectSelected ? <RepositoriesList {...props} /> : null}
     </div>

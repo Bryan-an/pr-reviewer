@@ -2,6 +2,10 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
@@ -47,47 +51,41 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Repository rules
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Repository rules</h1>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="text-muted-foreground text-sm">
           Browse Azure DevOps repositories and manage optional Markdown rules used during PR review.
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex flex-col gap-2">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Azure DevOps</div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Azure DevOps</CardTitle>
+        </CardHeader>
 
-          <form action={setOrgAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <label className="flex flex-1 flex-col gap-1 text-sm">
-              <span className="font-medium text-zinc-900 dark:text-zinc-50">Organization</span>
-
-              <input
+        <CardContent>
+          <form action={setOrgAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="org-input">Organization</Label>
+              <Input
+                id="org-input"
                 name={REPOS_FORM_FIELD.Org}
                 defaultValue={decodedOrg}
                 placeholder="my-org"
-                className="h-11 rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
                 required
               />
-            </label>
+            </div>
 
-            <button
-              type="submit"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              Load projects
-            </button>
+            <Button type="submit">Load projects</Button>
           </form>
-        </div>
 
-        {org ? null : (
-          <div className="text-sm text-zinc-600 dark:text-zinc-300">
-            Enter an Azure DevOps organization to browse projects and repositories.
-          </div>
-        )}
-      </div>
+          {org ? null : (
+            <p className="text-muted-foreground mt-3 text-sm">
+              Enter an Azure DevOps organization to browse projects and repositories.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {org ? (
         <ProjectsAndRepos
@@ -103,8 +101,8 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
         />
       ) : null}
 
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-        <Link className="underline" href="/">
+      <div className="text-xs">
+        <Link className={buttonVariants({ variant: "link", size: "xs" })} href="/">
           Back to review
         </Link>
       </div>
