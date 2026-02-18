@@ -68,7 +68,7 @@ UI (App Router pages/components)
 
 ### AI engine interface
 
-Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings. Implementations: `coderabbit-engine.ts` (preferred), `stub-engine.ts` (testing). Selected via `REVIEW_ENGINE` env var.
+Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings. Implementations: `coderabbit/coderabbit-engine.ts` (preferred), `stub-engine.ts` (testing). Selected via `REVIEW_ENGINE` env var.
 
 ### Database models (Prisma/SQLite)
 
@@ -94,3 +94,9 @@ Required: `AZURE_DEVOPS_PAT`
 Optional: `REPOS_DIR`, `CODERABBIT_BIN`, `CODERABBIT_TIMEOUT_MS`, `REVIEW_ENGINE` (`coderabbit` | `stub`), `DATABASE_URL` (default: `file:./pr-reviewer.db`), `LOG_LEVEL`
 
 Env schema defined in `lib/config/env.ts` with Zod validation.
+
+## Claude Code Tooling
+
+- `.claude/rules/` — project conventions enforced contextually (architecture, enums, naming, git workflow, etc.)
+- `.claude/skills/` — auto-invoked skills for Next.js App Router, server/client components, Prisma, shadcn/ui, TDD, and debugging
+- `.mcp.json` — MCP server config (shadcn component registry)
