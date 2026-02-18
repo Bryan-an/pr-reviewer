@@ -15,9 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getTrimmedStringFormField } from "@/lib/form-data";
 
+import { REVIEW_FORM_FIELD } from "./review/_lib/form-fields";
+
 async function goToReview(formData: FormData) {
   "use server";
-  const prUrl = getTrimmedStringFormField(formData, "prUrl");
+  const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
   redirect(`/review?prUrl=${encodeURIComponent(prUrl)}`);
 }
 
@@ -37,11 +39,11 @@ export default function Home() {
         <CardContent className="grid gap-6">
           <form action={goToReview} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="prUrl">Pull request URL</Label>
+              <Label htmlFor={REVIEW_FORM_FIELD.PrUrl}>Pull request URL</Label>
 
               <Input
-                id="prUrl"
-                name="prUrl"
+                id={REVIEW_FORM_FIELD.PrUrl}
+                name={REVIEW_FORM_FIELD.PrUrl}
                 placeholder="https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{id}"
                 required
               />

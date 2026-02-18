@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
+import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { logger } from "@/server/logging/logger";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
@@ -52,14 +53,14 @@ export async function publishAction(formData: FormData) {
   const correlationId = getCorrelationIdFromFormData(formData);
   const redirectToPublishError = createRedirectToPublishError(correlationId);
 
-  const prUrl = getTrimmedStringFormField(formData, "prUrl");
-  const runId = getTrimmedStringFormField(formData, "runId");
+  const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
+  const runId = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.RunId);
 
   if (!prUrl) {
     return redirectToPublishError();
   }
 
-  const engineName = getTrimmedStringFormField(formData, "engineName");
+  const engineName = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.EngineName);
 
   if (!runId || !engineName) {
     return redirectToPublishError({ prUrl });
