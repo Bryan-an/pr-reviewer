@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { getTrimmedStringFormField } from "@/lib/form-data";
+import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { reviewUrl } from "../_lib/routes";
 import { reviewRequestSchema } from "@/lib/validation/review-request";

@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { getTrimmedStringFormField } from "@/lib/form-data";
+import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { repoBasePath, repoEditRuleErrorUrl } from "@/app/repos/_lib/routes";
-import { getFirst } from "@/lib/search-params";
+import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";

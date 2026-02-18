@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { getTrimmedStringFormField } from "@/lib/form-data";
+import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { REVIEW_FORM_FIELD } from "./form-fields";
 import { reviewPublishErrorUrl } from "./routes";
 import { FindingSchema } from "@/lib/validation/finding";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
-import { getTrimmedStringFormField } from "@/lib/form-data";
+import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import {
   repoBasePath,

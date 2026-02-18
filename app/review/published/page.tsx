@@ -4,7 +4,7 @@ import { ArrowLeftIcon, CircleCheckIcon, CircleXIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
+import { getFirst, parseNonNegativeIntParam } from "@/lib/utils/search-params";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { REVIEW_SEARCH_PARAM } from "../_lib/search-params";
 import { reviewUrl } from "../_lib/routes";
