@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { getFirst, getTrimmedFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { ProjectsAndRepos } from "@/app/repos/_components/projects-and-repos";
@@ -22,7 +23,7 @@ async function setOrgAction(formData: FormData) {
   const jar = await cookies();
   jar.set(ORG_COOKIE, org, { sameSite: "lax", httpOnly: true });
 
-  redirect(`/repos?org=${encodeURIComponent(org)}`);
+  redirect(`/repos?${REPOS_FORM_FIELD.Org}=${encodeURIComponent(org)}`);
 }
 
 export default async function ReposPage({ searchParams }: ReposPageProps) {
@@ -30,14 +31,14 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
 
   const jar = await cookies();
   const orgFromCookie = jar.get(ORG_COOKIE)?.value;
-  const org = getTrimmedFirst(params.org, orgFromCookie ?? "");
+  const org = getTrimmedFirst(params[REPOS_FORM_FIELD.Org], orgFromCookie ?? "");
 
-  const project = getTrimmedFirst(params.project);
-  const q = getTrimmedFirst(params.q);
-  const sort = getTrimmedFirst(params.sort, "name");
-  const order = getTrimmedFirst(params.order, "asc");
-  const hasRules = getFirst(params.hasRules) === "1";
-  const page = parseNonNegativeIntParam(getFirst(params.page), 0);
+  const project = getTrimmedFirst(params[REPOS_FORM_FIELD.Project]);
+  const q = getTrimmedFirst(params[REPOS_FORM_FIELD.Query]);
+  const sort = getTrimmedFirst(params[REPOS_SEARCH_PARAM.Sort], "name");
+  const order = getTrimmedFirst(params[REPOS_FORM_FIELD.Order], "asc");
+  const hasRules = getFirst(params[REPOS_FORM_FIELD.HasRules]) === "1";
+  const page = parseNonNegativeIntParam(getFirst(params[REPOS_SEARCH_PARAM.Page]), 0);
 
   const decodedOrg = safeDecodeURIComponent(org);
   const decodedProject = safeDecodeURIComponent(project);

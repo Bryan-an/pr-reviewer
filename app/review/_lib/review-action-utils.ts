@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { REVIEW_FORM_FIELD } from "./form-fields";
+import { REVIEW_SEARCH_PARAM } from "./search-params";
 import { FindingSchema } from "@/lib/validation/finding";
 import type { getCachedReviewRun } from "@/server/review/get-or-run-review";
 import { ReviewRunError } from "@/server/review/errors";
@@ -19,10 +20,12 @@ export function createRedirectToPublishError(correlationId: string) {
 
     const prUrlPart =
       typeof params?.prUrl === "string" && params.prUrl.trim() !== ""
-        ? `prUrl=${encodeURIComponent(params.prUrl)}&`
+        ? `${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(params.prUrl)}&`
         : "";
 
-    redirect(`${base}${prUrlPart}publishError=1&correlationId=${encodedCorrelationId}`);
+    redirect(
+      `${base}${prUrlPart}${REVIEW_SEARCH_PARAM.PublishError}=1&${REVIEW_FORM_FIELD.CorrelationId}=${encodedCorrelationId}`,
+    );
   };
 }
 

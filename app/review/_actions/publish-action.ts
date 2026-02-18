@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import { REVIEW_SEARCH_PARAM } from "../_lib/search-params";
 import { logger } from "@/server/logging/logger";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
@@ -105,6 +106,6 @@ export async function publishAction(formData: FormData) {
   });
 
   redirect(
-    `/review/published?prUrl=${encodeURIComponent(prUrl)}&engineName=${encodeURIComponent(engineName)}&published=1&publishedThreads=${result.publishedThreads}&skippedThreads=${result.skippedThreads}&totalThreads=${result.totalThreads}`,
+    `/review/published?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}&${REVIEW_FORM_FIELD.EngineName}=${encodeURIComponent(engineName)}&${REVIEW_SEARCH_PARAM.Published}=1&${REVIEW_SEARCH_PARAM.PublishedThreads}=${result.publishedThreads}&${REVIEW_SEARCH_PARAM.SkippedThreads}=${result.skippedThreads}&${REVIEW_SEARCH_PARAM.TotalThreads}=${result.totalThreads}`,
   );
 }

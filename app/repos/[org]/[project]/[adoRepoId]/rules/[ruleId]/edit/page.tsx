@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { getFirst } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
@@ -23,7 +24,7 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
   const ruleId = safeDecodeURIComponent(p.ruleId);
 
   const sp = (await searchParams) ?? {};
-  const showErrorBanner = getFirst(sp.error) === "1";
+  const showErrorBanner = getFirst(sp[RULE_SEARCH_PARAM.Error]) === "1";
 
   const repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
 
@@ -48,7 +49,7 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
 
     if (!title) {
       redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/${encodeURIComponent(ruleId)}/edit?error=1`,
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/${encodeURIComponent(ruleId)}/edit?${RULE_SEARCH_PARAM.Error}=1`,
       );
     }
 

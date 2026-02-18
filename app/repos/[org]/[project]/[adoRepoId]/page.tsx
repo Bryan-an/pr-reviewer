@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
 import { getTrimmedStringFormField } from "@/lib/form-data";
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { REPOS_FORM_FIELD, RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
@@ -74,7 +74,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
   const rules = await listRepoRules({ repositoryId: storedRepo.id });
 
-  const backHref = `/repos?org=${encodeURIComponent(org)}&project=${encodeURIComponent(project)}`;
+  const backHref = `/repos?${REPOS_FORM_FIELD.Org}=${encodeURIComponent(org)}&${REPOS_FORM_FIELD.Project}=${encodeURIComponent(project)}`;
   const newRuleHref = `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new`;
 
   return (

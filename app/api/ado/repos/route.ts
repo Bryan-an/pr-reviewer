@@ -2,13 +2,14 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
+import { ADO_API_SEARCH_PARAM } from "@/app/api/ado/_lib/search-params";
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { logger } from "@/server/logging/logger";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const org = url.searchParams.get("org")?.trim() ?? "";
-  const project = url.searchParams.get("project")?.trim() ?? "";
+  const org = url.searchParams.get(ADO_API_SEARCH_PARAM.Org)?.trim() ?? "";
+  const project = url.searchParams.get(ADO_API_SEARCH_PARAM.Project)?.trim() ?? "";
 
   if (!org) {
     return NextResponse.json({ error: "Missing org." }, { status: 400 });

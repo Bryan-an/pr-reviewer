@@ -20,7 +20,7 @@ import { REVIEW_FORM_FIELD } from "./review/_lib/form-fields";
 async function goToReview(formData: FormData) {
   "use server";
   const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
-  redirect(`/review?prUrl=${encodeURIComponent(prUrl)}`);
+  redirect(`/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}`);
 }
 
 export default function Home() {
