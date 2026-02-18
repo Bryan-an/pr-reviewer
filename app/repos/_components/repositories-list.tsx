@@ -1,5 +1,27 @@
 import Link from "next/link";
+import { AlertCircleIcon } from "lucide-react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
 
@@ -73,147 +95,161 @@ export async function RepositoriesList(props: RepositoriesListProps) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-end justify-between gap-3">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Repositories</h2>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">{total} total</div>
+          <h2 className="text-sm font-semibold">Repositories</h2>
+          <div className="text-muted-foreground text-xs">{total} total</div>
         </div>
 
         <form method="GET" className="grid grid-cols-1 gap-2 sm:grid-cols-6">
           <input type="hidden" name={REPOS_FORM_FIELD.Org} value={props.decodedOrg} />
           <input type="hidden" name={REPOS_FORM_FIELD.Project} value={props.decodedProject} />
 
-          <label className="sm:col-span-3">
-            <span className="sr-only">Search</span>
+          <div className="sm:col-span-3">
+            <Label htmlFor="repo-search" className="sr-only">
+              Search
+            </Label>
 
-            <input
+            <Input
+              id="repo-search"
               name={REPOS_FORM_FIELD.Query}
               defaultValue={props.q}
               placeholder="Search repositories…"
-              className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
             />
-          </label>
+          </div>
 
-          <label className="sm:col-span-1">
-            <span className="sr-only">Sort</span>
+          <div className="sm:col-span-1">
+            <Label htmlFor="repo-order" className="sr-only">
+              Sort
+            </Label>
 
-            <select
-              name={REPOS_FORM_FIELD.Order}
-              defaultValue={props.order}
-              className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-            >
-              <option value="asc">A → Z</option>
-              <option value="desc">Z → A</option>
-            </select>
-          </label>
+            <Select name={REPOS_FORM_FIELD.Order} defaultValue={props.order}>
+              <SelectTrigger id="repo-order" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
 
-          <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 shadow-sm sm:col-span-1 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50">
-            <input
-              type="checkbox"
+              <SelectContent>
+                <SelectItem value="asc">A → Z</SelectItem>
+                <SelectItem value="desc">Z → A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="border-input bg-background flex items-center gap-2 rounded-md border px-3 text-sm shadow-xs sm:col-span-1">
+            <Checkbox
+              id="repo-has-rules"
               name={REPOS_FORM_FIELD.HasRules}
               value="1"
               defaultChecked={props.hasRules}
-              className="h-4 w-4"
-            />{" "}
-            Has rules
-          </label>
+            />
 
-          <button
-            type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 sm:col-span-1 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
+            <Label htmlFor="repo-has-rules" className="cursor-pointer">
+              Has rules
+            </Label>
+          </div>
+
+          <Button type="submit" className="sm:col-span-1">
             Apply
-          </button>
+          </Button>
         </form>
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-          Failed to load repositories. {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertDescription>Failed to load repositories. {error}</AlertDescription>
+        </Alert>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="grid grid-cols-12 gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-3 text-xs font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-300">
-          <div className="col-span-7">Repository</div>
-          <div className="col-span-3">Rules</div>
-          <div className="col-span-2 text-right">Action</div>
-        </div>
+      <div className="rounded-xl border shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="w-[55%]">Repository</TableHead>
+              <TableHead className="w-[25%]">Rules</TableHead>
+              <TableHead className="w-[20%]">Action</TableHead>
+            </TableRow>
+          </TableHeader>
 
-        {pageItems.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-zinc-600 dark:text-zinc-300">No repositories.</div>
-        ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-            {pageItems.map((r) => {
-              const count = ruleCounts[r.id] ?? 0;
+          <TableBody>
+            {pageItems.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-muted-foreground py-6 text-center">
+                  No repositories.
+                </TableCell>
+              </TableRow>
+            ) : (
+              pageItems.map((r) => {
+                const count = ruleCounts[r.id] ?? 0;
+                const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
 
-              const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <div className="text-sm font-medium">{r.name}</div>
+                      <div className="text-muted-foreground mt-1 max-w-xs truncate text-xs">
+                        {r.remoteUrl}
+                      </div>
+                    </TableCell>
 
-              return (
-                <li key={r.id} className="grid grid-cols-12 gap-3 px-4 py-4">
-                  <div className="col-span-7">
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {r.name}
-                    </div>
+                    <TableCell>
+                      {count > 0 ? (
+                        <Badge
+                          variant="secondary"
+                          className="bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
+                        >
+                          {count} rule{count === 1 ? "" : "s"}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No rules</span>
+                      )}
+                    </TableCell>
 
-                    <div className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
-                      {r.remoteUrl}
-                    </div>
-                  </div>
-
-                  <div className="col-span-3 flex items-center">
-                    {count > 0 ? (
-                      <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
-                        {count} rule{count === 1 ? "" : "s"}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">No rules</span>
-                    )}
-                  </div>
-
-                  <div className="col-span-2 flex items-center justify-end">
-                    <Link
-                      className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-                      href={href}
-                    >
-                      Manage
-                    </Link>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                    <TableCell>
+                      <Link className={buttonVariants({ variant: "link", size: "sm" })} href={href}>
+                        Manage
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="text-muted-foreground text-xs">
           Page {safePage + 1} of {totalPages}
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            className={`text-sm font-medium underline ${
-              safePage <= 0
-                ? "pointer-events-none text-zinc-400 dark:text-zinc-600"
-                : "text-zinc-900 dark:text-zinc-50"
-            }`}
-            href={reposListUrl({ ...baseFilterParams, page: Math.max(0, safePage - 1) })}
-          >
-            Prev
-          </Link>
+        <div className="flex items-center gap-2">
+          {safePage > 0 ? (
+            <Link
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              href={reposListUrl({ ...baseFilterParams, page: Math.max(0, safePage - 1) })}
+            >
+              Prev
+            </Link>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Prev
+            </Button>
+          )}
 
-          <Link
-            className={`text-sm font-medium underline ${
-              safePage >= totalPages - 1
-                ? "pointer-events-none text-zinc-400 dark:text-zinc-600"
-                : "text-zinc-900 dark:text-zinc-50"
-            }`}
-            href={reposListUrl({
-              ...baseFilterParams,
-              page: Math.min(totalPages - 1, safePage + 1),
-            })}
-          >
-            Next
-          </Link>
+          {safePage < totalPages - 1 ? (
+            <Link
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              href={reposListUrl({
+                ...baseFilterParams,
+                page: Math.min(totalPages - 1, safePage + 1),
+              })}
+            >
+              Next
+            </Link>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Next
+            </Button>
+          )}
         </div>
       </div>
     </div>

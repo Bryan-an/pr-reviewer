@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AlertCircleIcon } from "lucide-react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
@@ -64,21 +68,22 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
     return (
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-            New rule
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">New rule</h1>
 
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="text-muted-foreground text-sm">
             {org} · {project} · <span className="font-mono text-xs">{adoRepoId}</span>
           </p>
         </div>
 
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-          Unable to load repository details. Please verify your Azure DevOps access and try again.
-        </div>
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertDescription>
+            Unable to load repository details. Please verify your Azure DevOps access and try again.
+          </AlertDescription>
+        </Alert>
 
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">
-          <Link className="underline" href={backHref}>
+        <div className="text-xs">
+          <Link className={buttonVariants({ variant: "link", size: "xs" })} href={backHref}>
             Back
           </Link>
         </div>
@@ -122,33 +127,34 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          New rule
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">New rule</h1>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="text-muted-foreground text-sm">
           {repo.name} · {org} · {project}
         </p>
       </div>
 
       {errorBannerMessage ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-          {errorBannerMessage}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertDescription>{errorBannerMessage}</AlertDescription>
+        </Alert>
       ) : null}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
-        <form action={createAction}>
-          <MarkdownRuleEditor
-            initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
-            submitLabel="Create rule"
-            cancelHref={cancelHref}
-          />
-        </form>
-      </div>
+      <Card>
+        <CardContent>
+          <form action={createAction}>
+            <MarkdownRuleEditor
+              initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
+              submitLabel="Create rule"
+              cancelHref={cancelHref}
+            />
+          </form>
+        </CardContent>
+      </Card>
 
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-        <Link className="underline" href={cancelHref}>
+      <div className="text-xs">
+        <Link className={buttonVariants({ variant: "link", size: "xs" })} href={cancelHref}>
           Back
         </Link>
       </div>

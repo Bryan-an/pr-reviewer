@@ -1,8 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import { Markdown } from "@/components/markdown";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 
 type MarkdownRuleEditorProps = Readonly<{
@@ -39,61 +45,63 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-900 dark:text-zinc-50">Title</span>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rule-title">Title</Label>
 
-          <input
+          <Input
+            id="rule-title"
             name={RULE_FORM_FIELD.Title}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Error handling standards"
-            className="h-11 rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
             required
           />
-        </label>
+        </div>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-900 dark:text-zinc-50">Order</span>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rule-sort-order">Order</Label>
 
-          <input
+          <Input
+            id="rule-sort-order"
             name={RULE_FORM_FIELD.SortOrder}
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             inputMode="numeric"
-            className="h-11 rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
           />
 
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="text-muted-foreground text-xs">
             Lower numbers apply first. Current:{" "}
             <span className="font-medium">{sortOrderNumber}</span>
           </span>
-        </label>
+        </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-50">
-        <input
-          type="checkbox"
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="rule-enabled"
           name={RULE_FORM_FIELD.Enabled}
           value="1"
           checked={enabled}
-          onChange={(e) => setEnabled(e.target.checked)}
-          className="h-4 w-4"
-        />{" "}
-        Enabled (apply this rule during reviews)
-      </label>
+          onCheckedChange={(checked) => setEnabled(checked === true)}
+        />
+
+        <Label htmlFor="rule-enabled" className="cursor-pointer">
+          Enabled (apply this rule during reviews)
+        </Label>
+      </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Markdown</div>
+          <Label htmlFor="rule-markdown">Markdown</Label>
 
-          <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="bg-muted inline-flex rounded-lg border p-1 text-sm">
             <button
               type="button"
               onClick={() => setMode(MODE.Edit)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                 mode === MODE.Edit
-                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                  : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent"
               }`}
             >
               Edit
@@ -104,8 +112,8 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
               onClick={() => setMode(MODE.Preview)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                 mode === MODE.Preview
-                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                  : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent"
               }`}
             >
               Preview
@@ -115,49 +123,38 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className={`${mode === MODE.Preview ? "hidden lg:block" : "block"}`}>
-            <textarea
+            <Textarea
+              id="rule-markdown"
               name={RULE_FORM_FIELD.Markdown}
               value={markdown}
               onChange={(e) => setMarkdown(e.target.value)}
               placeholder="Write your guidelines in Markdown…"
-              className="min-h-[340px] w-full rounded-lg border border-zinc-200 bg-white p-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+              className="min-h-85"
             />
 
-            <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="text-muted-foreground mt-2 text-xs">
               Tip: be explicit and actionable. Prefer short sections and bullet points.
             </div>
           </div>
 
           <div
-            className={`rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 ${
-              mode === MODE.Edit ? "hidden lg:block" : "block"
-            }`}
+            className={`rounded-lg border p-4 ${mode === MODE.Edit ? "hidden lg:block" : "block"}`}
           >
             {markdown.trim() ? (
-              <Markdown className="text-sm text-zinc-700 dark:text-zinc-300" content={markdown} />
+              <Markdown className="text-muted-foreground text-sm" content={markdown} />
             ) : (
-              <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                Nothing to preview yet.
-              </div>
+              <div className="text-muted-foreground text-sm">Nothing to preview yet.</div>
             )}
           </div>
         </div>
       </div>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-        <a
-          href={cancelHref}
-          className="inline-flex h-11 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-        >
-          Cancel
-        </a>
+        <Button variant="outline" asChild>
+          <Link href={cancelHref}>Cancel</Link>
+        </Button>
 
-        <button
-          type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          {submitLabel}
-        </button>
+        <Button type="submit">{submitLabel}</Button>
       </div>
     </div>
   );

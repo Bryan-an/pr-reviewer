@@ -1,8 +1,10 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
-type ConfirmSubmitButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
+import { Button } from "@/components/ui/button";
+
+type ConfirmSubmitButtonProps = Omit<ComponentProps<typeof Button>, "type"> & {
   confirmText: string;
   children: ReactNode;
 };
@@ -14,7 +16,7 @@ export function ConfirmSubmitButton({
   ...rest
 }: ConfirmSubmitButtonProps) {
   return (
-    <button
+    <Button
       {...rest}
       type="submit"
       onClick={(e) => {
@@ -27,6 +29,6 @@ export function ConfirmSubmitButton({
       }}
     >
       {children}
-    </button>
+    </Button>
   );
 }

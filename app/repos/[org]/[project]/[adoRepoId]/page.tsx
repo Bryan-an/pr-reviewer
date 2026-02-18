@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Markdown } from "@/components/markdown";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
@@ -82,142 +85,133 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-              {repo.name}
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{repo.name}</h1>
 
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="text-muted-foreground text-sm">
               {org} · {project} · <span className="font-mono text-xs">{repo.id}</span>
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              href={newRuleHref}
-            >
-              New rule
-            </Link>
+            <Button asChild>
+              <Link href={newRuleHref}>New rule</Link>
+            </Button>
 
-            <Link
-              className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-              href={backHref}
-            >
+            <Link className={buttonVariants({ variant: "link" })} href={backHref}>
               Back
             </Link>
           </div>
         </div>
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{repo.remoteUrl}</p>
+        <p className="text-muted-foreground text-xs">{repo.remoteUrl}</p>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Rules</h2>
+          <h2 className="text-sm font-semibold">Rules</h2>
 
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="text-muted-foreground text-xs">
             Enabled rules are applied during PR reviews for this repo.
           </span>
         </div>
 
         {rules.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-            No rules yet. Create one to tailor reviews for this repository.
-          </div>
+          <Card>
+            <CardContent>
+              <p className="text-muted-foreground text-sm">
+                No rules yet. Create one to tailor reviews for this repository.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
           <ul className="flex flex-col gap-3">
             {rules.map((r) => {
               const editHref = repoEditRulePath(org, project, repo.id, r.id);
 
               return (
-                <li
-                  key={r.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
-                >
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                            {r.title}
+                <li key={r.id}>
+                  <Card>
+                    <CardContent>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-sm font-semibold">{r.title}</div>
+
+                              {r.enabled ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
+                                >
+                                  enabled
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">disabled</Badge>
+                              )}
+
+                              <span className="text-muted-foreground text-xs">
+                                order {r.sortOrder}
+                              </span>
+                            </div>
+
+                            <div className="text-muted-foreground text-xs">
+                              Updated {new Date(r.updatedAt).toLocaleString()}
+                            </div>
                           </div>
 
-                          {r.enabled ? (
-                            <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
-                              enabled
-                            </span>
-                          ) : (
-                            <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-                              disabled
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <form action={toggleAction}>
+                              <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
+                              <input
+                                type="hidden"
+                                name={RULE_FORM_FIELD.Enabled}
+                                value={r.enabled ? "0" : "1"}
+                              />
 
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                            order {r.sortOrder}
-                          </span>
-                        </div>
+                              <Button type="submit" variant="outline" size="sm">
+                                {r.enabled ? "Disable" : "Enable"}
+                              </Button>
+                            </form>
 
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                          Updated {new Date(r.updatedAt).toLocaleString()}
-                        </div>
-                      </div>
+                            <Link
+                              className={buttonVariants({ variant: "link", size: "sm" })}
+                              href={editHref}
+                            >
+                              Edit
+                            </Link>
 
-                      <div className="flex items-center gap-3">
-                        <form action={toggleAction}>
-                          <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
-                          <input
-                            type="hidden"
-                            name={RULE_FORM_FIELD.Enabled}
-                            value={r.enabled ? "0" : "1"}
-                          />
+                            <form action={deleteAction}>
+                              <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
 
-                          <button
-                            type="submit"
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-                          >
-                            {r.enabled ? "Disable" : "Enable"}
-                          </button>
-                        </form>
-
-                        <Link
-                          className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-                          href={editHref}
-                        >
-                          Edit
-                        </Link>
-
-                        <form action={deleteAction}>
-                          <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
-
-                          <ConfirmSubmitButton
-                            confirmText="Delete this rule? This cannot be undone."
-                            className="text-sm font-medium text-red-700 underline hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
-                          >
-                            Delete
-                          </ConfirmSubmitButton>
-                        </form>
-                      </div>
-                    </div>
-
-                    <details className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/30">
-                      <summary className="cursor-pointer text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                        Preview
-                      </summary>
-
-                      <div className="mt-3">
-                        {r.markdown.trim() ? (
-                          <Markdown
-                            className="text-sm text-zinc-700 dark:text-zinc-300"
-                            content={r.markdown}
-                          />
-                        ) : (
-                          <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Empty rule.
+                              <ConfirmSubmitButton
+                                variant="link"
+                                size="sm"
+                                confirmText="Delete this rule? This cannot be undone."
+                                className="text-destructive hover:text-destructive/80"
+                              >
+                                Delete
+                              </ConfirmSubmitButton>
+                            </form>
                           </div>
-                        )}
+                        </div>
+
+                        <details className="bg-muted/50 rounded-lg border p-4">
+                          <summary className="cursor-pointer text-sm font-medium">Preview</summary>
+
+                          <div className="mt-3">
+                            {r.markdown.trim() ? (
+                              <Markdown
+                                className="text-muted-foreground text-sm"
+                                content={r.markdown}
+                              />
+                            ) : (
+                              <div className="text-muted-foreground text-sm">Empty rule.</div>
+                            )}
+                          </div>
+                        </details>
                       </div>
-                    </details>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </li>
               );
             })}

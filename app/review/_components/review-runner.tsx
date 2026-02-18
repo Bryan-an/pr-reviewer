@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useId, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, TriangleAlertIcon } from "lucide-react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -214,12 +216,10 @@ export function ReviewRunner({ prUrl, cacheLoadError }: ReviewRunnerProps) {
 
         {cacheLoadError ? (
           <CardContent>
-            <div
-              role="alert"
-              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
-            >
-              {cacheLoadError}
-            </div>
+            <Alert>
+              <TriangleAlertIcon />
+              <AlertDescription>{cacheLoadError}</AlertDescription>
+            </Alert>
           </CardContent>
         ) : null}
 
