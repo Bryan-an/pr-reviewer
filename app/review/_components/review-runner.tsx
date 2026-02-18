@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import { reviewUrl } from "../_lib/routes";
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -121,9 +121,7 @@ export function ReviewRunner({ prUrl, cacheLoadError }: ReviewRunnerProps) {
           return;
         }
 
-        router.replace(
-          `/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}&${REVIEW_FORM_FIELD.RunId}=${encodeURIComponent(runId)}`,
-        );
+        router.replace(reviewUrl({ prUrl, runId }));
       } catch (err) {
         if (signal.aborted) return;
 

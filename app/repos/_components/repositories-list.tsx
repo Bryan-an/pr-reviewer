@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
-import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
+import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
@@ -19,17 +19,6 @@ export type RepositoriesListProps = Readonly<{
   hasRules: boolean;
   page: number;
 }>;
-
-function linkWithParams(params: Record<string, string | undefined>) {
-  const sp = new URLSearchParams();
-
-  for (const [k, v] of Object.entries(params)) {
-    if (typeof v === "string" && v.trim() !== "") sp.set(k, v);
-  }
-
-  const query = sp.toString();
-  return query ? `/repos?${query}` : "/repos";
-}
 
 export async function RepositoriesList(props: RepositoriesListProps) {
   let repositories: Awaited<ReturnType<typeof listAzureDevOpsRepositories>>["repositories"] = [];
@@ -71,13 +60,13 @@ export async function RepositoriesList(props: RepositoriesListProps) {
   const end = start + PAGE_SIZE;
   const pageItems = sorted.slice(start, end);
 
-  const baseParams = {
-    [REPOS_FORM_FIELD.Org]: props.decodedOrg,
-    [REPOS_FORM_FIELD.Project]: props.decodedProject,
-    [REPOS_FORM_FIELD.Query]: props.q || undefined,
-    [REPOS_SEARCH_PARAM.Sort]: props.sort || undefined,
-    [REPOS_FORM_FIELD.Order]: props.order || undefined,
-    [REPOS_FORM_FIELD.HasRules]: props.hasRules ? "1" : undefined,
+  const baseFilterParams = {
+    org: props.decodedOrg,
+    project: props.decodedProject,
+    q: props.q || undefined,
+    sort: props.sort || undefined,
+    order: props.order || undefined,
+    hasRules: props.hasRules || undefined,
   };
 
   return (
@@ -156,9 +145,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
             {pageItems.map((r) => {
               const count = ruleCounts[r.id] ?? 0;
 
-              const href = `/repos/${encodeURIComponent(props.decodedOrg)}/${encodeURIComponent(
-                props.decodedProject,
-              )}/${encodeURIComponent(r.id)}`;
+              const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
 
               return (
                 <li key={r.id} className="grid grid-cols-12 gap-3 px-4 py-4">
@@ -209,10 +196,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                 ? "pointer-events-none text-zinc-400 dark:text-zinc-600"
                 : "text-zinc-900 dark:text-zinc-50"
             }`}
-            href={linkWithParams({
-              ...baseParams,
-              [REPOS_SEARCH_PARAM.Page]: String(Math.max(0, safePage - 1)),
-            })}
+            href={reposListUrl({ ...baseFilterParams, page: Math.max(0, safePage - 1) })}
           >
             Prev
           </Link>
@@ -223,9 +207,9 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                 ? "pointer-events-none text-zinc-400 dark:text-zinc-600"
                 : "text-zinc-900 dark:text-zinc-50"
             }`}
-            href={linkWithParams({
-              ...baseParams,
-              [REPOS_SEARCH_PARAM.Page]: String(Math.min(totalPages - 1, safePage + 1)),
+            href={reposListUrl({
+              ...baseFilterParams,
+              page: Math.min(totalPages - 1, safePage + 1),
             })}
           >
             Next

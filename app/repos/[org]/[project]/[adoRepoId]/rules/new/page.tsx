@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
-import { REPOS_FORM_FIELD, RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
+import { repoBasePath, repoNewRuleErrorUrl, reposListUrl } from "@/app/repos/_lib/routes";
 import { getFirst } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
@@ -58,7 +59,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
       "NewRulePage: getAzureDevOpsRepository/upsertRepositoryFromAdoRepo failed",
     );
 
-    const backHref = `/repos?${REPOS_FORM_FIELD.Org}=${encodeURIComponent(org)}&${REPOS_FORM_FIELD.Project}=${encodeURIComponent(project)}`;
+    const backHref = reposListUrl({ org, project });
 
     return (
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
@@ -94,21 +95,15 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
     const sortOrder = Number(sortOrderRaw);
 
     if (!title) {
-      redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?${RULE_SEARCH_PARAM.Error}=title`,
-      );
+      redirect(repoNewRuleErrorUrl(org, project, repo.id, "title"));
     }
 
     if (!markdown) {
-      redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?${RULE_SEARCH_PARAM.Error}=markdown`,
-      );
+      redirect(repoNewRuleErrorUrl(org, project, repo.id, "markdown"));
     }
 
     if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
-      redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?${RULE_SEARCH_PARAM.Error}=sortOrder`,
-      );
+      redirect(repoNewRuleErrorUrl(org, project, repo.id, "sortOrder"));
     }
 
     await createRepoRule({
@@ -119,12 +114,10 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
       sortOrder: Number.isFinite(sortOrder) && Number.isInteger(sortOrder) ? sortOrder : 0,
     });
 
-    redirect(
-      `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}`,
-    );
+    redirect(repoBasePath(org, project, repo.id));
   }
 
-  const cancelHref = `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}`;
+  const cancelHref = repoBasePath(org, project, repo.id);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">

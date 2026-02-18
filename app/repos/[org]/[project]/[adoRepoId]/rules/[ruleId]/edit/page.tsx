@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
+import { repoBasePath, repoEditRuleErrorUrl } from "@/app/repos/_lib/routes";
 import { getFirst } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
@@ -48,9 +49,7 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
     const sortOrder = Number(sortOrderRaw);
 
     if (!title) {
-      redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/${encodeURIComponent(ruleId)}/edit?${RULE_SEARCH_PARAM.Error}=1`,
-      );
+      redirect(repoEditRuleErrorUrl(org, project, repo.id, ruleId));
     }
 
     const current = await getRepoRuleById({ id: ruleId });
@@ -67,12 +66,10 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
       sortOrder: Number.isFinite(sortOrder) && Number.isInteger(sortOrder) ? sortOrder : 0,
     });
 
-    redirect(
-      `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}`,
-    );
+    redirect(repoBasePath(org, project, repo.id));
   }
 
-  const cancelHref = `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}`;
+  const cancelHref = repoBasePath(org, project, repo.id);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">

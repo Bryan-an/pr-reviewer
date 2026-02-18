@@ -16,11 +16,12 @@ import { Label } from "@/components/ui/label";
 import { getTrimmedStringFormField } from "@/lib/form-data";
 
 import { REVIEW_FORM_FIELD } from "./review/_lib/form-fields";
+import { reviewUrl } from "./review/_lib/routes";
 
 async function goToReview(formData: FormData) {
   "use server";
   const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
-  redirect(`/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}`);
+  redirect(reviewUrl({ prUrl }));
 }
 
 export default function Home() {
