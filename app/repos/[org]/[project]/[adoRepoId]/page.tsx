@@ -3,7 +3,13 @@ import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
 import { getTrimmedStringFormField } from "@/lib/form-data";
-import { REPOS_FORM_FIELD, RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import {
+  repoBasePath,
+  repoEditRulePath,
+  repoNewRulePath,
+  reposListUrl,
+} from "@/app/repos/_lib/routes";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
@@ -40,10 +46,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
     const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
     const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
 
-    if (!id)
-      redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(adoRepoId)}`,
-      );
+    if (!id) redirect(repoBasePath(org, project, adoRepoId));
 
     const existing = await getRepoRuleById({ id });
 
@@ -58,10 +61,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
     "use server";
     const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
 
-    if (!id)
-      redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(adoRepoId)}`,
-      );
+    if (!id) redirect(repoBasePath(org, project, adoRepoId));
 
     const existing = await getRepoRuleById({ id });
 
@@ -74,8 +74,8 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
   const rules = await listRepoRules({ repositoryId: storedRepo.id });
 
-  const backHref = `/repos?${REPOS_FORM_FIELD.Org}=${encodeURIComponent(org)}&${REPOS_FORM_FIELD.Project}=${encodeURIComponent(project)}`;
-  const newRuleHref = `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new`;
+  const backHref = reposListUrl({ org, project });
+  const newRuleHref = repoNewRulePath(org, project, repo.id);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
@@ -127,9 +127,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
         ) : (
           <ul className="flex flex-col gap-3">
             {rules.map((r) => {
-              const editHref = `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(
-                repo.id,
-              )}/rules/${encodeURIComponent(r.id)}/edit`;
+              const editHref = repoEditRulePath(org, project, repo.id, r.id);
 
               return (
                 <li

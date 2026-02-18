@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { REVIEW_SEARCH_PARAM } from "../_lib/search-params";
+import { reviewUrl } from "../_lib/routes";
 
 type PublishedPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -69,9 +70,7 @@ export default async function ReviewPublishedPage({ searchParams }: PublishedPag
 
         <CardFooter>
           <Button variant="outline" asChild>
-            <Link
-              href={prUrl ? `/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}` : "/"}
-            >
+            <Link href={prUrl ? reviewUrl({ prUrl }) : "/"}>
               <ArrowLeftIcon />
               {prUrl ? "Back to preview" : "New review"}
             </Link>

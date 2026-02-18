@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
+import { reposListUrl } from "@/app/repos/_lib/routes";
 import { getFirst, getTrimmedFirst, parseNonNegativeIntParam } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { ProjectsAndRepos } from "@/app/repos/_components/projects-and-repos";
@@ -23,7 +24,7 @@ async function setOrgAction(formData: FormData) {
   const jar = await cookies();
   jar.set(ORG_COOKIE, org, { sameSite: "lax", httpOnly: true });
 
-  redirect(`/repos?${REPOS_FORM_FIELD.Org}=${encodeURIComponent(org)}`);
+  redirect(reposListUrl({ org }));
 }
 
 export default async function ReposPage({ searchParams }: ReposPageProps) {
