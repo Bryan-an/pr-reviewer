@@ -5,6 +5,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getFirst, parseNonNegativeIntParam } from "@/lib/search-params";
+import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import { REVIEW_SEARCH_PARAM } from "../_lib/search-params";
 
 type PublishedPageProps = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -12,11 +14,20 @@ type PublishedPageProps = Readonly<{
 
 export default async function ReviewPublishedPage({ searchParams }: PublishedPageProps) {
   const params = await searchParams;
-  const prUrl = getFirst(params.prUrl);
-  const publishError = getFirst(params.publishError) === "1";
-  const publishedThreads = parseNonNegativeIntParam(getFirst(params.publishedThreads), 0);
-  const skippedThreads = parseNonNegativeIntParam(getFirst(params.skippedThreads), 0);
-  const totalThreads = parseNonNegativeIntParam(getFirst(params.totalThreads), 0);
+  const prUrl = getFirst(params[REVIEW_FORM_FIELD.PrUrl]);
+  const publishError = getFirst(params[REVIEW_SEARCH_PARAM.PublishError]) === "1";
+  const publishedThreads = parseNonNegativeIntParam(
+    getFirst(params[REVIEW_SEARCH_PARAM.PublishedThreads]),
+    0,
+  );
+  const skippedThreads = parseNonNegativeIntParam(
+    getFirst(params[REVIEW_SEARCH_PARAM.SkippedThreads]),
+    0,
+  );
+  const totalThreads = parseNonNegativeIntParam(
+    getFirst(params[REVIEW_SEARCH_PARAM.TotalThreads]),
+    0,
+  );
 
   const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
   const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;
@@ -58,7 +69,9 @@ export default async function ReviewPublishedPage({ searchParams }: PublishedPag
 
         <CardFooter>
           <Button variant="outline" asChild>
-            <Link href={prUrl ? `/review?prUrl=${encodeURIComponent(prUrl)}` : "/"}>
+            <Link
+              href={prUrl ? `/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}` : "/"}
+            >
               <ArrowLeftIcon />
               {prUrl ? "Back to preview" : "New review"}
             </Link>

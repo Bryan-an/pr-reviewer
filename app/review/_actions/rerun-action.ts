@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import { REVIEW_SEARCH_PARAM } from "../_lib/search-params";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { logger } from "@/server/logging/logger";
 import { runAndPersistReview } from "@/server/review/get-or-run-review";
@@ -43,8 +44,12 @@ export async function rerunAction(formData: FormData) {
     );
 
     const message = "Review re-run failed.";
-    redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&error=${encodeURIComponent(message)}`);
+    redirect(
+      `/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}&${REVIEW_SEARCH_PARAM.Error}=${encodeURIComponent(message)}`,
+    );
   }
 
-  redirect(`/review?prUrl=${encodeURIComponent(prUrl)}&runId=${encodeURIComponent(runId)}`);
+  redirect(
+    `/review?${REVIEW_FORM_FIELD.PrUrl}=${encodeURIComponent(prUrl)}&${REVIEW_FORM_FIELD.RunId}=${encodeURIComponent(runId)}`,
+  );
 }

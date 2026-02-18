@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
@@ -71,12 +72,12 @@ export async function RepositoriesList(props: RepositoriesListProps) {
   const pageItems = sorted.slice(start, end);
 
   const baseParams = {
-    org: props.decodedOrg,
-    project: props.decodedProject,
-    q: props.q || undefined,
-    sort: props.sort || undefined,
-    order: props.order || undefined,
-    hasRules: props.hasRules ? "1" : undefined,
+    [REPOS_FORM_FIELD.Org]: props.decodedOrg,
+    [REPOS_FORM_FIELD.Project]: props.decodedProject,
+    [REPOS_FORM_FIELD.Query]: props.q || undefined,
+    [REPOS_SEARCH_PARAM.Sort]: props.sort || undefined,
+    [REPOS_FORM_FIELD.Order]: props.order || undefined,
+    [REPOS_FORM_FIELD.HasRules]: props.hasRules ? "1" : undefined,
   };
 
   return (
@@ -208,7 +209,10 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                 ? "pointer-events-none text-zinc-400 dark:text-zinc-600"
                 : "text-zinc-900 dark:text-zinc-50"
             }`}
-            href={linkWithParams({ ...baseParams, page: String(Math.max(0, safePage - 1)) })}
+            href={linkWithParams({
+              ...baseParams,
+              [REPOS_SEARCH_PARAM.Page]: String(Math.max(0, safePage - 1)),
+            })}
           >
             Prev
           </Link>
@@ -221,7 +225,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
             }`}
             href={linkWithParams({
               ...baseParams,
-              page: String(Math.min(totalPages - 1, safePage + 1)),
+              [REPOS_SEARCH_PARAM.Page]: String(Math.min(totalPages - 1, safePage + 1)),
             })}
           >
             Next

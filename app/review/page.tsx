@@ -9,6 +9,8 @@ import { getCachedReviewRun } from "@/server/review/get-or-run-review";
 
 import { publishAction } from "./_actions/publish-action";
 import { rerunAction } from "./_actions/rerun-action";
+import { REVIEW_FORM_FIELD } from "./_lib/form-fields";
+import { REVIEW_SEARCH_PARAM } from "./_lib/search-params";
 import { ReviewResults } from "./_components/review-results";
 import { ReviewRunner } from "./_components/review-runner";
 
@@ -18,15 +20,24 @@ type ReviewPageProps = Readonly<{
 
 export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const params = await searchParams;
-  const prUrl = getFirst(params.prUrl);
-  const runId = getFirst(params.runId);
+  const prUrl = getFirst(params[REVIEW_FORM_FIELD.PrUrl]);
+  const runId = getFirst(params[REVIEW_FORM_FIELD.RunId]);
   const correlationId = crypto.randomUUID();
-  const published = getFirst(params.published) === "1";
-  const publishError = getFirst(params.publishError) === "1";
-  const error = getFirst(params.error);
-  const publishedThreads = parseNonNegativeIntParam(getFirst(params.publishedThreads), 0);
-  const skippedThreads = parseNonNegativeIntParam(getFirst(params.skippedThreads), 0);
-  const totalThreads = parseNonNegativeIntParam(getFirst(params.totalThreads), 0);
+  const published = getFirst(params[REVIEW_SEARCH_PARAM.Published]) === "1";
+  const publishError = getFirst(params[REVIEW_SEARCH_PARAM.PublishError]) === "1";
+  const error = getFirst(params[REVIEW_SEARCH_PARAM.Error]);
+  const publishedThreads = parseNonNegativeIntParam(
+    getFirst(params[REVIEW_SEARCH_PARAM.PublishedThreads]),
+    0,
+  );
+  const skippedThreads = parseNonNegativeIntParam(
+    getFirst(params[REVIEW_SEARCH_PARAM.SkippedThreads]),
+    0,
+  );
+  const totalThreads = parseNonNegativeIntParam(
+    getFirst(params[REVIEW_SEARCH_PARAM.TotalThreads]),
+    0,
+  );
 
   if (!prUrl) {
     return (

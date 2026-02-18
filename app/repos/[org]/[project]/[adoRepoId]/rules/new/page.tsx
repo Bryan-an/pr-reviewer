@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { REPOS_FORM_FIELD, RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { getFirst } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
@@ -23,7 +24,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
   const adoRepoId = safeDecodeURIComponent(p.adoRepoId);
 
   const sp = (await searchParams) ?? {};
-  const errorCode = getFirst(sp.error);
+  const errorCode = getFirst(sp[RULE_SEARCH_PARAM.Error]);
 
   const errorBannerMessage = (() => {
     switch (errorCode) {
@@ -57,7 +58,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
       "NewRulePage: getAzureDevOpsRepository/upsertRepositoryFromAdoRepo failed",
     );
 
-    const backHref = `/repos?org=${encodeURIComponent(org)}&project=${encodeURIComponent(project)}`;
+    const backHref = `/repos?${REPOS_FORM_FIELD.Org}=${encodeURIComponent(org)}&${REPOS_FORM_FIELD.Project}=${encodeURIComponent(project)}`;
 
     return (
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
@@ -94,19 +95,19 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
 
     if (!title) {
       redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=title`,
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?${RULE_SEARCH_PARAM.Error}=title`,
       );
     }
 
     if (!markdown) {
       redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=markdown`,
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?${RULE_SEARCH_PARAM.Error}=markdown`,
       );
     }
 
     if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
       redirect(
-        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?error=sortOrder`,
+        `/repos/${encodeURIComponent(org)}/${encodeURIComponent(project)}/${encodeURIComponent(repo.id)}/rules/new?${RULE_SEARCH_PARAM.Error}=sortOrder`,
       );
     }
 
