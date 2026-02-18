@@ -5,6 +5,7 @@ import { Loader2Icon, RefreshCwIcon, SendIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
 
+import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { useReviewActions } from "./review-actions-context";
 
 // ---------------------------------------------------------------------------
@@ -38,10 +39,12 @@ export function ReviewActionFooter({
   return (
     <CardFooter className="flex flex-wrap gap-3">
       <form action={(formData) => startPublishTransition(() => publishAction(formData))}>
-        <input type="hidden" name="prUrl" value={prUrl} />
-        {effectiveRunId ? <input type="hidden" name="runId" value={effectiveRunId} /> : null}
-        <input type="hidden" name="engineName" value={engineName} />
-        <input type="hidden" name="correlationId" value={correlationId} />
+        <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
+        {effectiveRunId ? (
+          <input type="hidden" name={REVIEW_FORM_FIELD.RunId} value={effectiveRunId} />
+        ) : null}
+        <input type="hidden" name={REVIEW_FORM_FIELD.EngineName} value={engineName} />
+        <input type="hidden" name={REVIEW_FORM_FIELD.CorrelationId} value={correlationId} />
 
         <Button type="submit" disabled={isAnyPending} className="grid grid-cols-1 grid-rows-1">
           <span
@@ -64,7 +67,7 @@ export function ReviewActionFooter({
       </form>
 
       <form action={(formData) => startRerunTransition(() => rerunAction(formData))}>
-        <input type="hidden" name="prUrl" value={prUrl} />
+        <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
 
         <Button
           type="submit"

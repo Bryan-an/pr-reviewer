@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/form-data";
+import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { getFirst } from "@/lib/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
@@ -85,10 +86,10 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
 
   async function createAction(formData: FormData) {
     "use server";
-    const title = getTrimmedStringFormField(formData, "title");
-    const markdown = getTrimmedStringFormField(formData, "markdown");
-    const enabled = getTrimmedStringFormField(formData, "enabled") === "1";
-    const sortOrderRaw = getTrimmedStringFormField(formData, "sortOrder");
+    const title = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Title);
+    const markdown = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Markdown);
+    const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
+    const sortOrderRaw = getTrimmedStringFormField(formData, RULE_FORM_FIELD.SortOrder);
     const sortOrder = Number(sortOrderRaw);
 
     if (!title) {

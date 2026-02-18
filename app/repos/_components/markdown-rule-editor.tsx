@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { Markdown } from "@/components/markdown";
+import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 
 type MarkdownRuleEditorProps = Readonly<{
   initial: {
@@ -42,7 +43,7 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
           <span className="font-medium text-zinc-900 dark:text-zinc-50">Title</span>
 
           <input
-            name="title"
+            name={RULE_FORM_FIELD.Title}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Error handling standards"
@@ -55,7 +56,7 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
           <span className="font-medium text-zinc-900 dark:text-zinc-50">Order</span>
 
           <input
-            name="sortOrder"
+            name={RULE_FORM_FIELD.SortOrder}
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             inputMode="numeric"
@@ -72,7 +73,7 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
       <label className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-50">
         <input
           type="checkbox"
-          name="enabled"
+          name={RULE_FORM_FIELD.Enabled}
           value="1"
           checked={enabled}
           onChange={(e) => setEnabled(e.target.checked)}
@@ -115,7 +116,7 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className={`${mode === MODE.Preview ? "hidden lg:block" : "block"}`}>
             <textarea
-              name="markdown"
+              name={RULE_FORM_FIELD.Markdown}
               value={markdown}
               onChange={(e) => setMarkdown(e.target.value)}
               placeholder="Write your guidelines in Markdown…"

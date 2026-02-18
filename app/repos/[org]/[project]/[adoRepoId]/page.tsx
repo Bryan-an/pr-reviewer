@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Markdown } from "@/components/markdown";
 import { getTrimmedStringFormField } from "@/lib/form-data";
+import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
@@ -36,8 +37,8 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
   async function toggleAction(formData: FormData) {
     "use server";
-    const id = getTrimmedStringFormField(formData, "id");
-    const enabled = getTrimmedStringFormField(formData, "enabled") === "1";
+    const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
+    const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
 
     if (!id)
       redirect(
@@ -55,7 +56,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
   async function deleteAction(formData: FormData) {
     "use server";
-    const id = getTrimmedStringFormField(formData, "id");
+    const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
 
     if (!id)
       redirect(
@@ -165,8 +166,12 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
                       <div className="flex items-center gap-3">
                         <form action={toggleAction}>
-                          <input type="hidden" name="id" value={r.id} />
-                          <input type="hidden" name="enabled" value={r.enabled ? "0" : "1"} />
+                          <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
+                          <input
+                            type="hidden"
+                            name={RULE_FORM_FIELD.Enabled}
+                            value={r.enabled ? "0" : "1"}
+                          />
 
                           <button
                             type="submit"
@@ -184,7 +189,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
                         </Link>
 
                         <form action={deleteAction}>
-                          <input type="hidden" name="id" value={r.id} />
+                          <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
 
                           <ConfirmSubmitButton
                             confirmText="Delete this rule? This cannot be undone."

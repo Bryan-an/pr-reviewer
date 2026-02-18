@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
 
@@ -86,14 +88,14 @@ export async function RepositoriesList(props: RepositoriesListProps) {
         </div>
 
         <form method="GET" className="grid grid-cols-1 gap-2 sm:grid-cols-6">
-          <input type="hidden" name="org" value={props.decodedOrg} />
-          <input type="hidden" name="project" value={props.decodedProject} />
+          <input type="hidden" name={REPOS_FORM_FIELD.Org} value={props.decodedOrg} />
+          <input type="hidden" name={REPOS_FORM_FIELD.Project} value={props.decodedProject} />
 
           <label className="sm:col-span-3">
             <span className="sr-only">Search</span>
 
             <input
-              name="q"
+              name={REPOS_FORM_FIELD.Query}
               defaultValue={props.q}
               placeholder="Search repositories…"
               className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
@@ -104,7 +106,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
             <span className="sr-only">Sort</span>
 
             <select
-              name="order"
+              name={REPOS_FORM_FIELD.Order}
               defaultValue={props.order}
               className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 shadow-sm ring-zinc-300 outline-none focus:ring-2 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
             >
@@ -116,7 +118,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
           <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 shadow-sm sm:col-span-1 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50">
             <input
               type="checkbox"
-              name="hasRules"
+              name={REPOS_FORM_FIELD.HasRules}
               value="1"
               defaultChecked={props.hasRules}
               className="h-4 w-4"
