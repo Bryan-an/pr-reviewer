@@ -46,7 +46,11 @@ export function ReviewActionFooter({
         <input type="hidden" name={REVIEW_FORM_FIELD.EngineName} value={engineName} />
         <input type="hidden" name={REVIEW_FORM_FIELD.CorrelationId} value={correlationId} />
 
-        <Button type="submit" disabled={isAnyPending} className="grid grid-cols-1 grid-rows-1">
+        <Button
+          type="submit"
+          disabled={isAnyPending}
+          className="grid grid-cols-1 grid-rows-1 justify-items-center"
+        >
           <span
             className="col-start-1 row-start-1 inline-flex items-center gap-2"
             aria-hidden={isPublishing}
@@ -73,7 +77,7 @@ export function ReviewActionFooter({
           type="submit"
           variant="outline"
           disabled={isAnyPending}
-          className="grid grid-cols-1 grid-rows-1"
+          className="grid grid-cols-1 grid-rows-1 justify-items-center"
         >
           <span
             className="col-start-1 row-start-1 inline-flex items-center gap-2"

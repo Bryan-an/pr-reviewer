@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { ORG_COOKIE } from "@/app/repos/_lib/cookies";
@@ -38,58 +39,64 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
   const decodedProject = safeDecodeURIComponent(project);
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Repository rules</h1>
+    <>
+      <PageHeader
+        title="Repository rules"
+        actions={
+          <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/">
+            Back
+          </Link>
+        }
+      />
 
-        <p className="text-muted-foreground text-sm">
-          Browse Azure DevOps repositories and manage optional Markdown rules used during PR review.
-        </p>
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 pt-17 pb-12">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Repository rules</h1>
+
+          <p className="text-muted-foreground text-sm">
+            Browse Azure DevOps repositories and manage optional Markdown rules used during PR
+            review.
+          </p>
+        </div>
+
+        <ProjectLoadingProvider>
+          <OrgLoadingProvider action={setOrgAction}>
+            <ProjectLoadingGuard>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Azure DevOps</CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                  <LoadProjectsForm defaultOrg={decodedOrg} />
+
+                  {org ? null : (
+                    <p className="text-muted-foreground mt-3 text-sm">
+                      Enter an Azure DevOps organization to browse projects and repositories.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </ProjectLoadingGuard>
+
+            {org ? (
+              <OrgLoadingGuard>
+                <ProjectsAndRepos
+                  org={org}
+                  decodedOrg={decodedOrg}
+                  project={project}
+                  decodedProject={decodedProject}
+                  q={q}
+                  sort={sort}
+                  order={order}
+                  hasRules={hasRules}
+                  page={page}
+                />
+              </OrgLoadingGuard>
+            ) : null}
+          </OrgLoadingProvider>
+        </ProjectLoadingProvider>
       </div>
-
-      <ProjectLoadingProvider>
-        <OrgLoadingProvider action={setOrgAction}>
-          <ProjectLoadingGuard>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Azure DevOps</CardTitle>
-              </CardHeader>
-
-              <CardContent>
-                <LoadProjectsForm defaultOrg={decodedOrg} />
-
-                {org ? null : (
-                  <p className="text-muted-foreground mt-3 text-sm">
-                    Enter an Azure DevOps organization to browse projects and repositories.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </ProjectLoadingGuard>
-
-          {org ? (
-            <OrgLoadingGuard>
-              <ProjectsAndRepos
-                org={org}
-                decodedOrg={decodedOrg}
-                project={project}
-                decodedProject={decodedProject}
-                q={q}
-                sort={sort}
-                order={order}
-                hasRules={hasRules}
-                page={page}
-              />
-            </OrgLoadingGuard>
-          ) : null}
-
-          <div className="text-xs">
-            <Link className={buttonVariants({ variant: "link", size: "xs" })} href="/">
-              Back to review
-            </Link>
-          </div>
-        </OrgLoadingProvider>
-      </ProjectLoadingProvider>
-    </div>
+    </>
   );
 }

@@ -49,7 +49,9 @@ UI (App Router pages/components)
 ### Key directories
 
 - `app/` — Next.js App Router routes; route-scoped components in `_components/` subdirs
+- `components/` — shared UI: `page-header.tsx` (sticky auto-hide header), `loading-guard.tsx`, `markdown.tsx`
 - `components/ui/` — shadcn/ui components (do not manually edit)
+- `hooks/` — shared client-side hooks (e.g., `use-auto-hide-header.ts`)
 - `lib/` — shared utilities: env config (Zod), validation schemas, URL parsing
 - `server/` — all server-only code (`import "server-only"` guardrail); never import from Client Components
 - `prisma/` — schema + migrations; generated client at `prisma/generated/prisma/`
@@ -77,6 +79,11 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 
 ## Conventions
 
+- **Navigation links**: use `buttonVariants()` on `<Link>` — not `Button asChild` — for navigation
+- **Header actions**: `PageHeader` action links use `variant: "outline"` + `size: "sm"`; headers contain only navigation (e.g., "Back"), not duplicate page actions
+- **Grid overlay buttons**: loading-state buttons use `grid grid-cols-1 grid-rows-1 justify-items-center` — without `justify-items-center`, content is left-aligned because grid overrides the button's default `inline-flex justify-center`
+- **Tailwind v4 sizing**: 4px multiplier for all utilities — prefer `pt-17`/`h-13` over `pt-[68px]`/`h-[52px]`. Use `supports-backdrop-filter:` over `supports-[backdrop-filter]:`. Linter flags arbitrary values with canonical equivalents.
+- **Sticky header offset**: scrollable pages use `pt-17` (68px = 52px header + 16px gap); `scroll-padding-top: 68px` is set globally in `globals.css`
 - **Enums**: use `as const` object + derived type + values array for Zod. No magic string unions.
   ```ts
   export const SEVERITY = { Info: "info", Warn: "warn" } as const;

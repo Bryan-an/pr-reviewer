@@ -29,7 +29,11 @@ export function LoadProjectsForm({ defaultOrg }: LoadProjectsFormProps) {
         />
       </div>
 
-      <Button type="submit" disabled={isPending} className="grid grid-cols-1 grid-rows-1">
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="grid grid-cols-1 grid-rows-1 justify-items-center"
+      >
         <span
           className="col-start-1 row-start-1 inline-flex items-center gap-2"
           aria-hidden={isPending}

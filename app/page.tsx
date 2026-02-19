@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -72,9 +72,9 @@ export default function Home() {
         </CardContent>
 
         <CardFooter className="justify-between">
-          <Button variant="link" asChild className="px-0">
-            <Link href="/repos">Manage repository rules</Link>
-          </Button>
+          <Link className={buttonVariants({ variant: "outline" })} href="/repos">
+            Manage repository rules
+          </Link>
         </CardFooter>
       </Card>
     </div>

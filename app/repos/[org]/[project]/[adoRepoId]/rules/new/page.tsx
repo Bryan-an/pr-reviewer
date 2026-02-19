@@ -4,6 +4,7 @@ import { AlertCircleIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { getFirst } from "@/lib/utils/search-params";
@@ -63,28 +64,34 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
     const backHref = reposListUrl({ org, project });
 
     return (
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">New rule</h1>
+      <>
+        <PageHeader
+          title="New rule"
+          actions={
+            <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={backHref}>
+              Back
+            </Link>
+          }
+        />
 
-          <p className="text-muted-foreground text-sm">
-            {org} · {project} · <span className="font-mono text-xs">{adoRepoId}</span>
-          </p>
+        <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 pt-17 pb-12">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight">New rule</h1>
+
+            <p className="text-muted-foreground text-sm">
+              {org} · {project} · <span className="font-mono text-xs">{adoRepoId}</span>
+            </p>
+          </div>
+
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertDescription>
+              Unable to load repository details. Please verify your Azure DevOps access and try
+              again.
+            </AlertDescription>
+          </Alert>
         </div>
-
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertDescription>
-            Unable to load repository details. Please verify your Azure DevOps access and try again.
-          </AlertDescription>
-        </Alert>
-
-        <div className="text-xs">
-          <Link className={buttonVariants({ variant: "link", size: "xs" })} href={backHref}>
-            Back
-          </Link>
-        </div>
-      </div>
+      </>
     );
   }
 
@@ -98,39 +105,44 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
   const cancelHref = repoBasePath(org, project, repo.id);
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-12">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">New rule</h1>
+    <>
+      <PageHeader
+        title="New rule"
+        actions={
+          <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={cancelHref}>
+            Back
+          </Link>
+        }
+      />
 
-        <p className="text-muted-foreground text-sm">
-          {repo.name} · {org} · {project}
-        </p>
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 pt-17 pb-12">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">New rule</h1>
+
+          <p className="text-muted-foreground text-sm">
+            {repo.name} · {org} · {project}
+          </p>
+        </div>
+
+        {errorBannerMessage ? (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertDescription>{errorBannerMessage}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <Card>
+          <CardContent>
+            <form action={boundCreateAction}>
+              <MarkdownRuleEditor
+                initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
+                submitLabel="Create rule"
+                cancelHref={cancelHref}
+              />
+            </form>
+          </CardContent>
+        </Card>
       </div>
-
-      {errorBannerMessage ? (
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertDescription>{errorBannerMessage}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <Card>
-        <CardContent>
-          <form action={boundCreateAction}>
-            <MarkdownRuleEditor
-              initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
-              submitLabel="Create rule"
-              cancelHref={cancelHref}
-            />
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="text-xs">
-        <Link className={buttonVariants({ variant: "link", size: "xs" })} href={cancelHref}>
-          Back
-        </Link>
-      </div>
-    </div>
+    </>
   );
 }

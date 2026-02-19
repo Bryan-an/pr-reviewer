@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Markdown } from "@/components/markdown";
+import { PageHeader } from "@/components/page-header";
 import type { ReviewRunResult } from "@/server/review/types";
 
 import { NewReviewLink } from "./new-review-link";
@@ -68,13 +69,11 @@ export function ReviewResults({
 
   return (
     <ReviewActionsProvider>
-      <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
-        {/* ── Page heading ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">Review preview</h1>
+      <PageHeader title="Review preview" maxWidth="3xl" actions={<NewReviewLink />} />
 
-          <NewReviewLink />
-        </div>
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 pt-17 pb-12">
+        {/* ── Page heading ─────────────────────────────────────────────── */}
+        <h1 className="text-2xl font-semibold tracking-tight">Review preview</h1>
 
         {/* ── Status alerts ────────────────────────────────────────────── */}
         {published ? (
