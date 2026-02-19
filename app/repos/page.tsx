@@ -8,7 +8,9 @@ import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { ORG_COOKIE } from "@/app/repos/_lib/cookies";
 import { getFirst, getTrimmedFirst, parseNonNegativeIntParam } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
-import { LoadProjectsFormFields } from "@/app/repos/_components/load-projects-form-fields";
+import { LoadProjectsForm } from "@/app/repos/_components/load-projects-form";
+import { OrgLoadingProvider } from "@/app/repos/_components/org-loading-context";
+import { OrgLoadingGuard } from "@/app/repos/_components/org-loading-guard";
 import { ProjectsAndRepos } from "@/app/repos/_components/projects-and-repos";
 import { setOrgAction } from "@/app/repos/_actions/set-org-action";
 
@@ -43,43 +45,45 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Azure DevOps</CardTitle>
-        </CardHeader>
+      <OrgLoadingProvider action={setOrgAction}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Azure DevOps</CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <form action={setOrgAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <LoadProjectsFormFields defaultOrg={decodedOrg} />
-          </form>
+          <CardContent>
+            <LoadProjectsForm defaultOrg={decodedOrg} />
 
-          {org ? null : (
-            <p className="text-muted-foreground mt-3 text-sm">
-              Enter an Azure DevOps organization to browse projects and repositories.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            {org ? null : (
+              <p className="text-muted-foreground mt-3 text-sm">
+                Enter an Azure DevOps organization to browse projects and repositories.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-      {org ? (
-        <ProjectsAndRepos
-          org={org}
-          decodedOrg={decodedOrg}
-          project={project}
-          decodedProject={decodedProject}
-          q={q}
-          sort={sort}
-          order={order}
-          hasRules={hasRules}
-          page={page}
-        />
-      ) : null}
+        {org ? (
+          <OrgLoadingGuard>
+            <ProjectsAndRepos
+              org={org}
+              decodedOrg={decodedOrg}
+              project={project}
+              decodedProject={decodedProject}
+              q={q}
+              sort={sort}
+              order={order}
+              hasRules={hasRules}
+              page={page}
+            />
+          </OrgLoadingGuard>
+        ) : null}
 
-      <div className="text-xs">
-        <Link className={buttonVariants({ variant: "link", size: "xs" })} href="/">
-          Back to review
-        </Link>
-      </div>
+        <div className="text-xs">
+          <Link className={buttonVariants({ variant: "link", size: "xs" })} href="/">
+            Back to review
+          </Link>
+        </div>
+      </OrgLoadingProvider>
     </div>
   );
 }
