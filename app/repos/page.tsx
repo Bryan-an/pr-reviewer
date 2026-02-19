@@ -12,6 +12,8 @@ import { LoadProjectsForm } from "@/app/repos/_components/load-projects-form";
 import { OrgLoadingProvider } from "@/app/repos/_components/org-loading-context";
 import { OrgLoadingGuard } from "@/app/repos/_components/org-loading-guard";
 import { ProjectsAndRepos } from "@/app/repos/_components/projects-and-repos";
+import { ProjectLoadingProvider } from "@/app/repos/_components/project-loading-context";
+import { ProjectLoadingGuard } from "@/app/repos/_components/project-loading-guard";
 import { setOrgAction } from "@/app/repos/_actions/set-org-action";
 
 type ReposPageProps = Readonly<{
@@ -45,45 +47,49 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
         </p>
       </div>
 
-      <OrgLoadingProvider action={setOrgAction}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Azure DevOps</CardTitle>
-          </CardHeader>
+      <ProjectLoadingProvider>
+        <OrgLoadingProvider action={setOrgAction}>
+          <ProjectLoadingGuard>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Azure DevOps</CardTitle>
+              </CardHeader>
 
-          <CardContent>
-            <LoadProjectsForm defaultOrg={decodedOrg} />
+              <CardContent>
+                <LoadProjectsForm defaultOrg={decodedOrg} />
 
-            {org ? null : (
-              <p className="text-muted-foreground mt-3 text-sm">
-                Enter an Azure DevOps organization to browse projects and repositories.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                {org ? null : (
+                  <p className="text-muted-foreground mt-3 text-sm">
+                    Enter an Azure DevOps organization to browse projects and repositories.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </ProjectLoadingGuard>
 
-        {org ? (
-          <OrgLoadingGuard>
-            <ProjectsAndRepos
-              org={org}
-              decodedOrg={decodedOrg}
-              project={project}
-              decodedProject={decodedProject}
-              q={q}
-              sort={sort}
-              order={order}
-              hasRules={hasRules}
-              page={page}
-            />
-          </OrgLoadingGuard>
-        ) : null}
+          {org ? (
+            <OrgLoadingGuard>
+              <ProjectsAndRepos
+                org={org}
+                decodedOrg={decodedOrg}
+                project={project}
+                decodedProject={decodedProject}
+                q={q}
+                sort={sort}
+                order={order}
+                hasRules={hasRules}
+                page={page}
+              />
+            </OrgLoadingGuard>
+          ) : null}
 
-        <div className="text-xs">
-          <Link className={buttonVariants({ variant: "link", size: "xs" })} href="/">
-            Back to review
-          </Link>
-        </div>
-      </OrgLoadingProvider>
+          <div className="text-xs">
+            <Link className={buttonVariants({ variant: "link", size: "xs" })} href="/">
+              Back to review
+            </Link>
+          </div>
+        </OrgLoadingProvider>
+      </ProjectLoadingProvider>
     </div>
   );
 }
