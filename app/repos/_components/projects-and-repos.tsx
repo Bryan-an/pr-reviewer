@@ -1,23 +1,15 @@
 import { AlertCircleIcon } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { listAzureDevOpsProjects } from "@/server/azure-devops/projects";
+import { reposListUrl } from "@/app/repos/_lib/routes";
 
 import {
   RepositoriesList,
   type RepositoriesListProps,
 } from "@/app/repos/_components/repositories-list";
+import { ProjectList, type ProjectListItem } from "@/app/repos/_components/project-list";
 
 export type ProjectsAndReposProps = RepositoriesListProps;
 
@@ -30,6 +22,15 @@ export async function ProjectsAndRepos(props: ProjectsAndReposProps) {
   } catch (err) {
     projectError = err instanceof Error ? err.message : "Failed to load projects.";
   }
+
+  const items: ProjectListItem[] = projects
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      href: reposListUrl({ org: props.decodedOrg, project: p.name }),
+    }));
 
   const projectSelected = props.project.trim() !== "";
 
@@ -44,42 +45,19 @@ export async function ProjectsAndRepos(props: ProjectsAndReposProps) {
           {projectError ? (
             <Alert variant="destructive">
               <AlertCircleIcon />
-              <AlertDescription>Failed to load projects. {projectError}</AlertDescription>
+              <AlertDescription>{projectError}</AlertDescription>
             </Alert>
           ) : null}
 
-          <form method="GET" className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <input type="hidden" name={REPOS_FORM_FIELD.Org} value={props.decodedOrg} />
-
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="project-select">Project</Label>
-
-              <Select
-                name={REPOS_FORM_FIELD.Project}
-                defaultValue={props.decodedProject || undefined}
-                required
-              >
-                <SelectTrigger id="project-select" className="w-full">
-                  <SelectValue placeholder="Select a project…" />
-                </SelectTrigger>
-
-                <SelectContent>
-                  {projects
-                    .slice()
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((p) => (
-                      <SelectItem key={p.id} value={p.name}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button type="submit" variant="outline">
-              Browse repos
-            </Button>
-          </form>
+          {items.length > 0 ? (
+            <ProjectList items={items} selectedProject={props.decodedProject} />
+          ) : (
+            !projectError && (
+              <p className="text-muted-foreground text-sm">
+                No projects found in this organization.
+              </p>
+            )
+          )}
 
           {projectSelected ? null : (
             <p className="text-muted-foreground text-sm">
