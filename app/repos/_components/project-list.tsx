@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useDeferredValue, useId } from "react";
 import { Loader2Icon, CheckIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ export function ProjectList({ items, selectedProject }: ProjectListProps) {
   const inputId = useId();
   const { isPending, navigateToProject } = useProjectLoading();
 
-  const lower = query.trim().toLowerCase();
+  const deferredQuery = useDeferredValue(query);
+  const lower = deferredQuery.trim().toLowerCase();
   const filtered = lower === "" ? items : items.filter((p) => p.name.toLowerCase().includes(lower));
 
   return (
