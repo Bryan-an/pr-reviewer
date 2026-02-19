@@ -1,21 +1,18 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AlertCircleIcon } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
-import { repoBasePath, repoNewRuleErrorUrl, reposListUrl } from "@/app/repos/_lib/routes";
+import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
-import { createRepoRule } from "@/server/db/repo-rules";
 import { logger } from "@/server/logging/logger";
 import { MarkdownRuleEditor } from "@/app/repos/_components/markdown-rule-editor";
+import { createRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/rules/new/_actions/create-rule-action";
 
 type NewRulePageProps = Readonly<{
   params: Promise<{ org: string; project: string; adoRepoId: string }>;
@@ -91,36 +88,12 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
     );
   }
 
-  async function createAction(formData: FormData) {
-    "use server";
-    const title = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Title);
-    const markdown = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Markdown);
-    const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
-    const sortOrderRaw = getTrimmedStringFormField(formData, RULE_FORM_FIELD.SortOrder);
-    const sortOrder = Number(sortOrderRaw);
-
-    if (!title) {
-      redirect(repoNewRuleErrorUrl(org, project, repo.id, "title"));
-    }
-
-    if (!markdown) {
-      redirect(repoNewRuleErrorUrl(org, project, repo.id, "markdown"));
-    }
-
-    if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
-      redirect(repoNewRuleErrorUrl(org, project, repo.id, "sortOrder"));
-    }
-
-    await createRepoRule({
-      repositoryId: storedRepo.id,
-      title,
-      markdown,
-      enabled,
-      sortOrder: Number.isFinite(sortOrder) && Number.isInteger(sortOrder) ? sortOrder : 0,
-    });
-
-    redirect(repoBasePath(org, project, repo.id));
-  }
+  const boundCreateAction = createRuleAction.bind(null, {
+    repositoryId: storedRepo.id,
+    org,
+    project,
+    adoRepoId: repo.id,
+  });
 
   const cancelHref = repoBasePath(org, project, repo.id);
 
@@ -143,7 +116,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
 
       <Card>
         <CardContent>
-          <form action={createAction}>
+          <form action={boundCreateAction}>
             <MarkdownRuleEditor
               initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
               submitLabel="Create rule"

@@ -1,28 +1,18 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Markdown } from "@/components/markdown";
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
-import {
-  repoBasePath,
-  repoEditRulePath,
-  repoNewRulePath,
-  reposListUrl,
-} from "@/app/repos/_lib/routes";
+import { repoEditRulePath, repoNewRulePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
-import {
-  deleteRepoRule,
-  getRepoRuleById,
-  listRepoRules,
-  toggleRepoRuleEnabled,
-} from "@/server/db/repo-rules";
+import { listRepoRules } from "@/server/db/repo-rules";
 import { ConfirmSubmitButton } from "@/app/repos/_components/confirm-submit-button";
+import { toggleRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actions/toggle-rule-action";
+import { deleteRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actions/delete-rule-action";
 
 type RepoRulesPageProps = Readonly<{
   params: Promise<{ org: string; project: string; adoRepoId: string }>;
@@ -44,36 +34,15 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
     remoteUrl: repo.remoteUrl,
   });
 
-  async function toggleAction(formData: FormData) {
-    "use server";
-    const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
-    const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
+  const ruleActionContext = {
+    repositoryId: storedRepo.id,
+    org,
+    project,
+    adoRepoId: repo.id,
+  };
 
-    if (!id) redirect(repoBasePath(org, project, adoRepoId));
-
-    const existing = await getRepoRuleById({ id });
-
-    if (!existing || existing.repositoryId !== storedRepo.id) {
-      throw new Error("Rule does not belong to this repository.");
-    }
-
-    await toggleRepoRuleEnabled({ id, enabled });
-  }
-
-  async function deleteAction(formData: FormData) {
-    "use server";
-    const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
-
-    if (!id) redirect(repoBasePath(org, project, adoRepoId));
-
-    const existing = await getRepoRuleById({ id });
-
-    if (!existing || existing.repositoryId !== storedRepo.id) {
-      throw new Error("Rule does not belong to this repository.");
-    }
-
-    await deleteRepoRule({ id });
-  }
+  const boundToggleAction = toggleRuleAction.bind(null, ruleActionContext);
+  const boundDeleteAction = deleteRuleAction.bind(null, ruleActionContext);
 
   const rules = await listRepoRules({ repositoryId: storedRepo.id });
 
@@ -160,7 +129,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <form action={toggleAction}>
+                            <form action={boundToggleAction}>
                               <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
                               <input
                                 type="hidden"
@@ -180,7 +149,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
                               Edit
                             </Link>
 
-                            <form action={deleteAction}>
+                            <form action={boundDeleteAction}>
                               <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
 
                               <ConfirmSubmitButton
