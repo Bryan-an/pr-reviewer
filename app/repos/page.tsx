@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { ORG_COOKIE } from "@/app/repos/_lib/cookies";
 import { getFirst, getTrimmedFirst, parseNonNegativeIntParam } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
+import { LoadProjectsFormFields } from "@/app/repos/_components/load-projects-form-fields";
 import { ProjectsAndRepos } from "@/app/repos/_components/projects-and-repos";
 import { setOrgAction } from "@/app/repos/_actions/set-org-action";
 
@@ -51,18 +50,7 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
 
         <CardContent>
           <form action={setOrgAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="org-input">Organization</Label>
-              <Input
-                id="org-input"
-                name={REPOS_FORM_FIELD.Org}
-                defaultValue={decodedOrg}
-                placeholder="my-org"
-                required
-              />
-            </div>
-
-            <Button type="submit">Load projects</Button>
+            <LoadProjectsFormFields defaultOrg={decodedOrg} />
           </form>
 
           {org ? null : (
