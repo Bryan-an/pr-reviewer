@@ -14,7 +14,8 @@ export function OrgLoadingGuard({ children }: OrgLoadingGuardProps) {
 
   return (
     <div
-      className={cn("transition-opacity", isPending && "pointer-events-none opacity-50")}
+      className={cn("transition-opacity", isPending && "opacity-50")}
+      inert={isPending || undefined}
       aria-busy={isPending}
     >
       {children}
