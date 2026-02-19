@@ -52,7 +52,7 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
           <ProjectLoadingGuard>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Azure DevOps</CardTitle>
+                <CardTitle className="text-base">Azure DevOps</CardTitle>
               </CardHeader>
 
               <CardContent>

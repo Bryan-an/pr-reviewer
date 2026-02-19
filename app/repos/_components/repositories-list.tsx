@@ -93,10 +93,10 @@ export async function RepositoriesList(props: RepositoriesListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <div className="flex items-end justify-between gap-3">
-          <h2 className="text-sm font-semibold">Repositories</h2>
-          <div className="text-muted-foreground text-xs">{total} total</div>
+          <h2 className="text-base font-semibold">Repositories</h2>
+          <div className="text-muted-foreground text-sm">{total} total</div>
         </div>
 
         <form method="GET" className="grid grid-cols-1 gap-2 sm:grid-cols-6">

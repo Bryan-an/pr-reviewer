@@ -41,7 +41,7 @@ export async function ProjectsAndRepos(props: ProjectsAndReposProps) {
       <ProjectLoadingGuard>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Project</CardTitle>
+            <CardTitle className="text-base">Project</CardTitle>
           </CardHeader>
 
           <CardContent className="flex flex-col gap-3">
