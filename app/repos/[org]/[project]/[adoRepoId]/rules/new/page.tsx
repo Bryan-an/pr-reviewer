@@ -67,6 +67,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
       <>
         <PageHeader
           title="New rule"
+          showScrollToTop
           actions={
             <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={backHref}>
               Back
@@ -108,6 +109,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
     <>
       <PageHeader
         title="New rule"
+        showScrollToTop
         actions={
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={cancelHref}>
             Back

@@ -54,6 +54,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
     <>
       <PageHeader
         title={repo.name}
+        showScrollToTop
         actions={
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={backHref}>
             Back

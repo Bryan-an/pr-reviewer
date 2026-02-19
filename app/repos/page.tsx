@@ -42,6 +42,7 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
     <>
       <PageHeader
         title="Repository rules"
+        showScrollToTop
         actions={
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/">
             Back

@@ -71,6 +71,7 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
     <>
       <PageHeader
         title="Edit rule"
+        showScrollToTop
         actions={
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={cancelHref}>
             Back

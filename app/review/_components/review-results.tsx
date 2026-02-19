@@ -69,7 +69,12 @@ export function ReviewResults({
 
   return (
     <ReviewActionsProvider>
-      <PageHeader title="Review preview" maxWidth="3xl" actions={<NewReviewLink />} />
+      <PageHeader
+        title="Review preview"
+        maxWidth="3xl"
+        showScrollToTop
+        actions={<NewReviewLink />}
+      />
 
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 pt-17 pb-12">
         {/* ── Page heading ─────────────────────────────────────────────── */}
