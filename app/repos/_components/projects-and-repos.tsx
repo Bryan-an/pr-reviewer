@@ -10,6 +10,9 @@ import {
   type RepositoriesListProps,
 } from "@/app/repos/_components/repositories-list";
 import { ProjectList, type ProjectListItem } from "@/app/repos/_components/project-list";
+import { ProjectLoadingProvider } from "@/app/repos/_components/project-loading-context";
+import { ProjectLoadingGuard } from "@/app/repos/_components/project-loading-guard";
+import { ReposLoadingPlaceholder } from "@/app/repos/_components/repos-loading-placeholder";
 
 export type ProjectsAndReposProps = RepositoriesListProps;
 
@@ -35,39 +38,49 @@ export async function ProjectsAndRepos(props: ProjectsAndReposProps) {
   const projectSelected = props.project.trim() !== "";
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Project</CardTitle>
-        </CardHeader>
+    <ProjectLoadingProvider>
+      <div className="flex flex-col gap-6">
+        <ProjectLoadingGuard>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Project</CardTitle>
+            </CardHeader>
 
-        <CardContent className="flex flex-col gap-3">
-          {projectError ? (
-            <Alert variant="destructive">
-              <AlertCircleIcon />
-              <AlertDescription>{projectError}</AlertDescription>
-            </Alert>
-          ) : null}
+            <CardContent className="flex flex-col gap-3">
+              {projectError ? (
+                <Alert variant="destructive">
+                  <AlertCircleIcon />
+                  <AlertDescription>{projectError}</AlertDescription>
+                </Alert>
+              ) : null}
 
-          {items.length > 0 ? (
-            <ProjectList items={items} selectedProject={props.decodedProject} />
-          ) : (
-            !projectError && (
-              <p className="text-muted-foreground text-sm">
-                No projects found in this organization.
-              </p>
-            )
-          )}
+              {items.length > 0 ? (
+                <ProjectList items={items} selectedProject={props.decodedProject} />
+              ) : (
+                !projectError && (
+                  <p className="text-muted-foreground text-sm">
+                    No projects found in this organization.
+                  </p>
+                )
+              )}
 
-          {projectSelected ? null : (
-            <p className="text-muted-foreground text-sm">
-              Select a project to list its repositories.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+              {projectSelected ? null : (
+                <p className="text-muted-foreground text-sm">
+                  Select a project to list its repositories.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </ProjectLoadingGuard>
 
-      {projectSelected ? <RepositoriesList {...props} /> : null}
-    </div>
+        {projectSelected ? (
+          <ProjectLoadingGuard>
+            <RepositoriesList {...props} />
+          </ProjectLoadingGuard>
+        ) : (
+          <ReposLoadingPlaceholder />
+        )}
+      </div>
+    </ProjectLoadingProvider>
   );
 }
