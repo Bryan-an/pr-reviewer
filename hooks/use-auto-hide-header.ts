@@ -13,9 +13,10 @@ export function useAutoHideHeader() {
     function handleScroll() {
       const currentY = window.scrollY;
       const delta = currentY - lastScrollY.current;
-      lastScrollY.current = currentY;
 
       if (Math.abs(delta) < SCROLL_THRESHOLD) return;
+
+      lastScrollY.current = currentY;
 
       if (currentY <= HEADER_HEIGHT) {
         setIsVisible(true);
