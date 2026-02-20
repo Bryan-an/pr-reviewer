@@ -14,7 +14,7 @@ export function NewReviewLink() {
     return (
       <span
         className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
+          buttonVariants({ variant: "outline", size: "sm" }),
           "pointer-events-none opacity-50",
         )}
         aria-disabled="true"
@@ -25,7 +25,7 @@ export function NewReviewLink() {
   }
 
   return (
-    <Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/">
+    <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/">
       New review
     </Link>
   );
