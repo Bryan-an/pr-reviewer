@@ -27,10 +27,9 @@ export function ReposLoadingPlaceholder() {
           <Skeleton className="h-3 w-14" />
         </div>
 
-        {/* Filter form skeleton: matches the 6-column grid */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
+        {/* Filter form skeleton: matches the 5-column grid (search + order + hasRules) */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
           <Skeleton className="h-9 sm:col-span-3" />
-          <Skeleton className="h-9 sm:col-span-1" />
           <Skeleton className="h-9 sm:col-span-1" />
           <Skeleton className="h-9 sm:col-span-1" />
         </div>

@@ -11,6 +11,7 @@ import {
 } from "@/app/repos/_components/repositories-list";
 import { ProjectList, type ProjectListItem } from "@/app/repos/_components/project-list";
 import { ProjectLoadingGuard } from "@/app/repos/_components/project-loading-guard";
+import { ReposFilterLoadingProvider } from "@/app/repos/_components/repos-filter-loading-context";
 import { ReposLoadingPlaceholder } from "@/app/repos/_components/repos-loading-placeholder";
 
 export type ProjectsAndReposProps = RepositoriesListProps;
@@ -72,9 +73,11 @@ export async function ProjectsAndRepos(props: ProjectsAndReposProps) {
       </ProjectLoadingGuard>
 
       {projectSelected ? (
-        <ProjectLoadingGuard>
-          <RepositoriesList {...props} />
-        </ProjectLoadingGuard>
+        <ReposFilterLoadingProvider>
+          <ProjectLoadingGuard>
+            <RepositoriesList {...props} />
+          </ProjectLoadingGuard>
+        </ReposFilterLoadingProvider>
       ) : (
         <ReposLoadingPlaceholder />
       )}
