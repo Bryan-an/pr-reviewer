@@ -16,7 +16,9 @@ import { useRouter } from "next/navigation";
 
 type ReposFilterLoadingContextValue = Readonly<{
   isPending: boolean;
+  isRefreshing: boolean;
   navigateToRepos: (href: string) => void;
+  refreshRepos: () => void;
 }>;
 
 const ReposFilterLoadingContext = createContext<ReposFilterLoadingContextValue | null>(null);
@@ -30,21 +32,33 @@ type ReposFilterLoadingProviderProps = Readonly<{
 }>;
 
 export function ReposFilterLoadingProvider({ children }: ReposFilterLoadingProviderProps) {
-  const [isPending, startTransition] = useTransition();
+  const [isNavigating, startNavigationTransition] = useTransition();
+  const [isRefreshing, startRefreshTransition] = useTransition();
   const router = useRouter();
 
   const navigateToRepos = useCallback(
     (href: string) => {
-      startTransition(() => {
+      startNavigationTransition(() => {
         router.push(href);
       });
     },
-    [router, startTransition],
+    [router, startNavigationTransition],
   );
 
+  const refreshRepos = useCallback(() => {
+    startRefreshTransition(() => {
+      router.refresh();
+    });
+  }, [router, startRefreshTransition]);
+
   const value = useMemo<ReposFilterLoadingContextValue>(
-    () => ({ isPending, navigateToRepos }),
-    [isPending, navigateToRepos],
+    () => ({
+      isPending: isNavigating || isRefreshing,
+      isRefreshing,
+      navigateToRepos,
+      refreshRepos,
+    }),
+    [isNavigating, isRefreshing, navigateToRepos, refreshRepos],
   );
 
   return (

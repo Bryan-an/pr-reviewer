@@ -18,11 +18,17 @@ export function ReposLoadingPlaceholder() {
           <Skeleton className="h-3 w-14" />
         </div>
 
-        {/* Filter form skeleton: matches the 5-column grid (search + order + hasRules) */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
-          <Skeleton className="h-9 sm:col-span-3" />
-          <Skeleton className="h-9 sm:col-span-1" />
-          <Skeleton className="h-9 sm:col-span-1" />
+        {/* Filter form skeleton: flex wrapper (grid controls + action buttons) */}
+        <div className="flex items-start gap-2">
+          <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-5">
+            <Skeleton className="h-9 sm:col-span-3" />
+            <Skeleton className="h-9 sm:col-span-1" />
+            <Skeleton className="h-9 sm:col-span-1" />
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Skeleton className="size-9 rounded-md" />
+          </div>
         </div>
       </div>
 

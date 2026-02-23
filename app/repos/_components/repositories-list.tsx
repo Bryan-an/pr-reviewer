@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
+import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
@@ -65,7 +66,9 @@ export async function RepositoriesList(props: RepositoriesListProps) {
     : filteredByName;
 
   const sorted = filtered.slice().sort((a, b) => a.name.localeCompare(b.name));
-  if (props.sort === "name" && props.order === "desc") sorted.reverse();
+
+  if (props.sort === REPOS_SORT_FIELD.Name && props.order === REPOS_SORT_ORDER.Desc)
+    sorted.reverse();
 
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
