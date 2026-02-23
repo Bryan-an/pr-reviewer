@@ -148,7 +148,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                             {count} rule{count === 1 ? "" : "s"}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground text-xs">No rules</span>
+                          <span className="text-muted-foreground text-sm">No rules</span>
                         )}
                       </TableCell>
 
@@ -168,8 +168,8 @@ export async function RepositoriesList(props: RepositoriesListProps) {
           </Table>
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <div className="text-muted-foreground text-xs">
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-muted-foreground text-sm">
             Page {safePage + 1} of {totalPages}
           </div>
 

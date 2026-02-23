@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 
-import { LoadingGuard } from "@/components/loading-guard";
 import { useReposFilterLoading } from "./repos-filter-loading-context";
+import { ReposTableSkeleton } from "./repos-table-skeleton";
 
 type ReposFilterLoadingGuardProps = Readonly<{
   children: ReactNode;
@@ -11,5 +11,8 @@ type ReposFilterLoadingGuardProps = Readonly<{
 
 export function ReposFilterLoadingGuard({ children }: ReposFilterLoadingGuardProps) {
   const { isPending } = useReposFilterLoading();
-  return <LoadingGuard isPending={isPending}>{children}</LoadingGuard>;
+
+  if (!isPending) return children;
+
+  return <ReposTableSkeleton />;
 }
