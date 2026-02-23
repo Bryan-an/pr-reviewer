@@ -16,10 +16,9 @@ import { ReviewActionsProvider } from "./review-actions-context";
 // ---------------------------------------------------------------------------
 
 const SEVERITY_BADGE_STYLES: Record<string, string> = {
-  error:
-    "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300",
-  warn: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
-  info: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300",
+  error: "border-destructive/25 bg-destructive/10 text-destructive",
+  warn: "border-amber-600/20 bg-amber-600/8 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-400",
+  info: "border-border bg-secondary text-muted-foreground",
 };
 
 // ---------------------------------------------------------------------------
@@ -215,7 +214,7 @@ export function ReviewResults({
                       <Markdown className="text-muted-foreground text-sm" content={f.message} />
 
                       {f.recommendation ? (
-                        <div className="border-l-2 border-blue-200 pl-3 dark:border-blue-800">
+                        <div className="border-muted-foreground/25 border-l-2 pl-3">
                           <p className="text-xs font-medium">Recommendation</p>
 
                           <Markdown
