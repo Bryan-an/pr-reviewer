@@ -117,7 +117,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead className="w-[55%]">Repository</TableHead>
                 <TableHead className="w-[25%]">Rules</TableHead>
-                <TableHead className="w-[20%]">Action</TableHead>
+                <TableHead className="w-[20%] text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -155,7 +155,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                         )}
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="text-center">
                         <Link
                           className={buttonVariants({ variant: "outline", size: "sm" })}
                           href={href}
