@@ -1,0 +1,83 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useTransition,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
+
+// ---------------------------------------------------------------------------
+// Context
+// ---------------------------------------------------------------------------
+
+type ReposFilterLoadingContextValue = Readonly<{
+  isPending: boolean;
+  isRefreshing: boolean;
+  navigateToRepos: (href: string) => void;
+  refreshRepos: () => void;
+}>;
+
+const ReposFilterLoadingContext = createContext<ReposFilterLoadingContextValue | null>(null);
+
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
+
+type ReposFilterLoadingProviderProps = Readonly<{
+  children: ReactNode;
+}>;
+
+export function ReposFilterLoadingProvider({ children }: ReposFilterLoadingProviderProps) {
+  const [isNavigating, startNavigationTransition] = useTransition();
+  const [isRefreshing, startRefreshTransition] = useTransition();
+  const router = useRouter();
+
+  const navigateToRepos = useCallback(
+    (href: string) => {
+      startNavigationTransition(() => {
+        router.push(href);
+      });
+    },
+    [router, startNavigationTransition],
+  );
+
+  const refreshRepos = useCallback(() => {
+    startRefreshTransition(() => {
+      router.refresh();
+    });
+  }, [router, startRefreshTransition]);
+
+  const value = useMemo<ReposFilterLoadingContextValue>(
+    () => ({
+      isPending: isNavigating || isRefreshing,
+      isRefreshing,
+      navigateToRepos,
+      refreshRepos,
+    }),
+    [isNavigating, isRefreshing, navigateToRepos, refreshRepos],
+  );
+
+  return (
+    <ReposFilterLoadingContext.Provider value={value}>
+      {children}
+    </ReposFilterLoadingContext.Provider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+export function useReposFilterLoading(): ReposFilterLoadingContextValue {
+  const ctx = useContext(ReposFilterLoadingContext);
+
+  if (!ctx) {
+    throw new Error("useReposFilterLoading must be used within a <ReposFilterLoadingProvider>.");
+  }
+
+  return ctx;
+}

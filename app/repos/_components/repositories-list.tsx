@@ -4,16 +4,6 @@ import { AlertCircleIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -22,11 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
+import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
+
+import { ReposFilterForm } from "./repos-filter-form";
+import { ReposFilterLoadingGuard } from "./repos-filter-loading-guard";
 
 const PAGE_SIZE = 20;
 
@@ -73,7 +66,9 @@ export async function RepositoriesList(props: RepositoriesListProps) {
     : filteredByName;
 
   const sorted = filtered.slice().sort((a, b) => a.name.localeCompare(b.name));
-  if (props.sort === "name" && props.order === "desc") sorted.reverse();
+
+  if (props.sort === REPOS_SORT_FIELD.Name && props.order === REPOS_SORT_ORDER.Desc)
+    sorted.reverse();
 
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -99,57 +94,13 @@ export async function RepositoriesList(props: RepositoriesListProps) {
           <div className="text-muted-foreground text-sm">{total} total</div>
         </div>
 
-        <form method="GET" className="grid grid-cols-1 gap-2 sm:grid-cols-6">
-          <input type="hidden" name={REPOS_FORM_FIELD.Org} value={props.decodedOrg} />
-          <input type="hidden" name={REPOS_FORM_FIELD.Project} value={props.decodedProject} />
-
-          <div className="sm:col-span-3">
-            <Label htmlFor="repo-search" className="sr-only">
-              Search
-            </Label>
-
-            <Input
-              id="repo-search"
-              name={REPOS_FORM_FIELD.Query}
-              defaultValue={props.q}
-              placeholder="Search repositories…"
-            />
-          </div>
-
-          <div className="sm:col-span-1">
-            <Label htmlFor="repo-order" className="sr-only">
-              Sort
-            </Label>
-
-            <Select name={REPOS_FORM_FIELD.Order} defaultValue={props.order}>
-              <SelectTrigger id="repo-order" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="asc">A → Z</SelectItem>
-                <SelectItem value="desc">Z → A</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="border-input bg-background flex items-center gap-2 rounded-md border px-3 text-sm shadow-xs sm:col-span-1">
-            <Checkbox
-              id="repo-has-rules"
-              name={REPOS_FORM_FIELD.HasRules}
-              value="1"
-              defaultChecked={props.hasRules}
-            />
-
-            <Label htmlFor="repo-has-rules" className="cursor-pointer">
-              Has rules
-            </Label>
-          </div>
-
-          <Button type="submit" className="sm:col-span-1">
-            Apply
-          </Button>
-        </form>
+        <ReposFilterForm
+          decodedOrg={props.decodedOrg}
+          decodedProject={props.decodedProject}
+          initialQ={props.q}
+          initialOrder={props.order}
+          initialHasRules={props.hasRules}
+        />
       </div>
 
       {error ? (
@@ -159,99 +110,104 @@ export async function RepositoriesList(props: RepositoriesListProps) {
         </Alert>
       ) : null}
 
-      <div className="rounded-xl border shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[55%]">Repository</TableHead>
-              <TableHead className="w-[25%]">Rules</TableHead>
-              <TableHead className="w-[20%]">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {pageItems.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-muted-foreground py-6 text-center">
-                  No repositories.
-                </TableCell>
+      <ReposFilterLoadingGuard>
+        <div className="rounded-xl border shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="w-[55%]">Repository</TableHead>
+                <TableHead className="w-[25%]">Rules</TableHead>
+                <TableHead className="w-[20%]">Action</TableHead>
               </TableRow>
-            ) : (
-              pageItems.map((r) => {
-                const count = ruleCounts[r.id] ?? 0;
-                const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
+            </TableHeader>
 
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell>
-                      <div className="text-sm font-medium">{r.name}</div>
-                      <div className="text-muted-foreground mt-1 max-w-xs truncate text-xs">
-                        {r.remoteUrl}
-                      </div>
-                    </TableCell>
+            <TableBody>
+              {pageItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-muted-foreground py-6 text-center">
+                    No repositories.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pageItems.map((r) => {
+                  const count = ruleCounts[r.id] ?? 0;
+                  const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
 
-                    <TableCell>
-                      {count > 0 ? (
-                        <Badge
-                          variant="secondary"
-                          className="bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <div className="text-sm font-medium">{r.name}</div>
+                        <div className="text-muted-foreground mt-1 max-w-xs truncate text-xs">
+                          {r.remoteUrl}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        {count > 0 ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
+                          >
+                            {count} rule{count === 1 ? "" : "s"}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No rules</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <Link
+                          className={buttonVariants({ variant: "link", size: "sm" })}
+                          href={href}
                         >
-                          {count} rule{count === 1 ? "" : "s"}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">No rules</span>
-                      )}
-                    </TableCell>
+                          Manage
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-                    <TableCell>
-                      <Link className={buttonVariants({ variant: "link", size: "sm" })} href={href}>
-                        Manage
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-muted-foreground text-sm">
+            Page {safePage + 1} of {totalPages}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {safePage > 0 ? (
+              <Link
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+                href={reposListUrl({ ...baseFilterParams, page: Math.max(0, safePage - 1) })}
+              >
+                Prev
+              </Link>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
+                Prev
+              </Button>
             )}
-          </TableBody>
-        </Table>
-      </div>
 
-      <div className="flex items-center justify-between text-sm">
-        <div className="text-muted-foreground text-xs">
-          Page {safePage + 1} of {totalPages}
+            {safePage < totalPages - 1 ? (
+              <Link
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+                href={reposListUrl({
+                  ...baseFilterParams,
+                  page: Math.min(totalPages - 1, safePage + 1),
+                })}
+              >
+                Next
+              </Link>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
+                Next
+              </Button>
+            )}
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {safePage > 0 ? (
-            <Link
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-              href={reposListUrl({ ...baseFilterParams, page: Math.max(0, safePage - 1) })}
-            >
-              Prev
-            </Link>
-          ) : (
-            <Button variant="outline" size="sm" disabled>
-              Prev
-            </Button>
-          )}
-
-          {safePage < totalPages - 1 ? (
-            <Link
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-              href={reposListUrl({
-                ...baseFilterParams,
-                page: Math.min(totalPages - 1, safePage + 1),
-              })}
-            >
-              Next
-            </Link>
-          ) : (
-            <Button variant="outline" size="sm" disabled>
-              Next
-            </Button>
-          )}
-        </div>
-      </div>
+      </ReposFilterLoadingGuard>
     </div>
   );
 }
