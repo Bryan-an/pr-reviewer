@@ -81,7 +81,7 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 
 - **Navigation links**: use `buttonVariants()` on `<Link>` — not `Button asChild` — for navigation
 - **Header actions**: `PageHeader` action links use `variant: "outline"` + `size: "sm"`; headers contain only navigation (e.g., "Back"), not duplicate page actions
-- **Table action columns**: center-aligned; action buttons use `variant: "outline"` + `size: "sm"`. For clickable rows, use the stretched link pattern (`relative` on `TableRow`, `static after:absolute after:inset-0 after:content-['']` on the `Link`) to keep server components
+- **Table action columns**: center-aligned; action buttons use `variant: "outline"` + `size: "sm"`. For clickable rows, use the stretched link pattern (`relative` on `TableRow`, `static after:absolute after:inset-0 after:content-['']` on the primary `Link`) — the `Link`'s `::after` overlay covers the entire row, so any additional interactive elements in the row must use `relative z-10` to sit above it
 - **Grid overlay buttons**: loading-state buttons use `grid grid-cols-1 grid-rows-1 justify-items-center` — without `justify-items-center`, content is left-aligned because grid overrides the button's default `inline-flex justify-center`
 - **Tailwind v4 sizing**: 4px multiplier for all utilities — prefer `pt-17`/`h-13` over `pt-[68px]`/`h-[52px]`. Use `supports-backdrop-filter:` over `supports-[backdrop-filter]:`. Linter flags arbitrary values with canonical equivalents.
 - **Sticky header offset**: scrollable pages use `pt-17` (68px = 52px header + 16px gap); `scroll-padding-top: 68px` is set globally in `globals.css`
