@@ -3,11 +3,11 @@
 ## Branching (GitHub Flow)
 
 - `main` is the only long-lived branch; keep it working
-- Short-lived branches: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, `docs/<slug>`
+- Short-lived branches: `feat/<slug>`, `fix/<slug>`, `refactor/<slug>`, `chore/<slug>`, `docs/<slug>`
 
 ## Commits
 
-- Conventional Commits (enforced by commitlint): `feat:`, `fix:`, `chore:`, `docs:`
+- Conventional Commits (enforced by commitlint via `@commitlint/config-conventional`): `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, and other standard types
 
 ## PRs & merging
 
