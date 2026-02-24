@@ -29,7 +29,7 @@ No test framework is configured yet (vitest and playwright are planned).
 ## Git Hooks (Husky)
 
 - **pre-commit**: `lint-staged` (ESLint --fix + Prettier on staged files) + `pnpm type-check`
-- **commit-msg**: commitlint enforcing Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`)
+- **commit-msg**: commitlint enforcing Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`)
 - **pre-push**: `pnpm build`
 
 Branch prefixes: `feat/<slug>`, `fix/<slug>`, `refactor/<slug>`, `chore/<slug>`, `docs/<slug>`. Squash merge into `main`.
