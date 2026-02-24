@@ -117,7 +117,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead className="w-[55%]">Repository</TableHead>
                 <TableHead className="w-[25%]">Rules</TableHead>
-                <TableHead className="w-[20%]">Action</TableHead>
+                <TableHead className="w-[20%] text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -134,7 +134,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                   const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
 
                   return (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} className="relative cursor-pointer">
                       <TableCell>
                         <div className="text-sm font-medium">{r.name}</div>
                         <div className="text-muted-foreground mt-1 max-w-xs truncate text-xs">
@@ -155,9 +155,13 @@ export async function RepositoriesList(props: RepositoriesListProps) {
                         )}
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="text-center">
                         <Link
-                          className={buttonVariants({ variant: "link", size: "sm" })}
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                            className: "static after:absolute after:inset-0 after:content-['']",
+                          })}
                           href={href}
                         >
                           Manage
