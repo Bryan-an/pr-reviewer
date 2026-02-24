@@ -18,4 +18,4 @@
 ## Naming
 
 - Files/folders: `kebab-case`; React exports: `PascalCase`; values/functions: `camelCase`
-- Route-scoped UI in `app/**/_components/`; shared UI in `components/`; `components/ui/` reserved for shadcn/ui
+- Route-scoped UI in `app/**/_components/`; route-scoped logic in `app/**/_lib/` (routes, search params, constants); shared UI in `components/`; `components/ui/` reserved for shadcn/ui
