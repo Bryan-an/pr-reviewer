@@ -157,7 +157,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
 
                       <TableCell>
                         <Link
-                          className={buttonVariants({ variant: "link", size: "sm" })}
+                          className={buttonVariants({ variant: "outline", size: "sm" })}
                           href={href}
                         >
                           Manage
