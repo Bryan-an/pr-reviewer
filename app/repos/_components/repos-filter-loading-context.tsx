@@ -16,10 +16,14 @@ import { REPOS_SECTION_ID } from "@/app/repos/_lib/dom-ids";
 // Context
 // ---------------------------------------------------------------------------
 
+type NavigateToReposOptions = Readonly<{
+  replace?: boolean;
+}>;
+
 type ReposFilterLoadingContextValue = Readonly<{
   isPending: boolean;
   isRefreshing: boolean;
-  navigateToRepos: (href: string) => void;
+  navigateToRepos: (href: string, options?: NavigateToReposOptions) => void;
   refreshRepos: () => void;
 }>;
 
@@ -39,9 +43,11 @@ export function ReposFilterLoadingProvider({ children }: ReposFilterLoadingProvi
   const router = useRouter();
 
   const navigateToRepos = useCallback(
-    (href: string) => {
+    (href: string, options?: NavigateToReposOptions) => {
+      const navigate = options?.replace ? router.replace : router.push;
+
       startNavigationTransition(() => {
-        router.push(href, { scroll: false });
+        navigate(href, { scroll: false });
       });
 
       requestAnimationFrame(() => {
