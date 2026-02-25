@@ -10,8 +10,6 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
-import { REPOS_SECTION_ID } from "@/app/repos/_lib/dom-ids";
-
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
@@ -48,12 +46,6 @@ export function ReposFilterLoadingProvider({ children }: ReposFilterLoadingProvi
 
       startNavigationTransition(() => {
         navigate(href, { scroll: false });
-      });
-
-      requestAnimationFrame(() => {
-        document
-          .getElementById(REPOS_SECTION_ID)
-          ?.scrollIntoView({ behavior: "instant", block: "start" });
       });
     },
     [router, startNavigationTransition],
