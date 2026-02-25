@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { REPOS_SECTION_ID } from "@/app/repos/_lib/dom-ids";
 import { repoBasePath } from "@/app/repos/_lib/routes";
 import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 
@@ -88,7 +89,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div id={REPOS_SECTION_ID} className="flex scroll-mt-17 flex-col gap-4">
       <div className="flex flex-col gap-3">
         <div className="flex items-end justify-between gap-3">
           <h2 className="text-base font-semibold">Repositories</h2>

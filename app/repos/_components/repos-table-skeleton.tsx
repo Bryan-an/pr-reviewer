@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const SKELETON_ROWS = 6;
+const SKELETON_ROWS = 20;
 
 export function ReposTableSkeleton() {
   return (
