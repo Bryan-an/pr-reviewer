@@ -3,7 +3,7 @@ import { AlertCircleIcon } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
+import { repoBasePath } from "@/app/repos/_lib/routes";
 import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
@@ -20,6 +20,7 @@ import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
 
 import { ReposFilterForm } from "./repos-filter-form";
 import { ReposFilterLoadingGuard } from "./repos-filter-loading-guard";
+import { ReposPagination } from "./repos-pagination";
 
 const PAGE_SIZE = 20;
 
@@ -175,42 +176,11 @@ export async function RepositoriesList(props: RepositoriesListProps) {
           </Table>
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <div className="text-muted-foreground text-sm">
-            Page {safePage + 1} of {totalPages}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {safePage > 0 ? (
-              <Link
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-                href={reposListUrl({ ...baseFilterParams, page: Math.max(0, safePage - 1) })}
-              >
-                Prev
-              </Link>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
-                Prev
-              </Button>
-            )}
-
-            {safePage < totalPages - 1 ? (
-              <Link
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-                href={reposListUrl({
-                  ...baseFilterParams,
-                  page: Math.min(totalPages - 1, safePage + 1),
-                })}
-              >
-                Next
-              </Link>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
-                Next
-              </Button>
-            )}
-          </div>
-        </div>
+        <ReposPagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          baseFilterParams={baseFilterParams}
+        />
       </ReposFilterLoadingGuard>
     </div>
   );

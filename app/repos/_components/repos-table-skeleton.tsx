@@ -19,7 +19,7 @@ export function ReposTableSkeleton() {
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-[55%]">Repository</TableHead>
               <TableHead className="w-[25%]">Rules</TableHead>
-              <TableHead className="w-[20%]">Action</TableHead>
+              <TableHead className="w-[20%] text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -35,8 +35,8 @@ export function ReposTableSkeleton() {
                   <Skeleton className="h-5 w-16 rounded-full" />
                 </TableCell>
 
-                <TableCell>
-                  <Skeleton className="h-4 w-14" />
+                <TableCell className="text-center">
+                  <Skeleton className="inline-block h-4 w-14" />
                 </TableCell>
               </TableRow>
             ))}
