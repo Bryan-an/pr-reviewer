@@ -38,11 +38,7 @@ export function ReposPagination({
 
   function handleNext() {
     if (!hasNext) return;
-    const nextPage = currentPage + 1;
-
-    navigateToRepos(
-      reposListUrl({ ...baseFilterParams, page: nextPage === 0 ? undefined : nextPage }),
-    );
+    navigateToRepos(reposListUrl({ ...baseFilterParams, page: currentPage + 1 }));
   }
 
   return (
