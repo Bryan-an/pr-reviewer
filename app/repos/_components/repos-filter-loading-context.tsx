@@ -14,10 +14,14 @@ import { useRouter } from "next/navigation";
 // Context
 // ---------------------------------------------------------------------------
 
+type NavigateToReposOptions = Readonly<{
+  replace?: boolean;
+}>;
+
 type ReposFilterLoadingContextValue = Readonly<{
   isPending: boolean;
   isRefreshing: boolean;
-  navigateToRepos: (href: string) => void;
+  navigateToRepos: (href: string, options?: NavigateToReposOptions) => void;
   refreshRepos: () => void;
 }>;
 
@@ -37,9 +41,11 @@ export function ReposFilterLoadingProvider({ children }: ReposFilterLoadingProvi
   const router = useRouter();
 
   const navigateToRepos = useCallback(
-    (href: string) => {
+    (href: string, options?: NavigateToReposOptions) => {
+      const navigate = options?.replace ? router.replace : router.push;
+
       startNavigationTransition(() => {
-        router.push(href);
+        navigate(href, { scroll: false });
       });
     },
     [router, startNavigationTransition],

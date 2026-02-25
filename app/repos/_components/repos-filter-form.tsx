@@ -91,7 +91,7 @@ export function ReposFilterForm({
     if (inputValue === initialQ) return;
 
     debounceTimerRef.current = setTimeout(() => {
-      navigateToRepos(buildFilterUrl({ q: inputValue }));
+      navigateToRepos(buildFilterUrl({ q: inputValue }), { replace: true });
     }, DEBOUNCE_MS);
 
     return () => {
@@ -105,13 +105,13 @@ export function ReposFilterForm({
   function handleOrderChange(newOrder: string) {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     setOrder(newOrder);
-    navigateToRepos(buildFilterUrl({ order: newOrder }));
+    navigateToRepos(buildFilterUrl({ order: newOrder }), { replace: true });
   }
 
   function handleHasRulesChange(checked: boolean) {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     setHasRules(checked);
-    navigateToRepos(buildFilterUrl({ hasRules: checked }));
+    navigateToRepos(buildFilterUrl({ hasRules: checked }), { replace: true });
   }
 
   return (
@@ -188,7 +188,7 @@ export function ReposFilterForm({
                   size="icon"
                   aria-label="Reset filters"
                   disabled={isPending}
-                  onClick={() => navigateToRepos(resetUrl)}
+                  onClick={() => navigateToRepos(resetUrl, { replace: true })}
                 >
                   <XIcon />
                 </Button>

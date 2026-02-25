@@ -36,7 +36,7 @@ export function ProjectLoadingProvider({ children }: ProjectLoadingProviderProps
   const navigateToProject = useCallback(
     (href: string) => {
       startTransition(() => {
-        router.push(href);
+        router.push(href, { scroll: false });
       });
     },
     [router, startTransition],
