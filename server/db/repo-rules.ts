@@ -28,7 +28,7 @@ export async function listRepoRules(params: { repositoryId: string }) {
 
   return await prisma.repoRule.findMany({
     where: { repositoryId },
-    orderBy: [{ sortOrder: "asc" }, { updatedAt: "asc" }, { id: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
 }
 
@@ -37,7 +37,7 @@ export async function listEnabledRepoRules(params: { repositoryId: string }) {
 
   return await prisma.repoRule.findMany({
     where: { repositoryId, enabled: true },
-    orderBy: [{ sortOrder: "asc" }, { updatedAt: "asc" }, { id: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
 }
 

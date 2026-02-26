@@ -1,17 +1,15 @@
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Markdown } from "@/components/markdown";
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { repoEditRulePath, repoNewRulePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { listRepoRules } from "@/server/db/repo-rules";
-import { ConfirmSubmitButton } from "@/app/repos/_components/confirm-submit-button";
+import { RuleCard } from "@/app/repos/[org]/[project]/[adoRepoId]/_components/rule-card";
 import { toggleRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actions/toggle-rule-action";
 import { deleteRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actions/delete-rule-action";
 
@@ -104,87 +102,19 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
                 const editHref = repoEditRulePath(org, project, repo.id, r.id);
 
                 return (
-                  <li key={r.id}>
-                    <Card>
-                      <CardContent>
-                        <div className="flex flex-col gap-3">
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <div className="text-base font-semibold">{r.title}</div>
-
-                                {r.enabled ? (
-                                  <Badge>enabled</Badge>
-                                ) : (
-                                  <Badge variant="outline">disabled</Badge>
-                                )}
-
-                                <span className="text-muted-foreground text-xs">
-                                  order {r.sortOrder}
-                                </span>
-                              </div>
-
-                              <div className="text-muted-foreground text-xs">
-                                Updated {new Date(r.updatedAt).toLocaleString()}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <form action={boundToggleAction}>
-                                <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
-                                <input
-                                  type="hidden"
-                                  name={RULE_FORM_FIELD.Enabled}
-                                  value={r.enabled ? "0" : "1"}
-                                />
-
-                                <Button type="submit" variant="outline" size="sm">
-                                  {r.enabled ? "Disable" : "Enable"}
-                                </Button>
-                              </form>
-
-                              <Link
-                                className={buttonVariants({ variant: "outline", size: "sm" })}
-                                href={editHref}
-                              >
-                                Edit
-                              </Link>
-
-                              <form action={boundDeleteAction}>
-                                <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
-
-                                <ConfirmSubmitButton
-                                  variant="outline"
-                                  size="sm"
-                                  confirmText="Delete this rule? This cannot be undone."
-                                  className="text-destructive hover:text-destructive/80"
-                                >
-                                  Delete
-                                </ConfirmSubmitButton>
-                              </form>
-                            </div>
-                          </div>
-
-                          <details className="bg-muted/50 rounded-lg border p-4">
-                            <summary className="cursor-pointer text-sm font-medium">
-                              Preview
-                            </summary>
-
-                            <div className="mt-3">
-                              {r.markdown.trim() ? (
-                                <Markdown
-                                  className="text-muted-foreground text-sm"
-                                  content={r.markdown}
-                                />
-                              ) : (
-                                <div className="text-muted-foreground text-sm">Empty rule.</div>
-                              )}
-                            </div>
-                          </details>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </li>
+                  <RuleCard
+                    key={r.id}
+                    rule={r}
+                    editHref={editHref}
+                    toggleAction={boundToggleAction}
+                    deleteAction={boundDeleteAction}
+                  >
+                    {r.markdown.trim() ? (
+                      <Markdown className="text-muted-foreground text-sm" content={r.markdown} />
+                    ) : (
+                      <div className="text-muted-foreground text-sm">Empty rule.</div>
+                    )}
+                  </RuleCard>
                 );
               })}
             </ul>

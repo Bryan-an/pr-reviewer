@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
@@ -28,4 +29,6 @@ export async function toggleRuleAction(context: ToggleRuleContext, formData: For
   }
 
   await toggleRepoRuleEnabled({ id, enabled });
+
+  revalidatePath(repoBasePath(org, project, adoRepoId));
 }
