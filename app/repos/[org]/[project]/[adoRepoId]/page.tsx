@@ -144,7 +144,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
                               </form>
 
                               <Link
-                                className={buttonVariants({ variant: "link", size: "sm" })}
+                                className={buttonVariants({ variant: "outline", size: "sm" })}
                                 href={editHref}
                               >
                                 Edit
@@ -154,7 +154,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
                                 <input type="hidden" name={RULE_FORM_FIELD.Id} value={r.id} />
 
                                 <ConfirmSubmitButton
-                                  variant="link"
+                                  variant="outline"
                                   size="sm"
                                   confirmText="Delete this rule? This cannot be undone."
                                   className="text-destructive hover:text-destructive/80"
