@@ -9,7 +9,7 @@ Azure DevOps AI PR Reviewer — a Next.js web app that automates pull request re
 ## Commands
 
 ```bash
-pnpm dev              # Start dev server
+pnpm dev              # Start dev server (port 3100)
 pnpm build            # Production build (also runs as pre-push hook)
 pnpm lint             # ESLint
 pnpm type-check       # TypeScript check (tsc --noEmit)
@@ -96,6 +96,10 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 - **Naming**: files/folders in `kebab-case`, React exports `PascalCase`, values/functions `camelCase`
 - **Validation**: validate at boundaries with Zod; prefer `unknown` + Zod over `any`
 - **Server-only**: modules under `server/` must include `import "server-only"` and never be imported by Client Components
+- **Radix primitives**: import from `"radix-ui"` monorepo (e.g., `import { Collapsible } from "radix-ui"`), not individual `@radix-ui/react-*` packages. For one-time use, import primitives directly — only install shadcn wrappers when the component will be reused across the app
+- **Optimistic updates**: use React 19 `useOptimistic` inside `startTransition`. Server actions must call `revalidatePath()` after mutations so the canonical state settles correctly. Never use `redirect()` in server actions consumed by optimistic flows — it throws `NEXT_REDIRECT` which gets caught by `try/catch`, producing false error toasts
+- **Animated collapsible**: use Radix `Collapsible` + `tw-animate-css` classes (`data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up overflow-hidden` on Content). Put visual styling (`bg-muted/50`, `border`, `p-4`) on an inner `<div>`, not on Content itself — mixing `overflow-hidden` with border/padding causes visual glitches during height animation
+- **Destructive confirmations**: use shadcn `AlertDialog` (not `window.confirm()`). Use uncontrolled pattern — `AlertDialogAction` auto-closes via Radix internals, no `useState` needed. Pass `variant="destructive"` to `AlertDialogAction`
 - **Package manager**: pnpm only — do not use npm or yarn
 
 ## Environment Variables
