@@ -141,7 +141,7 @@ export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: Markdow
             className={`rounded-lg border p-4 ${mode === MODE.Edit ? "hidden lg:block" : "block"}`}
           >
             {markdown.trim() ? (
-              <Markdown className="text-muted-foreground text-sm" content={markdown} />
+              <Markdown content={markdown} />
             ) : (
               <div className="text-muted-foreground text-sm">Nothing to preview yet.</div>
             )}

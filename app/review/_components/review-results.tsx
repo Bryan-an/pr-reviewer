@@ -211,16 +211,13 @@ export function ReviewResults({
                     </CardHeader>
 
                     <CardContent className="flex flex-col gap-3">
-                      <Markdown className="text-muted-foreground text-sm" content={f.message} />
+                      <Markdown content={f.message} />
 
                       {f.recommendation ? (
                         <div className="border-muted-foreground/25 border-l-2 pl-3">
                           <p className="text-xs font-medium">Recommendation</p>
 
-                          <Markdown
-                            className="text-muted-foreground text-sm"
-                            content={f.recommendation}
-                          />
+                          <Markdown content={f.recommendation} />
                         </div>
                       ) : null}
                     </CardContent>
