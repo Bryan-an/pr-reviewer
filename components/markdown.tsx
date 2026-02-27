@@ -3,6 +3,8 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
+import { cn } from "@/lib/utils/cn";
+
 type MarkdownProps = Readonly<{
   content: string;
   className?: string;
@@ -18,7 +20,7 @@ const markdownComponents: Components = {
 
 export function Markdown({ content, className }: MarkdownProps) {
   return (
-    <div className={`prose prose-sm max-w-none ${className ?? ""}`}>
+    <div className={cn("prose max-w-none", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[rehypeHighlight]}

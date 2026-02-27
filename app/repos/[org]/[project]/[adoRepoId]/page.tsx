@@ -52,7 +52,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
     rules.map((r) => [
       r.id,
       r.markdown.trim() ? (
-        <Markdown className="text-muted-foreground text-sm" content={r.markdown} />
+        <Markdown content={r.markdown} />
       ) : (
         <div className="text-muted-foreground text-sm">Empty rule.</div>
       ),
@@ -92,7 +92,7 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Rules</h2>
+            <h2 className="text-xl font-semibold">Rules</h2>
 
             <span className="text-muted-foreground text-xs">
               Enabled rules are applied during PR reviews for this repo.

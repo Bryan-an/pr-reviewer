@@ -57,7 +57,7 @@ export function RuleCard({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-base font-semibold">{rule.title}</div>
+                  <div className="text-lg font-semibold">{rule.title}</div>
 
                   {optimisticEnabled ? (
                     <Badge>enabled</Badge>

@@ -158,12 +158,6 @@
   --tw-prose-td-borders: var(--border);
 }
 
-/* Increase prose code font size — prose-sm default is too small */
-.prose pre {
-  font-size: 0.875rem;
-  line-height: 1.625;
-}
-
 /* highlight.js — GitHub Light / GitHub Dark Dimmed
    Unlayered to win over prose's layered pre code color rules.
    Sources: highlightjs/highlight.js github.css + github-dark-dimmed.css */
