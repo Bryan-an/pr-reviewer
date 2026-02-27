@@ -22,6 +22,7 @@
     ]
   },
   "dependencies": {
+    "@formkit/auto-animate": "^0.9.0",
     "@prisma/adapter-better-sqlite3": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "azure-devops-node-api": "^15.1.2",

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ConfirmSubmitButton } from "@/app/repos/_components/confirm-submit-button";
+import { DeleteRuleDialog } from "@/app/repos/[org]/[project]/[adoRepoId]/_components/delete-rule-dialog";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 
 type RuleCardRule = Readonly<{
@@ -23,11 +23,17 @@ type RuleCardProps = Readonly<{
   rule: RuleCardRule;
   editHref: string;
   toggleAction: (formData: FormData) => Promise<void>;
-  deleteAction: (formData: FormData) => Promise<void>;
+  onDeleteConfirm: () => void;
   children: ReactNode;
 }>;
 
-export function RuleCard({ rule, editHref, toggleAction, deleteAction, children }: RuleCardProps) {
+export function RuleCard({
+  rule,
+  editHref,
+  toggleAction,
+  onDeleteConfirm,
+  children,
+}: RuleCardProps) {
   const [optimisticEnabled, setOptimisticEnabled] = useOptimistic(rule.enabled);
 
   async function handleToggle(formData: FormData) {
@@ -83,18 +89,7 @@ export function RuleCard({ rule, editHref, toggleAction, deleteAction, children 
                   Edit
                 </Link>
 
-                <form action={deleteAction}>
-                  <input type="hidden" name={RULE_FORM_FIELD.Id} value={rule.id} />
-
-                  <ConfirmSubmitButton
-                    variant="outline"
-                    size="sm"
-                    confirmText="Delete this rule? This cannot be undone."
-                    className="text-destructive hover:text-destructive/80"
-                  >
-                    Delete
-                  </ConfirmSubmitButton>
-                </form>
+                <DeleteRuleDialog ruleTitle={rule.title} onConfirm={onDeleteConfirm} />
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
@@ -18,7 +18,7 @@ export async function deleteRuleAction(context: DeleteRuleContext, formData: For
   const { repositoryId, org, project, adoRepoId } = context;
   const id = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Id);
 
-  if (!id) redirect(repoBasePath(org, project, adoRepoId));
+  if (!id) throw new Error("Missing rule id.");
 
   const existing = await getRepoRuleById({ id });
 
@@ -27,4 +27,6 @@ export async function deleteRuleAction(context: DeleteRuleContext, formData: For
   }
 
   await deleteRepoRule({ id });
+
+  revalidatePath(repoBasePath(org, project, adoRepoId));
 }

@@ -4,12 +4,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Markdown } from "@/components/markdown";
-import { repoEditRulePath, repoNewRulePath, reposListUrl } from "@/app/repos/_lib/routes";
+import { repoNewRulePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { listRepoRules } from "@/server/db/repo-rules";
-import { RuleCard } from "@/app/repos/[org]/[project]/[adoRepoId]/_components/rule-card";
+import { RuleList } from "@/app/repos/[org]/[project]/[adoRepoId]/_components/rule-list";
 import { toggleRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actions/toggle-rule-action";
 import { deleteRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actions/delete-rule-action";
 
@@ -47,6 +47,17 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
   const backHref = reposListUrl({ org, project });
   const newRuleHref = repoNewRulePath(org, project, repo.id);
+
+  const ruleContent = Object.fromEntries(
+    rules.map((r) => [
+      r.id,
+      r.markdown.trim() ? (
+        <Markdown className="text-muted-foreground text-sm" content={r.markdown} />
+      ) : (
+        <div className="text-muted-foreground text-sm">Empty rule.</div>
+      ),
+    ]),
+  );
 
   return (
     <>
@@ -97,27 +108,15 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
               </CardContent>
             </Card>
           ) : (
-            <ul className="flex flex-col gap-3">
-              {rules.map((r) => {
-                const editHref = repoEditRulePath(org, project, repo.id, r.id);
-
-                return (
-                  <RuleCard
-                    key={r.id}
-                    rule={r}
-                    editHref={editHref}
-                    toggleAction={boundToggleAction}
-                    deleteAction={boundDeleteAction}
-                  >
-                    {r.markdown.trim() ? (
-                      <Markdown className="text-muted-foreground text-sm" content={r.markdown} />
-                    ) : (
-                      <div className="text-muted-foreground text-sm">Empty rule.</div>
-                    )}
-                  </RuleCard>
-                );
-              })}
-            </ul>
+            <RuleList
+              rules={rules}
+              ruleContent={ruleContent}
+              deleteAction={boundDeleteAction}
+              toggleAction={boundToggleAction}
+              org={org}
+              project={project}
+              adoRepoId={repo.id}
+            />
           )}
         </div>
       </div>
