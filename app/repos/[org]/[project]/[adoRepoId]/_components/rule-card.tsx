@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useOptimistic } from "react";
+import { type ReactNode, useOptimistic, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { ChevronDown } from "lucide-react";
+import { Collapsible } from "radix-ui";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,7 @@ export function RuleCard({
   children,
 }: RuleCardProps) {
   const [optimisticEnabled, setOptimisticEnabled] = useOptimistic(rule.enabled);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function handleToggle(formData: FormData) {
     setOptimisticEnabled(!optimisticEnabled);
@@ -93,11 +96,20 @@ export function RuleCard({
               </div>
             </div>
 
-            <details className="bg-muted/50 rounded-lg border p-4">
-              <summary className="cursor-pointer text-sm font-medium">Preview</summary>
+            <Collapsible.Root open={previewOpen} onOpenChange={setPreviewOpen}>
+              <Collapsible.Trigger asChild>
+                <Button variant="outline" size="sm">
+                  Preview
+                  <ChevronDown
+                    className={`size-4 transition-transform duration-200 ${previewOpen ? "rotate-180" : ""}`}
+                  />
+                </Button>
+              </Collapsible.Trigger>
 
-              <div className="mt-3">{children}</div>
-            </details>
+              <Collapsible.Content className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
+                <div className="bg-muted/50 mt-2 rounded-lg border p-4">{children}</div>
+              </Collapsible.Content>
+            </Collapsible.Root>
           </div>
         </CardContent>
       </Card>
