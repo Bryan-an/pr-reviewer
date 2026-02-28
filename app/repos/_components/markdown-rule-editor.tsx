@@ -1,15 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Markdown } from "@/components/markdown";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import { ruleFormSchema, type RuleFormValues } from "@/app/repos/_lib/rule-schema";
 
 type MarkdownRuleEditorProps = Readonly<{
   initial: {
@@ -20,6 +30,7 @@ type MarkdownRuleEditorProps = Readonly<{
   };
   submitLabel: string;
   cancelHref: string;
+  formAction: (formData: FormData) => void | Promise<void>;
 }>;
 
 const MODE = {
@@ -29,133 +40,190 @@ const MODE = {
 
 type Mode = (typeof MODE)[keyof typeof MODE];
 
-export function MarkdownRuleEditor({ initial, submitLabel, cancelHref }: MarkdownRuleEditorProps) {
-  const [title, setTitle] = useState(initial.title);
-  const [markdown, setMarkdown] = useState(initial.markdown);
-  const [enabled, setEnabled] = useState(initial.enabled);
-  const [sortOrder, setSortOrder] = useState(String(initial.sortOrder));
+export function MarkdownRuleEditor({
+  initial,
+  submitLabel,
+  cancelHref,
+  formAction,
+}: MarkdownRuleEditorProps) {
   const [mode, setMode] = useState<Mode>(MODE.Edit);
 
-  const sortOrderNumber = useMemo(() => {
-    const n = Number(sortOrder);
-    if (!Number.isFinite(n) || !Number.isInteger(n)) return 0;
-    return n;
-  }, [sortOrder]);
+  const form = useForm<RuleFormValues>({
+    resolver: zodResolver(ruleFormSchema),
+    defaultValues: {
+      title: initial.title,
+      markdown: initial.markdown,
+      enabled: initial.enabled,
+      sortOrder: String(initial.sortOrder),
+    },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+
+  function onValid(values: RuleFormValues) {
+    const fd = new FormData();
+    fd.set(RULE_FORM_FIELD.Title, values.title);
+    fd.set(RULE_FORM_FIELD.Markdown, values.markdown);
+
+    const trimmed = values.sortOrder.trim();
+    const sortOrderNum = trimmed === "" ? 0 : Number(trimmed);
+    fd.set(RULE_FORM_FIELD.SortOrder, String(sortOrderNum));
+
+    if (values.enabled) {
+      fd.set(RULE_FORM_FIELD.Enabled, "1");
+    }
+
+    void formAction(fd);
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rule-title">Title</Label>
+    <Form {...form}>
+      <form
+        action={formAction}
+        onSubmit={form.handleSubmit(onValid)}
+        className="flex flex-col gap-4"
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="flex flex-col gap-1.5">
+                <FormLabel>Title</FormLabel>
 
-          <Input
-            id="rule-title"
-            name={RULE_FORM_FIELD.Title}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Error handling standards"
-            required
+                <FormControl>
+                  <Input {...field} placeholder="e.g. Error handling standards" />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="sortOrder"
+            render={({ field }) => {
+              const n = Number(field.value);
+              const displayNumber = Number.isFinite(n) && Number.isInteger(n) ? n : 0;
+
+              return (
+                <FormItem className="flex flex-col gap-1.5">
+                  <FormLabel>Order</FormLabel>
+
+                  <FormControl>
+                    <Input {...field} inputMode="numeric" />
+                  </FormControl>
+
+                  <span className="text-muted-foreground text-xs">
+                    Lower numbers apply first. Current:{" "}
+                    <span className="font-medium">{displayNumber}</span>
+                  </span>
+
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rule-sort-order">Order</Label>
+        <FormField
+          control={form.control}
+          name="enabled"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center gap-2">
+              <FormControl>
+                <Checkbox
+                  name={field.name}
+                  value="1"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                />
+              </FormControl>
 
-          <Input
-            id="rule-sort-order"
-            name={RULE_FORM_FIELD.SortOrder}
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            inputMode="numeric"
-          />
-
-          <span className="text-muted-foreground text-xs">
-            Lower numbers apply first. Current:{" "}
-            <span className="font-medium">{sortOrderNumber}</span>
-          </span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="rule-enabled"
-          name={RULE_FORM_FIELD.Enabled}
-          value="1"
-          checked={enabled}
-          onCheckedChange={(checked) => setEnabled(checked === true)}
+              <FormLabel className="cursor-pointer">
+                Enabled (apply this rule during reviews)
+              </FormLabel>
+            </FormItem>
+          )}
         />
 
-        <Label htmlFor="rule-enabled" className="cursor-pointer">
-          Enabled (apply this rule during reviews)
-        </Label>
-      </div>
+        <FormField
+          control={form.control}
+          name="markdown"
+          render={({ field }) => (
+            <FormItem className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <FormLabel>Markdown</FormLabel>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor="rule-markdown">Markdown</Label>
+                <div className="bg-muted inline-flex rounded-lg border p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setMode(MODE.Edit)}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                      mode === MODE.Edit
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent"
+                    }`}
+                  >
+                    Edit
+                  </button>
 
-          <div className="bg-muted inline-flex rounded-lg border p-1 text-sm">
-            <button
-              type="button"
-              onClick={() => setMode(MODE.Edit)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                mode === MODE.Edit
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              Edit
-            </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode(MODE.Preview)}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                      mode === MODE.Preview
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent"
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => setMode(MODE.Preview)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                mode === MODE.Preview
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              Preview
-            </button>
-          </div>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className={`${mode === MODE.Preview ? "hidden lg:block" : "block"}`}>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Write your guidelines in Markdown…"
+                      className="min-h-85"
+                    />
+                  </FormControl>
+
+                  <div className="text-muted-foreground mt-2 text-xs">
+                    Tip: be explicit and actionable. Prefer short sections and bullet points.
+                  </div>
+                </div>
+
+                <div
+                  className={`rounded-lg border p-4 ${mode === MODE.Edit ? "hidden lg:block" : "block"}`}
+                >
+                  {field.value.trim() ? (
+                    <Markdown content={field.value} />
+                  ) : (
+                    <div className="text-muted-foreground text-sm">Nothing to preview yet.</div>
+                  )}
+                </div>
+              </div>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <Link href={cancelHref} className={buttonVariants({ variant: "outline" })}>
+            Cancel
+          </Link>
+
+          <Button type="submit">{submitLabel}</Button>
         </div>
-
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className={`${mode === MODE.Preview ? "hidden lg:block" : "block"}`}>
-            <Textarea
-              id="rule-markdown"
-              name={RULE_FORM_FIELD.Markdown}
-              value={markdown}
-              onChange={(e) => setMarkdown(e.target.value)}
-              placeholder="Write your guidelines in Markdown…"
-              className="min-h-85"
-            />
-
-            <div className="text-muted-foreground mt-2 text-xs">
-              Tip: be explicit and actionable. Prefer short sections and bullet points.
-            </div>
-          </div>
-
-          <div
-            className={`rounded-lg border p-4 ${mode === MODE.Edit ? "hidden lg:block" : "block"}`}
-          >
-            {markdown.trim() ? (
-              <Markdown content={markdown} />
-            ) : (
-              <div className="text-muted-foreground text-sm">Nothing to preview yet.</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-        <Button variant="outline" asChild>
-          <Link href={cancelHref}>Cancel</Link>
-        </Button>
-
-        <Button type="submit">{submitLabel}</Button>
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 }

@@ -135,13 +135,12 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
 
         <Card>
           <CardContent>
-            <form action={boundCreateAction}>
-              <MarkdownRuleEditor
-                initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
-                submitLabel="Create rule"
-                cancelHref={cancelHref}
-              />
-            </form>
+            <MarkdownRuleEditor
+              formAction={boundCreateAction}
+              initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
+              submitLabel="Create rule"
+              cancelHref={cancelHref}
+            />
           </CardContent>
         </Card>
       </div>

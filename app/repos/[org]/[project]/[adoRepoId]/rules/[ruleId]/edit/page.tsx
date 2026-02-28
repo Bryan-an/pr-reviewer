@@ -97,18 +97,17 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
 
         <Card>
           <CardContent>
-            <form action={boundUpdateAction}>
-              <MarkdownRuleEditor
-                initial={{
-                  title: existing.title,
-                  markdown: existing.markdown,
-                  enabled: existing.enabled,
-                  sortOrder: existing.sortOrder,
-                }}
-                submitLabel="Save changes"
-                cancelHref={cancelHref}
-              />
-            </form>
+            <MarkdownRuleEditor
+              formAction={boundUpdateAction}
+              initial={{
+                title: existing.title,
+                markdown: existing.markdown,
+                enabled: existing.enabled,
+                sortOrder: existing.sortOrder,
+              }}
+              submitLabel="Save changes"
+              cancelHref={cancelHref}
+            />
           </CardContent>
         </Card>
       </div>
