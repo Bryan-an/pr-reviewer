@@ -6,13 +6,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
+import { getRuleErrorBannerMessage } from "@/app/repos/_lib/rule-error-messages";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
-import { repoBasePath } from "@/app/repos/_lib/routes";
+import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { getRepoRuleById } from "@/server/db/repo-rules";
+import { logger } from "@/server/logging/logger";
 import { MarkdownRuleEditor } from "@/app/repos/_components/markdown-rule-editor";
 import { updateRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/rules/[ruleId]/edit/_actions/update-rule-action";
 
@@ -31,28 +33,61 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
   const sp = (await searchParams) ?? {};
   const errorCode = getFirst(sp[RULE_SEARCH_PARAM.Error]);
 
-  const errorBannerMessage = (() => {
-    switch (errorCode) {
-      case "title":
-        return "Please provide a title for this rule.";
-      case "markdown":
-        return "Please provide markdown content for this rule.";
-      case "sortOrder":
-        return "Order must be a non-negative integer.";
-      default:
-        return undefined;
-    }
-  })();
+  const errorBannerMessage = getRuleErrorBannerMessage(errorCode);
 
-  const repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
+  let repo: Awaited<ReturnType<typeof getAzureDevOpsRepository>>;
+  let storedRepo: Awaited<ReturnType<typeof upsertRepositoryFromAdoRepo>>;
 
-  const storedRepo = await upsertRepositoryFromAdoRepo({
-    org,
-    project,
-    adoRepoId: repo.id,
-    name: repo.name,
-    remoteUrl: repo.remoteUrl,
-  });
+  try {
+    repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
+
+    storedRepo = await upsertRepositoryFromAdoRepo({
+      org,
+      project,
+      adoRepoId: repo.id,
+      name: repo.name,
+      remoteUrl: repo.remoteUrl,
+    });
+  } catch (err) {
+    logger.error(
+      { err, org, project, adoRepoId },
+      "EditRulePage: getAzureDevOpsRepository/upsertRepositoryFromAdoRepo failed",
+    );
+
+    const backHref = reposListUrl({ org, project });
+
+    return (
+      <>
+        <PageHeader
+          title="Edit rule"
+          showScrollToTop
+          actions={
+            <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={backHref}>
+              Back
+            </Link>
+          }
+        />
+
+        <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 pt-17 pb-12">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Edit rule</h1>
+
+            <p className="text-muted-foreground text-sm">
+              {org} · {project} · <span className="font-mono text-xs">{adoRepoId}</span>
+            </p>
+          </div>
+
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertDescription>
+              Unable to load repository details. Please verify your Azure DevOps access and try
+              again.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </>
+    );
+  }
 
   const existing = await getRepoRuleById({ id: ruleId });
   if (!existing || existing.repositoryId !== storedRepo.id) notFound();

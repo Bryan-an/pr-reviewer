@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
+import { getRuleErrorBannerMessage } from "@/app/repos/_lib/rule-error-messages";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { getFirst } from "@/lib/utils/search-params";
@@ -29,18 +30,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
   const sp = (await searchParams) ?? {};
   const errorCode = getFirst(sp[RULE_SEARCH_PARAM.Error]);
 
-  const errorBannerMessage = (() => {
-    switch (errorCode) {
-      case "title":
-        return "Please provide a title for this rule.";
-      case "markdown":
-        return "Please provide markdown content for this rule.";
-      case "sortOrder":
-        return "Order must be a non-negative integer.";
-      default:
-        return undefined;
-    }
-  })();
+  const errorBannerMessage = getRuleErrorBannerMessage(errorCode);
 
   let repo: Awaited<ReturnType<typeof getAzureDevOpsRepository>>;
   let storedRepo: Awaited<ReturnType<typeof upsertRepositoryFromAdoRepo>>;
