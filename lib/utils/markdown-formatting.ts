@@ -248,7 +248,7 @@ function findNextOrderedNumber(
 }
 
 /**
- * Indents or outdents a list item by 2 spaces. Returns `null` when the current
+ * Indents or outdents a list item by 4 spaces. Returns `null` when the current
  * line is not a list item so the caller can fall through to default Tab
  * behaviour.
  *
