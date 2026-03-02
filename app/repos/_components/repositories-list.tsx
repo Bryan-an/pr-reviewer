@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { REPOS_SECTION_ID } from "@/app/repos/_lib/dom-ids";
-import { repoBasePath } from "@/app/repos/_lib/routes";
+import { repoManageUrl, reposListUrl } from "@/app/repos/_lib/routes";
 import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
@@ -88,6 +88,11 @@ export async function RepositoriesList(props: RepositoriesListProps) {
     hasRules: props.hasRules || undefined,
   };
 
+  const currentListUrl = reposListUrl({
+    ...baseFilterParams,
+    page: safePage > 0 ? safePage : undefined,
+  });
+
   return (
     <div id={REPOS_SECTION_ID} className="flex scroll-mt-17 flex-col gap-4">
       <div className="flex flex-col gap-3">
@@ -133,7 +138,13 @@ export async function RepositoriesList(props: RepositoriesListProps) {
               ) : (
                 pageItems.map((r) => {
                   const count = ruleCounts[r.id] ?? 0;
-                  const href = repoBasePath(props.decodedOrg, props.decodedProject, r.id);
+
+                  const href = repoManageUrl(
+                    props.decodedOrg,
+                    props.decodedProject,
+                    r.id,
+                    currentListUrl,
+                  );
 
                   return (
                     <TableRow key={r.id} className="relative cursor-pointer">

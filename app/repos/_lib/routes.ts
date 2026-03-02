@@ -6,6 +6,17 @@ export function repoBasePath(org: string, project: string, repoId: string): stri
   return joinPathSegments("/repos", org, project, repoId);
 }
 
+export function repoManageUrl(
+  org: string,
+  project: string,
+  repoId: string,
+  fromUrl: string,
+): string {
+  return buildUrl(repoBasePath(org, project, repoId), {
+    [RULE_SEARCH_PARAM.From]: fromUrl,
+  });
+}
+
 export function repoNewRulePath(org: string, project: string, repoId: string): string {
   return joinPathSegments("/repos", org, project, repoId, "rules", "new");
 }
