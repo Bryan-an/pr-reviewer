@@ -1,9 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Tabs } from "radix-ui";
+import {
+  BoldIcon,
+  Code2Icon,
+  CodeIcon,
+  Heading2Icon,
+  ItalicIcon,
+  LinkIcon,
+  ListIcon,
+  ListOrderedIcon,
+} from "lucide-react";
 
 import { Markdown } from "@/components/markdown";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -18,8 +29,17 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { ruleFormSchema, type RuleFormValues } from "@/app/repos/_lib/rule-schema";
+import {
+  applyCodeBlock,
+  applyInlineFormat,
+  applyLinePrefix,
+  applyLink,
+  type FormatResult,
+  type SelectionRange,
+} from "@/lib/utils/markdown-formatting";
 
 type MarkdownRuleEditorProps = Readonly<{
   initial: {
@@ -33,12 +53,89 @@ type MarkdownRuleEditorProps = Readonly<{
   formAction: (formData: FormData) => void | Promise<void>;
 }>;
 
-const MODE = {
-  Edit: "edit",
-  Preview: "preview",
-} as const;
-
+const MODE = { Write: "write", Preview: "preview" } as const;
 type Mode = (typeof MODE)[keyof typeof MODE];
+
+type ToolbarAction = {
+  icon: React.ReactNode;
+  label: string;
+  shortcut: string | null;
+  shortcutKey: string | null;
+  getResult: (value: string, selection: SelectionRange) => FormatResult;
+};
+
+const TOOLBAR_GROUPS: ToolbarAction[][] = [
+  [
+    {
+      icon: <BoldIcon />,
+      label: "Bold",
+      shortcut: "\u2318B",
+      shortcutKey: "b",
+      getResult: (v, s) => applyInlineFormat(v, s, "**", "bold text"),
+    },
+    {
+      icon: <ItalicIcon />,
+      label: "Italic",
+      shortcut: "\u2318I",
+      shortcutKey: "i",
+      getResult: (v, s) => applyInlineFormat(v, s, "_", "italic text"),
+    },
+  ],
+  [
+    {
+      icon: <Heading2Icon />,
+      label: "Heading",
+      shortcut: null,
+      shortcutKey: null,
+      getResult: (v, s) => applyLinePrefix(v, s, "## "),
+    },
+  ],
+  [
+    {
+      icon: <LinkIcon />,
+      label: "Link",
+      shortcut: "\u2318K",
+      shortcutKey: "k",
+      getResult: applyLink,
+    },
+    {
+      icon: <CodeIcon />,
+      label: "Inline code",
+      shortcut: "\u2318E",
+      shortcutKey: "e",
+      getResult: (v, s) => applyInlineFormat(v, s, "`", "code"),
+    },
+    {
+      icon: <Code2Icon />,
+      label: "Code block",
+      shortcut: null,
+      shortcutKey: null,
+      getResult: applyCodeBlock,
+    },
+  ],
+  [
+    {
+      icon: <ListIcon />,
+      label: "Bulleted list",
+      shortcut: null,
+      shortcutKey: null,
+      getResult: (v, s) => applyLinePrefix(v, s, "- "),
+    },
+    {
+      icon: <ListOrderedIcon />,
+      label: "Numbered list",
+      shortcut: null,
+      shortcutKey: null,
+      getResult: (v, s) => applyLinePrefix(v, s, "1. "),
+    },
+  ],
+];
+
+const SHORTCUT_MAP = new Map(
+  TOOLBAR_GROUPS.flat()
+    .filter((a): a is ToolbarAction & { shortcutKey: string } => a.shortcutKey !== null)
+    .map((a) => [a.shortcutKey, a.getResult]),
+);
 
 export function MarkdownRuleEditor({
   initial,
@@ -46,7 +143,9 @@ export function MarkdownRuleEditor({
   cancelHref,
   formAction,
 }: MarkdownRuleEditorProps) {
-  const [mode, setMode] = useState<Mode>(MODE.Edit);
+  const [mode, setMode] = useState<Mode>(MODE.Write);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const pendingSelectionRef = useRef<{ start: number; end: number } | null>(null);
 
   const form = useForm<RuleFormValues>({
     resolver: zodResolver(ruleFormSchema),
@@ -76,6 +175,56 @@ export function MarkdownRuleEditor({
     void formAction(fd);
   }
 
+  const applyFormat = useCallback(
+    (getResult: (value: string, selection: SelectionRange) => FormatResult) => {
+      const el = textareaRef.current;
+      if (!el) return;
+
+      const value = form.getValues(RULE_FORM_FIELD.Markdown);
+      const selection: SelectionRange = { start: el.selectionStart, end: el.selectionEnd };
+      const result = getResult(value, selection);
+
+      form.setValue(RULE_FORM_FIELD.Markdown, result.value, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      pendingSelectionRef.current = { start: result.selectionStart, end: result.selectionEnd };
+    },
+    [form],
+  );
+
+  // Restore cursor/selection after React commits the new value to the DOM
+  useLayoutEffect(() => {
+    const sel = pendingSelectionRef.current;
+    if (!sel) return;
+    pendingSelectionRef.current = null;
+
+    const el = textareaRef.current;
+    if (!el) return;
+    el.setSelectionRange(sel.start, sel.end);
+    el.focus();
+  });
+
+  // Keyboard shortcuts — window-level listener avoids stale ref issues on remount
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (document.activeElement !== textareaRef.current) return;
+
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.shiftKey || e.altKey) return;
+
+      const action = SHORTCUT_MAP.get(e.key.toLowerCase());
+
+      if (action) {
+        e.preventDefault();
+        applyFormat(action);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [applyFormat]);
+
   return (
     <Form {...form}>
       <form
@@ -86,9 +235,9 @@ export function MarkdownRuleEditor({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FormField
             control={form.control}
-            name="title"
+            name={RULE_FORM_FIELD.Title}
             render={({ field }) => (
-              <FormItem className="flex flex-col gap-1.5">
+              <FormItem className="flex flex-col gap-2">
                 <FormLabel>Title</FormLabel>
 
                 <FormControl>
@@ -102,13 +251,13 @@ export function MarkdownRuleEditor({
 
           <FormField
             control={form.control}
-            name="sortOrder"
+            name={RULE_FORM_FIELD.SortOrder}
             render={({ field }) => {
               const n = Number(field.value);
               const displayNumber = Number.isFinite(n) && Number.isInteger(n) ? n : 0;
 
               return (
-                <FormItem className="flex flex-col gap-1.5">
+                <FormItem className="flex flex-col gap-2">
                   <FormLabel>Order</FormLabel>
 
                   <FormControl>
@@ -129,7 +278,7 @@ export function MarkdownRuleEditor({
 
         <FormField
           control={form.control}
-          name="enabled"
+          name={RULE_FORM_FIELD.Enabled}
           render={({ field }) => (
             <FormItem className="flex flex-row items-center gap-2">
               <FormControl>
@@ -152,64 +301,98 @@ export function MarkdownRuleEditor({
 
         <FormField
           control={form.control}
-          name="markdown"
+          name={RULE_FORM_FIELD.Markdown}
           render={({ field }) => (
-            <FormItem className="flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <FormLabel>Markdown</FormLabel>
+            <FormItem className="flex flex-col gap-2">
+              <FormLabel>Markdown</FormLabel>
 
-                <div className="bg-muted inline-flex rounded-lg border p-1 text-sm">
-                  <button
-                    type="button"
-                    onClick={() => setMode(MODE.Edit)}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                      mode === MODE.Edit
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent"
-                    }`}
-                  >
-                    Edit
-                  </button>
+              <TooltipProvider>
+                <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
+                  <div className="overflow-hidden rounded-lg border">
+                    {/* Tab bar */}
+                    <div className="bg-muted/50 flex items-end border-b px-2">
+                      <Tabs.List className="flex">
+                        <Tabs.Trigger
+                          value={MODE.Write}
+                          className="text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors"
+                        >
+                          Write
+                        </Tabs.Trigger>
 
-                  <button
-                    type="button"
-                    onClick={() => setMode(MODE.Preview)}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                      mode === MODE.Preview
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent"
-                    }`}
-                  >
-                    Preview
-                  </button>
-                </div>
-              </div>
+                        <Tabs.Trigger
+                          value={MODE.Preview}
+                          className="text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors"
+                        >
+                          Preview
+                        </Tabs.Trigger>
+                      </Tabs.List>
+                    </div>
 
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div className={`${mode === MODE.Preview ? "hidden lg:block" : "block"}`}>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Write your guidelines in Markdown…"
-                      className="min-h-85"
-                    />
-                  </FormControl>
+                    {/* Formatting toolbar — visible only in Write mode */}
+                    {mode === MODE.Write && (
+                      <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
+                        {TOOLBAR_GROUPS.map((group, gi) => (
+                          <Fragment key={gi}>
+                            {gi > 0 && <div className="bg-border mx-1 h-4 w-px" />}
+                            {group.map((action) => (
+                              <Tooltip key={action.label}>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={action.label}
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => applyFormat(action.getResult)}
+                                  >
+                                    {action.icon}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {action.label}
+                                  {action.shortcut ? ` (${action.shortcut})` : ""}
+                                </TooltipContent>
+                              </Tooltip>
+                            ))}
+                          </Fragment>
+                        ))}
+                      </div>
+                    )}
 
-                  <div className="text-muted-foreground mt-2 text-xs">
-                    Tip: be explicit and actionable. Prefer short sections and bullet points.
+                    {/* Write panel — forceMount keeps textarea in DOM across tab switches */}
+                    <Tabs.Content
+                      value={MODE.Write}
+                      forceMount
+                      className="outline-none data-[state=inactive]:hidden"
+                    >
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          ref={(el) => {
+                            field.ref(el);
+                            textareaRef.current = el;
+                          }}
+                          placeholder="Write your guidelines in Markdown…"
+                          className="min-h-52 resize-none rounded-none border-0 shadow-none focus-visible:ring-0"
+                        />
+                      </FormControl>
+                    </Tabs.Content>
+
+                    {/* Preview panel — unmounts when inactive (no state to preserve) */}
+                    <Tabs.Content value={MODE.Preview} className="min-h-52 p-4 outline-none">
+                      {field.value.trim() ? (
+                        <Markdown content={field.value} />
+                      ) : (
+                        <p className="text-muted-foreground text-sm">Nothing to preview yet.</p>
+                      )}
+                    </Tabs.Content>
                   </div>
-                </div>
+                </Tabs.Root>
+              </TooltipProvider>
 
-                <div
-                  className={`rounded-lg border p-4 ${mode === MODE.Edit ? "hidden lg:block" : "block"}`}
-                >
-                  {field.value.trim() ? (
-                    <Markdown content={field.value} />
-                  ) : (
-                    <div className="text-muted-foreground text-sm">Nothing to preview yet.</div>
-                  )}
-                </div>
-              </div>
+              <p className="text-muted-foreground text-xs">
+                Tip: be explicit and actionable. Prefer short sections and bullet points.
+              </p>
 
               <FormMessage />
             </FormItem>
