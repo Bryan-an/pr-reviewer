@@ -50,7 +50,7 @@ UI (App Router pages/components)
 
 - `app/` — Next.js App Router routes; route-scoped components in `_components/`, route-scoped logic in `_lib/` (routes, search params, constants)
 - `components/` — shared UI: `page-header.tsx` (sticky auto-hide header), `loading-guard.tsx`, `markdown.tsx`
-- `components/ui/` — shadcn/ui components (do not manually edit)
+- `components/ui/` — shadcn/ui primitives (do not manually edit) + custom UI components (`highlighted-textarea.tsx`)
 - `hooks/` — shared client-side hooks (e.g., `use-auto-hide-header.ts`)
 - `lib/` — shared utilities: env config (Zod), validation schemas, URL parsing
 - `server/` — all server-only code (`import "server-only"` guardrail); never import from Client Components
@@ -87,6 +87,7 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 - **Loading guard overlays**: to prevent scroll clamp when swapping content for skeleton, use CSS grid stacking — both invisible children and skeleton at `col-start-1 row-start-1` in a `grid grid-cols-1 grid-rows-1` container. Cell height = max of both layers. Use `useLayoutEffect` (not `requestAnimationFrame`) for `scrollIntoView` — it runs before paint, before the browser clamps scroll.
 - **DOM ID constants**: shared DOM element IDs for programmatic scrolling live in route-scoped `_lib/dom-ids.ts` files.
 - **Tailwind v4 sizing**: 4px multiplier for all utilities — prefer `pt-17`/`h-13` over `pt-[68px]`/`h-[52px]`. Use `supports-backdrop-filter:` over `supports-[backdrop-filter]:`. Linter flags arbitrary values with canonical equivalents.
+- **Tailwind v4 custom CSS**: attribute selectors (`[data-slot="..."]`) in `globals.css` are stripped from output — use class selectors for custom CSS scoping. Only Tailwind-recognized `data-*` variants (e.g., `data-[state=open]:`) work in utility classes.
 - **Overriding shadcn styles**: when overriding responsive defaults from shadcn components, match the breakpoint — e.g., Textarea has `md:text-sm`, so use `text-base md:text-base` (both) to override at all screen sizes
 - **Sticky header offset**: scrollable pages use `pt-17` (68px = 52px header + 16px gap); `scroll-padding-top: 68px` is set globally in `globals.css`
 - **Enums**: use `as const` object + derived type + values array for Zod. No magic string unions.
@@ -107,6 +108,7 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 - **Markdown rendering**: `components/markdown.tsx` uses `prose max-w-none` (base = 16px) + `rehype-highlight` (sync). Prose token colors mapped to design system in `globals.css`. Use `rehype-highlight` (not Shiki) — Shiki is async and incompatible with `"use client"` components. Callers should not pass `text-sm` or `text-muted-foreground` — prose handles sizing and body color via `--tw-prose-body`
 - **Markdown editor**: `markdown-rule-editor.tsx` uses `HighlightedTextarea` (transparent textarea over highlighted `<pre><code>` backdrop) for live syntax highlighting. Formatting utilities live in `lib/utils/markdown-formatting.ts`. Textarea selection/cursor positioning uses `flushSync` (from `react-dom`) + `setSelectionRange` — not `useLayoutEffect` + ref, which breaks when `form.setValue` with `shouldValidate` triggers multiple renders. List indentation uses 4 spaces (not 2) — CommonMark requires indent >= parent marker width (3 for ordered `1. `, 2 for bullet `- `); 4 spaces is universally safe
 - **highlight.js theme**: a single unified GitHub Light / Dark Dimmed hljs theme in `globals.css` serves both prose code blocks and the markdown editor overlay. Must be unlayered CSS to override prose's layered `pre code` color rules. Tokens shared with the markdown grammar (`.hljs-code`, `.hljs-bullet`, `.hljs-quote`, `.hljs-link`) are split from their original groups so they can have markdown-friendly styles without affecting other tokens in the same group
+- **highlight.js imports**: use tree-shaken `highlight.js/lib/core` + register only needed languages (not the full bundle). Added as a direct dependency because pnpm strict isolation blocks transitive imports via `rehype-highlight`
 - **Dark mode**: uses `@media (prefers-color-scheme: dark)` only — no `.dark` class toggle. This means `prose-invert` cannot be used (it requires `.dark` class). Instead, prose vars reference design system tokens that automatically swap in the dark media query
 - **Package manager**: pnpm only — do not use npm or yarn
 
