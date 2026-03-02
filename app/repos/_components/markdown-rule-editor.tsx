@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { flushSync } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs } from "radix-ui";
@@ -23,7 +24,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { ruleFormSchema, type RuleFormValues } from "@/app/repos/_lib/rule-schema";
 import { SHORTCUT_MAP, TOOLBAR_GROUPS } from "@/app/repos/_lib/toolbar-config";
-import type { FormatResult, SelectionRange } from "@/lib/utils/markdown-formatting";
+import {
+  handleListContinuation,
+  handleListIndent,
+  INDENT_DIRECTION,
+  type FormatResult,
+  type SelectionRange,
+} from "@/lib/utils/markdown-formatting";
 
 type MarkdownRuleEditorProps = Readonly<{
   initial: {
@@ -48,7 +55,6 @@ export function MarkdownRuleEditor({
 }: MarkdownRuleEditorProps) {
   const [mode, setMode] = useState<Mode>(MODE.Write);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const pendingSelectionRef = useRef<{ start: number; end: number } | null>(null);
 
   const form = useForm<RuleFormValues>({
     resolver: zodResolver(ruleFormSchema),
@@ -78,6 +84,26 @@ export function MarkdownRuleEditor({
     void formAction(fd);
   }
 
+  // Synchronously commits the new value to the DOM so setSelectionRange sticks.
+  // flushSync prevents the multi-render race that caused the old useLayoutEffect
+  // approach to lose the selection.
+  const applyResult = useCallback(
+    (result: FormatResult) => {
+      flushSync(() => {
+        form.setValue(RULE_FORM_FIELD.Markdown, result.value, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      });
+
+      const el = textareaRef.current;
+      if (!el) return;
+      el.setSelectionRange(result.selectionStart, result.selectionEnd);
+      el.focus();
+    },
+    [form],
+  );
+
   const applyFormat = useCallback(
     (getResult: (value: string, selection: SelectionRange) => FormatResult) => {
       const el = textareaRef.current;
@@ -85,48 +111,61 @@ export function MarkdownRuleEditor({
 
       const value = form.getValues(RULE_FORM_FIELD.Markdown);
       const selection: SelectionRange = { start: el.selectionStart, end: el.selectionEnd };
-      const result = getResult(value, selection);
-
-      form.setValue(RULE_FORM_FIELD.Markdown, result.value, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      pendingSelectionRef.current = { start: result.selectionStart, end: result.selectionEnd };
+      applyResult(getResult(value, selection));
     },
-    [form],
+    [form, applyResult],
   );
 
-  // Restore cursor/selection after React commits the new value to the DOM
-  useLayoutEffect(() => {
-    const sel = pendingSelectionRef.current;
-    if (!sel) return;
-    pendingSelectionRef.current = null;
-
-    const el = textareaRef.current;
-    if (!el) return;
-    el.setSelectionRange(sel.start, sel.end);
-    el.focus();
-  });
-
-  // Keyboard shortcuts — window-level listener avoids stale ref issues on remount
+  // Keyboard shortcuts, list continuation (Enter), and indent/outdent (Tab)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (document.activeElement !== textareaRef.current) return;
+      const el = textareaRef.current;
+      if (document.activeElement !== el || !el) return;
 
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod || e.shiftKey || e.altKey) return;
 
-      const action = SHORTCUT_MAP.get(e.key.toLowerCase());
+      // Ctrl/Cmd shortcuts (bold, italic, link, inline code)
+      if (mod && !e.shiftKey && !e.altKey) {
+        const action = SHORTCUT_MAP.get(e.key.toLowerCase());
 
-      if (action) {
-        e.preventDefault();
-        applyFormat(action);
+        if (action) {
+          e.preventDefault();
+          applyFormat(action);
+        }
+
+        return;
+      }
+
+      const value = form.getValues(RULE_FORM_FIELD.Markdown);
+      const selection: SelectionRange = { start: el.selectionStart, end: el.selectionEnd };
+
+      // Enter — auto-continue lists
+      if (e.key === "Enter" && !mod && !e.shiftKey && !e.altKey) {
+        const result = handleListContinuation(value, selection);
+
+        if (result) {
+          e.preventDefault();
+          applyResult(result);
+        }
+
+        return;
+      }
+
+      // Tab / Shift+Tab — indent/outdent list items
+      if (e.key === "Tab" && !mod && !e.altKey) {
+        const direction = e.shiftKey ? INDENT_DIRECTION.Outdent : INDENT_DIRECTION.Indent;
+        const result = handleListIndent(value, selection, direction);
+
+        if (result) {
+          e.preventDefault();
+          applyResult(result);
+        }
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [applyFormat]);
+  }, [applyFormat, applyResult, form]);
 
   return (
     <Form {...form}>
@@ -276,7 +315,7 @@ export function MarkdownRuleEditor({
                             textareaRef.current = el;
                           }}
                           placeholder="Write your guidelines in Markdown…"
-                          className="min-h-52 resize-none rounded-none border-0 shadow-none focus-visible:ring-0"
+                          className="min-h-52 resize-none rounded-none border-0 text-base shadow-none focus-visible:ring-0 md:text-base"
                         />
                       </FormControl>
                     </Tabs.Content>
@@ -286,7 +325,7 @@ export function MarkdownRuleEditor({
                       {field.value.trim() ? (
                         <Markdown content={field.value} />
                       ) : (
-                        <p className="text-muted-foreground text-sm">Nothing to preview yet.</p>
+                        <p className="text-muted-foreground text-base">Nothing to preview yet.</p>
                       )}
                     </Tabs.Content>
                   </div>

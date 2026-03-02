@@ -116,3 +116,135 @@ export function applyLink(value: string, selection: SelectionRange): FormatResul
     selectionEnd: urlStart + url.length,
   };
 }
+
+// ---------------------------------------------------------------------------
+// List continuation & indentation
+// ---------------------------------------------------------------------------
+
+export const INDENT_DIRECTION = { Indent: "indent", Outdent: "outdent" } as const;
+export type IndentDirection = (typeof INDENT_DIRECTION)[keyof typeof INDENT_DIRECTION];
+
+const BULLET_RE = /^(\s*)([-*+])\s/;
+const ORDERED_RE = /^(\s*)(\d+)\.\s/;
+
+/** Removes an empty list item and its trailing newline (if any). */
+function exitList(
+  value: string,
+  lineStart: number,
+  lineEnd: number,
+  fullLineEnd: number,
+): FormatResult {
+  // Consume the trailing newline so a mid-list removal doesn't leave a blank line
+  const removeEnd = lineEnd !== -1 ? fullLineEnd + 1 : fullLineEnd;
+
+  return {
+    value: value.slice(0, lineStart) + value.slice(removeEnd),
+    selectionStart: lineStart,
+    selectionEnd: lineStart,
+  };
+}
+
+/**
+ * Handles Enter inside a list item. Returns `null` when the cursor is not on a
+ * list line so the caller can fall through to default Enter behaviour.
+ *
+ * Behaviours:
+ * - **Empty item** (just the prefix, no content): removes the prefix and exits
+ *   the list — no new line is inserted.
+ * - **Content item**: inserts a newline followed by the same prefix (bullet) or
+ *   the next number (ordered list). Content after the cursor moves to the new
+ *   item.
+ */
+export function handleListContinuation(
+  value: string,
+  selection: SelectionRange,
+): FormatResult | null {
+  // Only act on a collapsed cursor (no selection)
+  if (selection.start !== selection.end) return null;
+
+  const pos = selection.start;
+  const lineStart = value.lastIndexOf("\n", pos - 1) + 1;
+  const lineEnd = value.indexOf("\n", pos);
+  const fullLineEnd = lineEnd === -1 ? value.length : lineEnd;
+  const line = value.slice(lineStart, fullLineEnd);
+
+  // --- Bullet lists (-, *, +) ---
+  const bulletMatch = line.match(BULLET_RE);
+
+  if (bulletMatch) {
+    const [fullPrefix, indent, marker] = bulletMatch;
+
+    if (line.slice(fullPrefix.length).trim() === "") {
+      return exitList(value, lineStart, lineEnd, fullLineEnd);
+    }
+
+    const insertion = `\n${indent}${marker} `;
+
+    return {
+      value: value.slice(0, pos) + insertion + value.slice(pos),
+      selectionStart: pos + insertion.length,
+      selectionEnd: pos + insertion.length,
+    };
+  }
+
+  // --- Ordered lists (1. 2. 3. …) ---
+  const orderedMatch = line.match(ORDERED_RE);
+
+  if (orderedMatch) {
+    const [fullPrefix, indent, numStr] = orderedMatch;
+
+    if (line.slice(fullPrefix.length).trim() === "") {
+      return exitList(value, lineStart, lineEnd, fullLineEnd);
+    }
+
+    const nextNum = parseInt(numStr, 10) + 1;
+    const insertion = `\n${indent}${nextNum}. `;
+
+    return {
+      value: value.slice(0, pos) + insertion + value.slice(pos),
+      selectionStart: pos + insertion.length,
+      selectionEnd: pos + insertion.length,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Indents or outdents a list item by 2 spaces. Returns `null` when the current
+ * line is not a list item so the caller can fall through to default Tab
+ * behaviour.
+ */
+export function handleListIndent(
+  value: string,
+  selection: SelectionRange,
+  direction: IndentDirection,
+): FormatResult | null {
+  const { start, end } = selection;
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const line = value.slice(lineStart);
+
+  const isList = BULLET_RE.test(line) || ORDERED_RE.test(line);
+  if (!isList) return null;
+
+  if (direction === INDENT_DIRECTION.Indent) {
+    const indent = "  ";
+
+    return {
+      value: value.slice(0, lineStart) + indent + value.slice(lineStart),
+      selectionStart: start + indent.length,
+      selectionEnd: end + indent.length,
+    };
+  }
+
+  // Outdent — remove up to 2 leading spaces
+  const leadingSpaces = line.match(/^(\s*)/)?.[1] ?? "";
+  const removeCount = Math.min(2, leadingSpaces.length);
+  if (removeCount === 0) return null;
+
+  return {
+    value: value.slice(0, lineStart) + value.slice(lineStart + removeCount),
+    selectionStart: Math.max(start - removeCount, lineStart),
+    selectionEnd: Math.max(end - removeCount, lineStart),
+  };
+}
