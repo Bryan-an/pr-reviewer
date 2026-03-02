@@ -129,6 +129,7 @@ export default async function NewRulePage({ params, searchParams }: NewRulePageP
               formAction={boundCreateAction}
               initial={{ title: "", markdown: "", enabled: true, sortOrder: 0 }}
               submitLabel="Create rule"
+              pendingLabel="Creating…"
               cancelHref={cancelHref}
             />
           </CardContent>

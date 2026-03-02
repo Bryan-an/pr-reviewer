@@ -5,8 +5,10 @@ import Link from "next/link";
 import { flushSync } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2Icon } from "lucide-react";
 import { Tabs } from "radix-ui";
 
+import { cn } from "@/lib/utils/cn";
 import { Markdown } from "@/components/markdown";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,6 +42,7 @@ type MarkdownRuleEditorProps = Readonly<{
     sortOrder: number;
   };
   submitLabel: string;
+  pendingLabel: string;
   cancelHref: string;
   formAction: (formData: FormData) => void | Promise<void>;
 }>;
@@ -50,10 +53,12 @@ type Mode = (typeof MODE)[keyof typeof MODE];
 export function MarkdownRuleEditor({
   initial,
   submitLabel,
+  pendingLabel,
   cancelHref,
   formAction,
 }: MarkdownRuleEditorProps) {
   const [mode, setMode] = useState<Mode>(MODE.Write);
+  const [isPending, setIsPending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const form = useForm<RuleFormValues>({
@@ -69,6 +74,9 @@ export function MarkdownRuleEditor({
   });
 
   function onValid(values: RuleFormValues) {
+    if (isPending) return;
+    setIsPending(true);
+
     const fd = new FormData();
     fd.set(RULE_FORM_FIELD.Title, values.title);
     fd.set(RULE_FORM_FIELD.Markdown, values.markdown);
@@ -81,7 +89,9 @@ export function MarkdownRuleEditor({
       fd.set(RULE_FORM_FIELD.Enabled, "1");
     }
 
-    void formAction(fd);
+    Promise.resolve(formAction(fd)).catch(() => {
+      setIsPending(false);
+    });
   }
 
   // Synchronously commits the new value to the DOM so setSelectionRange sticks.
@@ -174,180 +184,214 @@ export function MarkdownRuleEditor({
         onSubmit={form.handleSubmit(onValid)}
         className="flex flex-col gap-4"
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div
+          className={cn("flex flex-col gap-4 transition-opacity", isPending && "opacity-50")}
+          inert={isPending || undefined}
+          aria-busy={isPending}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormField
+              control={form.control}
+              name={RULE_FORM_FIELD.Title}
+              render={({ field }) => (
+                <FormItem className="flex flex-col gap-2">
+                  <FormLabel>Title</FormLabel>
+
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. Error handling standards" />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={RULE_FORM_FIELD.SortOrder}
+              render={({ field }) => {
+                const n = Number(field.value);
+                const displayNumber = Number.isFinite(n) && Number.isInteger(n) ? n : 0;
+
+                return (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Order</FormLabel>
+
+                    <FormControl>
+                      <Input {...field} inputMode="numeric" />
+                    </FormControl>
+
+                    <span className="text-muted-foreground text-xs">
+                      Lower numbers apply first. Current:{" "}
+                      <span className="font-medium">{displayNumber}</span>
+                    </span>
+
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          </div>
+
           <FormField
             control={form.control}
-            name={RULE_FORM_FIELD.Title}
+            name={RULE_FORM_FIELD.Enabled}
             render={({ field }) => (
-              <FormItem className="flex flex-col gap-2">
-                <FormLabel>Title</FormLabel>
-
+              <FormItem className="flex flex-row items-center gap-2">
                 <FormControl>
-                  <Input {...field} placeholder="e.g. Error handling standards" />
+                  <Checkbox
+                    name={field.name}
+                    value="1"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    ref={field.ref}
+                    onBlur={field.onBlur}
+                  />
                 </FormControl>
 
-                <FormMessage />
+                <FormLabel className="cursor-pointer">
+                  Enabled (apply this rule during reviews)
+                </FormLabel>
               </FormItem>
             )}
           />
 
           <FormField
             control={form.control}
-            name={RULE_FORM_FIELD.SortOrder}
-            render={({ field }) => {
-              const n = Number(field.value);
-              const displayNumber = Number.isFinite(n) && Number.isInteger(n) ? n : 0;
+            name={RULE_FORM_FIELD.Markdown}
+            render={({ field }) => (
+              <FormItem className="flex flex-col gap-2">
+                <FormLabel>Markdown</FormLabel>
 
-              return (
-                <FormItem className="flex flex-col gap-2">
-                  <FormLabel>Order</FormLabel>
+                <TooltipProvider>
+                  <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
+                    <div className="overflow-hidden rounded-lg border">
+                      {/* Tab bar */}
+                      <div className="bg-muted/50 flex items-end border-b px-2">
+                        <Tabs.List className="flex">
+                          <Tabs.Trigger
+                            value={MODE.Write}
+                            className="text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors"
+                          >
+                            Write
+                          </Tabs.Trigger>
 
-                  <FormControl>
-                    <Input {...field} inputMode="numeric" />
-                  </FormControl>
+                          <Tabs.Trigger
+                            value={MODE.Preview}
+                            className="text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors"
+                          >
+                            Preview
+                          </Tabs.Trigger>
+                        </Tabs.List>
+                      </div>
 
-                  <span className="text-muted-foreground text-xs">
-                    Lower numbers apply first. Current:{" "}
-                    <span className="font-medium">{displayNumber}</span>
-                  </span>
+                      {/* Formatting toolbar — visible only in Write mode */}
+                      {mode === MODE.Write && (
+                        <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
+                          {TOOLBAR_GROUPS.map((group, gi) => (
+                            <Fragment key={gi}>
+                              {gi > 0 && <div className="bg-border mx-1 h-4 w-px" />}
+                              {group.map((action) => (
+                                <Tooltip key={action.label}>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      aria-label={action.label}
+                                      onMouseDown={(e) => e.preventDefault()}
+                                      onClick={() => applyFormat(action.getResult)}
+                                    >
+                                      {action.icon}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {action.label}
+                                    {action.shortcut ? ` (${action.shortcut})` : ""}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ))}
+                            </Fragment>
+                          ))}
+                        </div>
+                      )}
 
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+                      {/* Write panel — forceMount keeps textarea in DOM across tab switches */}
+                      <Tabs.Content
+                        value={MODE.Write}
+                        forceMount
+                        className="outline-none data-[state=inactive]:hidden"
+                      >
+                        <FormControl>
+                          <HighlightedTextarea
+                            {...field}
+                            ref={(el: HTMLTextAreaElement | null) => {
+                              field.ref(el);
+                              textareaRef.current = el;
+                            }}
+                            placeholder="Write your guidelines in Markdown…"
+                            spellCheck={false}
+                            className="min-h-52 resize-none rounded-none border-0 text-base shadow-none focus-visible:ring-0 md:text-base"
+                          />
+                        </FormControl>
+                      </Tabs.Content>
+
+                      {/* Preview panel — unmounts when inactive (no state to preserve) */}
+                      <Tabs.Content value={MODE.Preview} className="min-h-52 p-4 outline-none">
+                        {field.value.trim() ? (
+                          <Markdown content={field.value} />
+                        ) : (
+                          <p className="text-muted-foreground text-base">Nothing to preview yet.</p>
+                        )}
+                      </Tabs.Content>
+                    </div>
+                  </Tabs.Root>
+                </TooltipProvider>
+
+                <p className="text-muted-foreground text-xs">
+                  Tip: be explicit and actionable. Prefer short sections and bullet points.
+                </p>
+
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name={RULE_FORM_FIELD.Enabled}
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center gap-2">
-              <FormControl>
-                <Checkbox
-                  name={field.name}
-                  value="1"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  ref={field.ref}
-                  onBlur={field.onBlur}
-                />
-              </FormControl>
-
-              <FormLabel className="cursor-pointer">
-                Enabled (apply this rule during reviews)
-              </FormLabel>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name={RULE_FORM_FIELD.Markdown}
-          render={({ field }) => (
-            <FormItem className="flex flex-col gap-2">
-              <FormLabel>Markdown</FormLabel>
-
-              <TooltipProvider>
-                <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                  <div className="overflow-hidden rounded-lg border">
-                    {/* Tab bar */}
-                    <div className="bg-muted/50 flex items-end border-b px-2">
-                      <Tabs.List className="flex">
-                        <Tabs.Trigger
-                          value={MODE.Write}
-                          className="text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors"
-                        >
-                          Write
-                        </Tabs.Trigger>
-
-                        <Tabs.Trigger
-                          value={MODE.Preview}
-                          className="text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors"
-                        >
-                          Preview
-                        </Tabs.Trigger>
-                      </Tabs.List>
-                    </div>
-
-                    {/* Formatting toolbar — visible only in Write mode */}
-                    {mode === MODE.Write && (
-                      <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
-                        {TOOLBAR_GROUPS.map((group, gi) => (
-                          <Fragment key={gi}>
-                            {gi > 0 && <div className="bg-border mx-1 h-4 w-px" />}
-                            {group.map((action) => (
-                              <Tooltip key={action.label}>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    aria-label={action.label}
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => applyFormat(action.getResult)}
-                                  >
-                                    {action.icon}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {action.label}
-                                  {action.shortcut ? ` (${action.shortcut})` : ""}
-                                </TooltipContent>
-                              </Tooltip>
-                            ))}
-                          </Fragment>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Write panel — forceMount keeps textarea in DOM across tab switches */}
-                    <Tabs.Content
-                      value={MODE.Write}
-                      forceMount
-                      className="outline-none data-[state=inactive]:hidden"
-                    >
-                      <FormControl>
-                        <HighlightedTextarea
-                          {...field}
-                          ref={(el: HTMLTextAreaElement | null) => {
-                            field.ref(el);
-                            textareaRef.current = el;
-                          }}
-                          placeholder="Write your guidelines in Markdown…"
-                          spellCheck={false}
-                          className="min-h-52 resize-none rounded-none border-0 text-base shadow-none focus-visible:ring-0 md:text-base"
-                        />
-                      </FormControl>
-                    </Tabs.Content>
-
-                    {/* Preview panel — unmounts when inactive (no state to preserve) */}
-                    <Tabs.Content value={MODE.Preview} className="min-h-52 p-4 outline-none">
-                      {field.value.trim() ? (
-                        <Markdown content={field.value} />
-                      ) : (
-                        <p className="text-muted-foreground text-base">Nothing to preview yet.</p>
-                      )}
-                    </Tabs.Content>
-                  </div>
-                </Tabs.Root>
-              </TooltipProvider>
-
-              <p className="text-muted-foreground text-xs">
-                Tip: be explicit and actionable. Prefer short sections and bullet points.
-              </p>
-
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-          <Link href={cancelHref} className={buttonVariants({ variant: "outline" })}>
+          <Link
+            href={cancelHref}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              isPending && "pointer-events-none opacity-50",
+            )}
+            aria-disabled={isPending}
+            tabIndex={isPending ? -1 : undefined}
+          >
             Cancel
           </Link>
 
-          <Button type="submit">{submitLabel}</Button>
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="grid grid-cols-1 grid-rows-1 justify-items-center"
+          >
+            <span
+              className="col-start-1 row-start-1 inline-flex items-center gap-2"
+              aria-hidden={isPending}
+              style={isPending ? { visibility: "hidden" } : undefined}
+            >
+              {submitLabel}
+            </span>
+            <span
+              className="col-start-1 row-start-1 inline-flex items-center gap-2"
+              aria-hidden={!isPending}
+              style={isPending ? undefined : { visibility: "hidden" }}
+            >
+              <Loader2Icon className="animate-spin" />
+              {pendingLabel}
+            </span>
+          </Button>
         </div>
       </form>
     </Form>

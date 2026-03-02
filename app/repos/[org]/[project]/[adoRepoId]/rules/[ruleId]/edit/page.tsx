@@ -141,6 +141,7 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
                 sortOrder: existing.sortOrder,
               }}
               submitLabel="Save changes"
+              pendingLabel="Saving…"
               cancelHref={cancelHref}
             />
           </CardContent>
