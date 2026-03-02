@@ -50,7 +50,7 @@ export default async function RepoRulesPage({ params, searchParams }: RepoRulesP
   const rules = await listRepoRules({ repositoryId: storedRepo.id });
 
   const rawFrom = getFirst(sp[RULE_SEARCH_PARAM.From]) ?? "";
-  const safeFrom = rawFrom.startsWith("/repos") && !rawFrom.includes("..") ? rawFrom : "";
+  const safeFrom = /^\/repos(\?|#|\/|$)/.test(rawFrom) && !rawFrom.includes("..") ? rawFrom : "";
   const backHref = `${safeFrom || reposListUrl({ org, project })}#${REPOS_SECTION_ID}`;
   const newRuleHref = repoNewRulePath(org, project, repo.id);
 
