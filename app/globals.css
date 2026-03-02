@@ -158,18 +158,25 @@
   --tw-prose-td-borders: var(--border);
 }
 
-/* highlight.js — GitHub Light / GitHub Dark Dimmed
-   Unlayered to win over prose's layered pre code color rules.
-   Sources: highlightjs/highlight.js github.css + github-dark-dimmed.css */
+/* highlight.js — GitHub Light / GitHub Dark Dimmed (unified)
+   Shared by code-block syntax highlighting in prose and the markdown
+   editor overlay.  Unlayered to win over prose's layered pre code
+   color rules.
+   Sources: github.css + github-dark-dimmed.css, adapted so tokens
+   shared with the markdown grammar (.hljs-code, .hljs-bullet,
+   .hljs-quote, .hljs-link) look good in both contexts. */
 .hljs {
   color: #24292e;
   background: transparent;
 }
 .hljs-comment,
-.hljs-code,
 .hljs-formula {
   color: #6a737d;
   font-style: italic;
+}
+/* Code (inline + fenced) — same muted gray as comments, NOT italic */
+.hljs-code {
+  color: #6a737d;
 }
 .hljs-doctag,
 .hljs-keyword,
@@ -206,17 +213,24 @@
   color: #e36209;
 }
 .hljs-name,
-.hljs-quote,
 .hljs-selector-tag,
 .hljs-selector-pseudo {
   color: #22863a;
+}
+/* Blockquotes — muted gray italic (split from .hljs-name green group) */
+.hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+.hljs-link {
+  color: #032f62;
 }
 .hljs-section {
   color: #005cc5;
   font-weight: 700;
 }
 .hljs-bullet {
-  color: #735c0f;
+  color: #6f42c1;
 }
 .hljs-addition {
   color: #22863a;
@@ -239,8 +253,10 @@
     color: #adbac7;
   }
   .hljs-comment,
-  .hljs-code,
   .hljs-formula {
+    color: #768390;
+  }
+  .hljs-code {
     color: #768390;
   }
   .hljs-doctag,
@@ -278,16 +294,21 @@
     color: #f69d50;
   }
   .hljs-name,
-  .hljs-quote,
   .hljs-selector-tag,
   .hljs-selector-pseudo {
     color: #8ddb8c;
   }
+  .hljs-quote {
+    color: #768390;
+  }
+  .hljs-link {
+    color: #96d0ff;
+  }
   .hljs-section {
-    color: #316dca;
+    color: #6cb6ff;
   }
   .hljs-bullet {
-    color: #eac55f;
+    color: #dcbdfb;
   }
   .hljs-addition {
     color: #b4f1b4;

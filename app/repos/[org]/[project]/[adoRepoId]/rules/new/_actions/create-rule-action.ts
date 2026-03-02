@@ -39,7 +39,7 @@ export async function createRuleAction(context: CreateRuleContext, formData: For
     title,
     markdown,
     enabled,
-    sortOrder: Number.isFinite(sortOrder) && Number.isInteger(sortOrder) ? sortOrder : 0,
+    sortOrder,
   });
 
   redirect(repoBasePath(org, project, adoRepoId));
