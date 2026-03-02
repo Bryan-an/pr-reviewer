@@ -269,7 +269,7 @@ export function handleListIndent(
   if (!bulletMatch && !orderedMatch) return null;
 
   if (direction === INDENT_DIRECTION.Indent) {
-    const indent = "  ";
+    const indent = "    ";
 
     if (orderedMatch) {
       const [fullPrefix, currentIndent] = orderedMatch;
@@ -290,9 +290,9 @@ export function handleListIndent(
     };
   }
 
-  // Outdent — remove up to 2 leading spaces
+  // Outdent — remove up to 4 leading spaces (symmetric with indent)
   const leadingSpaces = line.match(/^(\s*)/)?.[1] ?? "";
-  const removeCount = Math.min(2, leadingSpaces.length);
+  const removeCount = Math.min(4, leadingSpaces.length);
   if (removeCount === 0) return null;
 
   if (orderedMatch) {
