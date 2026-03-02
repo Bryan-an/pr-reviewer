@@ -5,16 +5,6 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs } from "radix-ui";
-import {
-  BoldIcon,
-  Code2Icon,
-  CodeIcon,
-  Heading2Icon,
-  ItalicIcon,
-  LinkIcon,
-  ListIcon,
-  ListOrderedIcon,
-} from "lucide-react";
 
 import { Markdown } from "@/components/markdown";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -32,14 +22,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { ruleFormSchema, type RuleFormValues } from "@/app/repos/_lib/rule-schema";
-import {
-  applyCodeBlock,
-  applyInlineFormat,
-  applyLinePrefix,
-  applyLink,
-  type FormatResult,
-  type SelectionRange,
-} from "@/lib/utils/markdown-formatting";
+import { SHORTCUT_MAP, TOOLBAR_GROUPS } from "@/app/repos/_lib/toolbar-config";
+import type { FormatResult, SelectionRange } from "@/lib/utils/markdown-formatting";
 
 type MarkdownRuleEditorProps = Readonly<{
   initial: {
@@ -55,87 +39,6 @@ type MarkdownRuleEditorProps = Readonly<{
 
 const MODE = { Write: "write", Preview: "preview" } as const;
 type Mode = (typeof MODE)[keyof typeof MODE];
-
-type ToolbarAction = {
-  icon: React.ReactNode;
-  label: string;
-  shortcut: string | null;
-  shortcutKey: string | null;
-  getResult: (value: string, selection: SelectionRange) => FormatResult;
-};
-
-const TOOLBAR_GROUPS: ToolbarAction[][] = [
-  [
-    {
-      icon: <BoldIcon />,
-      label: "Bold",
-      shortcut: "\u2318B",
-      shortcutKey: "b",
-      getResult: (v, s) => applyInlineFormat(v, s, "**", "bold text"),
-    },
-    {
-      icon: <ItalicIcon />,
-      label: "Italic",
-      shortcut: "\u2318I",
-      shortcutKey: "i",
-      getResult: (v, s) => applyInlineFormat(v, s, "_", "italic text"),
-    },
-  ],
-  [
-    {
-      icon: <Heading2Icon />,
-      label: "Heading",
-      shortcut: null,
-      shortcutKey: null,
-      getResult: (v, s) => applyLinePrefix(v, s, "## "),
-    },
-  ],
-  [
-    {
-      icon: <LinkIcon />,
-      label: "Link",
-      shortcut: "\u2318K",
-      shortcutKey: "k",
-      getResult: applyLink,
-    },
-    {
-      icon: <CodeIcon />,
-      label: "Inline code",
-      shortcut: "\u2318E",
-      shortcutKey: "e",
-      getResult: (v, s) => applyInlineFormat(v, s, "`", "code"),
-    },
-    {
-      icon: <Code2Icon />,
-      label: "Code block",
-      shortcut: null,
-      shortcutKey: null,
-      getResult: applyCodeBlock,
-    },
-  ],
-  [
-    {
-      icon: <ListIcon />,
-      label: "Bulleted list",
-      shortcut: null,
-      shortcutKey: null,
-      getResult: (v, s) => applyLinePrefix(v, s, "- "),
-    },
-    {
-      icon: <ListOrderedIcon />,
-      label: "Numbered list",
-      shortcut: null,
-      shortcutKey: null,
-      getResult: (v, s) => applyLinePrefix(v, s, "1. "),
-    },
-  ],
-];
-
-const SHORTCUT_MAP = new Map(
-  TOOLBAR_GROUPS.flat()
-    .filter((a): a is ToolbarAction & { shortcutKey: string } => a.shortcutKey !== null)
-    .map((a) => [a.shortcutKey, a.getResult]),
-);
 
 export function MarkdownRuleEditor({
   initial,
