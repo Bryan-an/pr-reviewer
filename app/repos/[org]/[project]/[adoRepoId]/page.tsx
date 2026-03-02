@@ -4,7 +4,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Markdown } from "@/components/markdown";
+import { REPOS_SECTION_ID } from "@/app/repos/_lib/dom-ids";
 import { repoNewRulePath, reposListUrl } from "@/app/repos/_lib/routes";
+import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
+import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
@@ -15,10 +18,11 @@ import { deleteRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/_actio
 
 type RepoRulesPageProps = Readonly<{
   params: Promise<{ org: string; project: string; adoRepoId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
-  const p = await params;
+export default async function RepoRulesPage({ params, searchParams }: RepoRulesPageProps) {
+  const [p, sp] = await Promise.all([params, searchParams]);
   const org = safeDecodeURIComponent(p.org);
   const project = safeDecodeURIComponent(p.project);
   const adoRepoId = safeDecodeURIComponent(p.adoRepoId);
@@ -45,7 +49,9 @@ export default async function RepoRulesPage({ params }: RepoRulesPageProps) {
 
   const rules = await listRepoRules({ repositoryId: storedRepo.id });
 
-  const backHref = reposListUrl({ org, project });
+  const rawFrom = getFirst(sp[RULE_SEARCH_PARAM.From]) ?? "";
+  const safeFrom = rawFrom.startsWith("/repos") && !rawFrom.includes("..") ? rawFrom : "";
+  const backHref = `${safeFrom || reposListUrl({ org, project })}#${REPOS_SECTION_ID}`;
   const newRuleHref = repoNewRulePath(org, project, repo.id);
 
   const ruleContent = Object.fromEntries(

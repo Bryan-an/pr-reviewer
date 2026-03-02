@@ -14,4 +14,5 @@ export const REPOS_SEARCH_PARAM = {
  */
 export const RULE_SEARCH_PARAM = {
   Error: "error",
+  From: "from",
 } as const;
