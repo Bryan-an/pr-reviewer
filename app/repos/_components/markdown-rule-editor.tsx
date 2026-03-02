@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { HighlightedTextarea } from "@/components/ui/highlighted-textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { ruleFormSchema, type RuleFormValues } from "@/app/repos/_lib/rule-schema";
@@ -308,13 +308,14 @@ export function MarkdownRuleEditor({
                       className="outline-none data-[state=inactive]:hidden"
                     >
                       <FormControl>
-                        <Textarea
+                        <HighlightedTextarea
                           {...field}
-                          ref={(el) => {
+                          ref={(el: HTMLTextAreaElement | null) => {
                             field.ref(el);
                             textareaRef.current = el;
                           }}
                           placeholder="Write your guidelines in Markdown…"
+                          spellCheck={false}
                           className="min-h-52 resize-none rounded-none border-0 text-base shadow-none focus-visible:ring-0 md:text-base"
                         />
                       </FormControl>
