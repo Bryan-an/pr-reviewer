@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
 import { Tabs } from "radix-ui";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/cn";
 import { Markdown } from "@/components/markdown";
@@ -46,6 +47,17 @@ type MarkdownRuleEditorProps = Readonly<{
   cancelHref: string;
   formAction: (formData: FormData) => void | Promise<void>;
 }>;
+
+/** redirect() rejects the action promise with a NEXT_REDIRECT digest error. */
+function isRedirectDigest(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest: unknown }).digest === "string" &&
+    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  );
+}
 
 const MODE = { Write: "write", Preview: "preview" } as const;
 type Mode = (typeof MODE)[keyof typeof MODE];
@@ -89,8 +101,10 @@ export function MarkdownRuleEditor({
       fd.set(RULE_FORM_FIELD.Enabled, "1");
     }
 
-    Promise.resolve(formAction(fd)).catch(() => {
+    Promise.resolve(formAction(fd)).catch((error: unknown) => {
+      if (isRedirectDigest(error)) return;
       setIsPending(false);
+      toast.error("Failed to save rule. Please try again.");
     });
   }
 
