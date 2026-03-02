@@ -211,9 +211,49 @@ export function handleListContinuation(
 }
 
 /**
+ * Scans backwards from `currentLineStart` to find the last ordered-list item
+ * at the given indentation level. Returns that item's number + 1, or 1 if no
+ * preceding ordered item is found. Blank lines are skipped; a non-ordered,
+ * non-empty line at the target indent breaks the scan.
+ */
+function findNextOrderedNumber(
+  value: string,
+  currentLineStart: number,
+  targetIndent: number,
+): number {
+  let lineStart = currentLineStart;
+
+  while (lineStart > 0) {
+    const prevLineStart = value.lastIndexOf("\n", lineStart - 2) + 1;
+    const prevLine = value.slice(prevLineStart, lineStart - 1);
+
+    const indentLen = prevLine.match(/^(\s*)/)?.[1]?.length ?? 0;
+
+    // A non-empty line with shallower indent means we've left the list context
+    if (indentLen < targetIndent && prevLine.trim() !== "") break;
+
+    if (indentLen === targetIndent) {
+      const m = prevLine.match(ORDERED_RE);
+      if (m) return parseInt(m[2], 10) + 1;
+
+      // Non-ordered, non-empty content at the target indent breaks the sequence
+      if (prevLine.trim() !== "") break;
+    }
+
+    if (prevLineStart >= lineStart) break; // prevent infinite loop on leading newlines
+    lineStart = prevLineStart;
+  }
+
+  return 1;
+}
+
+/**
  * Indents or outdents a list item by 2 spaces. Returns `null` when the current
  * line is not a list item so the caller can fall through to default Tab
  * behaviour.
+ *
+ * For ordered lists, indent resets the number to 1 (new sublist) and outdent
+ * restores the correct continuation number from the parent list context.
  */
 export function handleListIndent(
   value: string,
@@ -224,11 +264,24 @@ export function handleListIndent(
   const lineStart = value.lastIndexOf("\n", start - 1) + 1;
   const line = value.slice(lineStart);
 
-  const isList = BULLET_RE.test(line) || ORDERED_RE.test(line);
-  if (!isList) return null;
+  const bulletMatch = line.match(BULLET_RE);
+  const orderedMatch = line.match(ORDERED_RE);
+  if (!bulletMatch && !orderedMatch) return null;
 
   if (direction === INDENT_DIRECTION.Indent) {
     const indent = "  ";
+
+    if (orderedMatch) {
+      const [fullPrefix, currentIndent] = orderedMatch;
+      const newPrefix = indent + currentIndent + "1. ";
+      const shift = newPrefix.length - fullPrefix.length;
+
+      return {
+        value: value.slice(0, lineStart) + newPrefix + value.slice(lineStart + fullPrefix.length),
+        selectionStart: start + shift,
+        selectionEnd: end + shift,
+      };
+    }
 
     return {
       value: value.slice(0, lineStart) + indent + value.slice(lineStart),
@@ -241,6 +294,21 @@ export function handleListIndent(
   const leadingSpaces = line.match(/^(\s*)/)?.[1] ?? "";
   const removeCount = Math.min(2, leadingSpaces.length);
   if (removeCount === 0) return null;
+
+  if (orderedMatch) {
+    const [fullPrefix] = orderedMatch;
+    const targetIndent = leadingSpaces.length - removeCount;
+    const newNum = findNextOrderedNumber(value, lineStart, targetIndent);
+    const newNumStr = String(newNum);
+    const newPrefix = " ".repeat(targetIndent) + newNumStr + ". ";
+    const shift = newPrefix.length - fullPrefix.length;
+
+    return {
+      value: value.slice(0, lineStart) + newPrefix + value.slice(lineStart + fullPrefix.length),
+      selectionStart: Math.max(start + shift, lineStart),
+      selectionEnd: Math.max(end + shift, lineStart),
+    };
+  }
 
   return {
     value: value.slice(0, lineStart) + value.slice(lineStart + removeCount),
