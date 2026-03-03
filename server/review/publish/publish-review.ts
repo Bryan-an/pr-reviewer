@@ -83,13 +83,22 @@ export async function publishFindings(params: {
     findings: params.findings,
   });
 
-  // Fetch iteration context for line-anchored threads.
-  const iterCtx = await getLatestIterationContext({
-    org: pr.org,
-    project: pr.project,
-    repoId: pr.repo.id,
-    prId: pr.pr.id,
-  });
+  // Fetch iteration context for line-anchored threads (best-effort).
+  let iterCtx: Awaited<ReturnType<typeof getLatestIterationContext>> | undefined;
+
+  try {
+    iterCtx = await getLatestIterationContext({
+      org: pr.org,
+      project: pr.project,
+      repoId: pr.repo.id,
+      prId: pr.pr.id,
+    });
+  } catch (error) {
+    logger.warn(
+      { err: String(error) },
+      "publish:iteration context fetch failed, continuing without",
+    );
+  }
 
   const existing = await listPullRequestThreads({
     org: pr.org,
