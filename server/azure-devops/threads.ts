@@ -2,12 +2,15 @@ import "server-only";
 
 import type {
   Comment,
+  CommentIterationContext,
   CommentThreadContext,
   GitPullRequestCommentThread,
+  GitPullRequestCommentThreadContext,
 } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { CommentThreadStatus, CommentType } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 import { createAzureDevOpsClient } from "@/server/azure-devops/client";
+import { logger } from "@/server/logging/logger";
 
 export type CreatePullRequestThreadParams = {
   org: string;
@@ -16,6 +19,10 @@ export type CreatePullRequestThreadParams = {
   prId: number;
   content: string;
   filePath?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  changeTrackingId?: number;
+  iterationContext?: CommentIterationContext;
 };
 
 export type ListPullRequestThreadsParams = {
@@ -25,7 +32,25 @@ export type ListPullRequestThreadsParams = {
   prId: number;
 };
 
-function buildThread(params: { content: string; filePath?: string }): GitPullRequestCommentThread {
+function ensureLeadingSlash(filePath: string): string {
+  return filePath.startsWith("/") ? filePath : `/${filePath}`;
+}
+
+/**
+ * Maximum offset value for Azure DevOps `CommentPosition.offset`.
+ * The API defines offset as `integer (int32)` — max 2,147,483,647.
+ * Using int32 max to represent "end of line" without exceeding the API limit.
+ */
+const INT32_MAX = 2_147_483_647;
+
+function buildThread(params: {
+  content: string;
+  filePath?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  changeTrackingId?: number;
+  iterationContext?: CommentIterationContext;
+}): GitPullRequestCommentThread {
   const comments: Comment[] = [
     {
       commentType: CommentType.Text,
@@ -33,14 +58,36 @@ function buildThread(params: { content: string; filePath?: string }): GitPullReq
     },
   ];
 
-  const threadContext: CommentThreadContext | undefined = params.filePath
-    ? { filePath: params.filePath }
+  const adoFilePath = params.filePath ? ensureLeadingSlash(params.filePath) : undefined;
+
+  const threadContext: CommentThreadContext | undefined = adoFilePath
+    ? {
+        filePath: adoFilePath,
+        ...(params.lineStart !== undefined
+          ? {
+              rightFileStart: { line: params.lineStart, offset: 1 },
+              rightFileEnd: {
+                line: params.lineEnd ?? params.lineStart,
+                offset: INT32_MAX,
+              },
+            }
+          : {}),
+      }
     : undefined;
+
+  const pullRequestThreadContext: GitPullRequestCommentThreadContext | undefined =
+    params.changeTrackingId !== undefined && params.iterationContext
+      ? {
+          changeTrackingId: params.changeTrackingId,
+          iterationContext: params.iterationContext,
+        }
+      : undefined;
 
   return {
     status: CommentThreadStatus.Active,
     comments,
     threadContext,
+    pullRequestThreadContext,
   };
 }
 
@@ -50,8 +97,35 @@ export async function createPullRequestThread(
   const webApi = createAzureDevOpsClient(params.org);
   const gitApi = await webApi.getGitApi();
 
-  const thread = buildThread({ content: params.content, filePath: params.filePath });
-  return await gitApi.createThread(thread, params.repoId, params.prId, params.project);
+  const thread = buildThread({
+    content: params.content,
+    filePath: params.filePath,
+    lineStart: params.lineStart,
+    lineEnd: params.lineEnd,
+    changeTrackingId: params.changeTrackingId,
+    iterationContext: params.iterationContext,
+  });
+
+  logger.info(
+    {
+      threadContext: thread.threadContext,
+      pullRequestThreadContext: thread.pullRequestThreadContext,
+    },
+    "publish:thread object being sent to ADO",
+  );
+
+  const result = await gitApi.createThread(thread, params.repoId, params.prId, params.project);
+
+  logger.info(
+    {
+      id: result.id,
+      threadContext: result.threadContext,
+      pullRequestThreadContext: result.pullRequestThreadContext,
+    },
+    "publish:ADO response",
+  );
+
+  return result;
 }
 
 export async function listPullRequestThreads(

@@ -24,17 +24,21 @@ function countAddedLines(file: File): number {
   return added;
 }
 
-function hasTodoInAddedLines(file: File): boolean {
+function firstTodoLine(file: File): number | undefined {
   const chunks: Chunk[] = file.chunks ?? [];
 
   for (const chunk of chunks) {
     for (const change of chunk.changes ?? []) {
       if (change.type !== "add") continue;
-      if (/TODO\b/i.test(change.content)) return true;
+      if (/TODO\b/i.test(change.content)) return change.ln;
     }
   }
 
-  return false;
+  return undefined;
+}
+
+function firstHunkLine(file: File): number | undefined {
+  return file.chunks?.[0]?.newStart;
 }
 
 export function runStubEngine(parsedDiff: File[]): Finding[] {
@@ -49,6 +53,7 @@ export function runStubEngine(parsedDiff: File[]): Finding[] {
     const addedLines = countAddedLines(file);
 
     if (addedLines >= 300) {
+      const hunkLine = firstHunkLine(file);
       findings.push({
         id: stableId(`large_diff:${filePath}`),
         severity: SEVERITY.Warn,
@@ -56,10 +61,12 @@ export function runStubEngine(parsedDiff: File[]): Finding[] {
         title: "Large change set",
         message: `This file adds ${addedLines} lines. Consider splitting into smaller commits or PRs for easier review.`,
         filePath,
+        ...(hunkLine !== undefined ? { lineStart: hunkLine, lineEnd: hunkLine } : {}),
       });
     }
 
-    if (hasTodoInAddedLines(file)) {
+    const todoLine = firstTodoLine(file);
+    if (todoLine !== undefined) {
       findings.push({
         id: stableId(`todo_added:${filePath}`),
         severity: SEVERITY.Info,
@@ -68,6 +75,8 @@ export function runStubEngine(parsedDiff: File[]): Finding[] {
         message:
           "This file contains a TODO in newly added lines. Ensure it is tracked or resolved before merging.",
         filePath,
+        lineStart: todoLine,
+        lineEnd: todoLine,
       });
     }
 

@@ -9,6 +9,8 @@ export type Finding = {
   title: string;
   message: string;
   filePath?: string;
+  lineStart?: number;
+  lineEnd?: number;
   recommendation?: string;
 };
 

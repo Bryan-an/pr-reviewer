@@ -66,11 +66,11 @@ UI (App Router pages/components)
    - Generates unified diff via `git diff` (source of truth, not ADO APIs)
    - Selects AI engine → runs review → normalizes findings via Zod
    - Persists `ReviewRun` + `Finding[]` to SQLite
-4. Results displayed in `ReviewResults` → user can publish to Azure DevOps as comment threads
+4. Results displayed in `ReviewResults` → user can publish to Azure DevOps as line-anchored comment threads (one thread per finding)
 
 ### AI engine interface
 
-Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings. Implementations: `coderabbit/coderabbit-engine.ts` (preferred), `stub-engine.ts` (testing). Selected via `REVIEW_ENGINE` env var.
+Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings (including optional `lineStart`/`lineEnd` for line-level positioning). Implementations: `coderabbit/coderabbit-engine.ts` (preferred, parses `Line:` from output), `stub-engine.ts` (testing, infers lines from parsed diff). Selected via `REVIEW_ENGINE` env var.
 
 ### Database models (Prisma/SQLite)
 

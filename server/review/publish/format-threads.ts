@@ -7,7 +7,6 @@ import {
   adoBlockquote,
   adoBold,
   adoInlineCode,
-  adoJoinLines,
   adoNormalizeNewlines,
 } from "@/server/review/publish/ado-markdown";
 
@@ -17,9 +16,17 @@ export type PublishableThread = {
    */
   threadMarker: string;
   /**
-   * File-scoped threads use `filePath` (no line anchoring in v1).
+   * File path for file-scoped or line-anchored threads.
    */
   filePath?: string;
+  /**
+   * Start line for line-anchored threads (1-based). Maps to `rightFileStart.line` in Azure DevOps.
+   */
+  lineStart?: number;
+  /**
+   * End line for line-anchored threads (1-based). Maps to `rightFileEnd.line` in Azure DevOps.
+   */
+  lineEnd?: number;
   /**
    * Full comment content to publish.
    */
@@ -87,35 +94,6 @@ function threadMarker(marker: string): string {
   return `<!-- pr-reviewer:thread:${marker} -->`;
 }
 
-function normalizeFilePath(value: string): string {
-  // Azure DevOps expects repo-relative paths; our findings should already be that.
-  // Avoid accidental whitespace causing mismatches.
-  return value.trim();
-}
-
-function groupByFilePath(findings: Finding[]): Map<string, Finding[]> {
-  const map = new Map<string, Finding[]>();
-
-  for (const f of findings) {
-    if (!f.filePath) continue;
-    const trimmedFilePath = f.filePath.trim();
-    if (trimmedFilePath === "") continue;
-    const key = normalizeFilePath(trimmedFilePath);
-    const list = map.get(key) ?? [];
-    list.push(f);
-    map.set(key, list);
-  }
-
-  return map;
-}
-
-function maxSeverity(findings: Finding[]): Severity {
-  return findings.reduce<Severity>((best, f) => {
-    if (severityRank(f.severity) < severityRank(best)) return f.severity;
-    return best;
-  }, SEVERITY.Info);
-}
-
 function sortFindingsForThread(findings: Finding[]): Finding[] {
   return [...findings].sort((a, b) => {
     const bySeverity = severityRank(a.severity) - severityRank(b.severity);
@@ -134,7 +112,7 @@ export function formatThreads(params: {
 }): FormatThreadsResult {
   const cap = Math.max(1, params.cap ?? DEFAULT_THREAD_CAP);
   const unscopedFindings = params.findings.filter((f) => !f.filePath);
-  const fileGroups = groupByFilePath(params.findings);
+  const scopedFindings = sortFindingsForThread(params.findings.filter((f) => !!f.filePath));
 
   const summaryMarker = threadMarker(`summary:pr:${params.pr.prId}`);
 
@@ -190,47 +168,23 @@ export function formatThreads(params: {
     });
   }
 
-  const fileThreadCandidates = [...fileGroups.entries()].map(([filePath, findings]) => {
-    const sorted = sortFindingsForThread(findings);
-    const max = maxSeverity(findings);
-
-    return {
-      filePath,
-      findings: sorted,
-      maxSeverity: max,
-      total: findings.length,
-    };
-  });
-
-  fileThreadCandidates.sort((a, b) => {
-    const byMaxSeverity = severityRank(a.maxSeverity) - severityRank(b.maxSeverity);
-    if (byMaxSeverity !== 0) return byMaxSeverity;
-    const byCount = b.total - a.total;
-    if (byCount !== 0) return byCount;
-    return a.filePath.localeCompare(b.filePath);
-  });
-
   const reservedThreads = 1 + (hasGeneralThread && cap >= 2 ? 1 : 0);
-  const maxFileThreads = Math.max(0, cap - reservedThreads);
-  const selectedFileThreads = fileThreadCandidates.slice(0, maxFileThreads);
+  const maxFindingThreads = Math.max(0, cap - reservedThreads);
+  const selectedFindings = scopedFindings.slice(0, maxFindingThreads);
 
   const wasCapped =
-    fileThreadCandidates.length > selectedFileThreads.length || (hasGeneralThread && cap < 2);
+    scopedFindings.length > selectedFindings.length || (hasGeneralThread && cap < 2);
 
-  for (const t of selectedFileThreads) {
-    const marker = threadMarker(`file:${t.filePath}:pr:${params.pr.prId}`);
+  for (const f of selectedFindings) {
+    const marker = threadMarker(`finding:${f.id}:pr:${params.pr.prId}`);
 
     threads.push({
       threadMarker: marker,
-      filePath: t.filePath,
-      content: [
-        adoJoinLines([`${adoBold("File:")} ${adoInlineCode(t.filePath)}`]),
-        "",
-        t.findings.map(formatFinding).join("\n\n"),
-        "",
-        marker,
-      ].join("\n"),
-      findingIds: t.findings.map((f) => f.id),
+      filePath: f.filePath,
+      lineStart: f.lineStart,
+      lineEnd: f.lineEnd,
+      content: [formatFinding(f), "", marker].join("\n"),
+      findingIds: [f.id],
     });
   }
 

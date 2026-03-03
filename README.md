@@ -8,7 +8,7 @@ It is designed for scenarios where a single reviewer (or a small group) receives
 
 ## The idea
 
-Build a **web app** that connects to Azure DevOps, fetches the set of changes in a pull request, runs an AI review, and then produces **ready-to-post comments** (general and file-scoped, and later line-scoped) that you can publish back to the PR.
+Build a **web app** that connects to Azure DevOps, fetches the set of changes in a pull request, runs an AI review, and then produces **ready-to-post comments** (general, file-scoped, and line-anchored) that you can publish back to the PR.
 
 The reviewer should be able to provide their own standards (architecture rules, naming, error handling, testing expectations, etc.) so the AI review is aligned with the team’s expectations rather than generic advice.
 
@@ -78,7 +78,8 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
   - severity (e.g. info/warn/error)
   - category (e.g. correctness/security/maintainability)
 - **Publishable PR threads** in Azure DevOps:
-  - general comments and file-scoped comments (line anchoring is a non-goal for v1)
+  - Line-anchored comments (one thread per finding, positioned at the relevant lines in the diff view)
+  - File-scoped and general fallback for findings without line information
 - Minimal run metadata:
   - timestamp, PR reference, engine used, counts by severity
 
@@ -92,7 +93,6 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 ### Non-goals (v1)
 
 - Browsing/listing PRs (user supplies a PR id or PR URL).
-- Line-level anchoring (file-level only; line anchoring can be added later).
 - Persisting PATs in the database (when added later, it must be encrypted at rest with `APP_ENCRYPTION_KEY`).
 - Multi-org/multi-repo management UI, teams/roles, SSO, and enterprise policy management.
 - Organization-wide policy management (beyond repository-scoped Markdown rules).
@@ -116,9 +116,9 @@ MVP is progressing:
 The review preview page can publish findings back to Azure DevOps as **PR comment threads**:
 
 - **One summary thread**: basic run metadata (engine name, counts).
-- **File-scoped threads**: one thread per file (no line anchoring in v1).
+- **One thread per finding**: each finding with a file path becomes its own thread. When line numbers are available (parsed from CodeRabbit output or inferred by the stub engine), the thread is **line-anchored** — it appears directly on the relevant lines in the Azure DevOps diff view.
+- **Fallback hierarchy**: findings with file + lines → line-anchored thread; findings with file only → file-scoped thread; findings without file → general thread. If Azure DevOps rejects a line-anchored or file-scoped thread, the app falls back to posting a general thread.
 - **Idempotency**: published threads include hidden markers so re-publishing does not duplicate threads.
-- **Fallback**: if Azure DevOps rejects file-scoped context without positions, the app falls back to posting a general thread that includes the file path in the content.
 
 ## Repository rules (Markdown)
 
@@ -166,10 +166,10 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 - **`CODERABBIT_BIN`**: override the CodeRabbit CLI binary path/name (default: `coderabbit`).
 - **`REVIEW_ENGINE`**: choose the engine (`coderabbit` or `stub`). Default: `coderabbit`.
 
-## Known limitations (v1)
+## Known limitations
 
-- Publishing is **file-scoped only** (no line anchoring).
 - CodeRabbit CLI output parsing is **best-effort**; some findings may be unscoped or less precise.
+- Line anchoring depends on the AI engine providing line numbers. If the engine does not include line information, the finding falls back to file-scoped or general threading.
 
 ## Architecture, strategy, and repository structure
 

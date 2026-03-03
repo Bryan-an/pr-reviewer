@@ -96,6 +96,8 @@ export const FindingScalarFieldEnum = {
   title: "title",
   message: "message",
   filePath: "filePath",
+  lineStart: "lineStart",
+  lineEnd: "lineEnd",
   recommendation: "recommendation",
   createdAt: "createdAt",
 } as const;
