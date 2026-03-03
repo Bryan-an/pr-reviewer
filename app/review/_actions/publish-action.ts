@@ -1,72 +1,40 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
-import { reviewPublishedUrl } from "../_lib/routes";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
 
 import {
   getCorrelationIdFromFormData,
-  createRedirectToPublishError,
   toReviewRunError,
-  requireCachedReviewRun,
-  parseCachedFindingsOrRedirect,
+  parseCachedFindings,
   toErrorForLogging,
 } from "../_lib/review-action-utils";
 
-async function publishFindingsOrRedirect(params: {
-  prUrl: string;
-  runId: string;
-  engineName: string;
-  correlationId: string;
-  findings: Parameters<typeof publishFindings>[0]["findings"];
-  redirectToPublishError: (params?: { prUrl?: string }) => never;
-}): Promise<Awaited<ReturnType<typeof publishFindings>>> {
-  try {
-    return await publishFindings({
-      prUrl: params.prUrl,
-      findings: params.findings,
-    });
-  } catch (err) {
-    const errorToLog = toErrorForLogging(err, "publishFindings failed.");
+export type PublishActionResult =
+  | {
+      success: true;
+      publishedThreads: number;
+      skippedThreads: number;
+      totalThreads: number;
+      wasCapped: boolean;
+      cap: number;
+    }
+  | { success: false };
 
-    logger.error(
-      {
-        correlationId: params.correlationId,
-        prUrl: params.prUrl,
-        runId: params.runId,
-        engineName: params.engineName,
-        err: errorToLog,
-      },
-      "publishFindings failed",
-    );
-
-    return params.redirectToPublishError({ prUrl: params.prUrl });
-  }
-}
-
-export async function publishAction(formData: FormData) {
+export async function publishAction(formData: FormData): Promise<PublishActionResult> {
   const correlationId = getCorrelationIdFromFormData(formData);
-  const redirectToPublishError = createRedirectToPublishError(correlationId);
 
   const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
   const runId = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.RunId);
-
-  if (!prUrl) {
-    return redirectToPublishError();
-  }
-
   const engineName = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.EngineName);
 
-  if (!runId || !engineName) {
-    return redirectToPublishError({ prUrl });
+  if (!prUrl || !runId || !engineName) {
+    return { success: false };
   }
 
-  // We now publish from cached run findings (avoid rerunning review and avoid large payloads).
   let cached: Awaited<ReturnType<typeof getCachedReviewRun>>;
 
   try {
@@ -79,38 +47,40 @@ export async function publishAction(formData: FormData) {
     });
 
     logger.error(
-      {
-        correlationId,
-        prUrl,
-        runId,
-        engineName,
-        err: wrapped,
-      },
+      { correlationId, prUrl, runId, engineName, err: wrapped },
       "getCachedReviewRun failed",
     );
 
-    return redirectToPublishError({ prUrl });
+    return { success: false };
   }
 
-  const ensuredCached = requireCachedReviewRun(cached, prUrl, redirectToPublishError);
-  const findings = parseCachedFindingsOrRedirect(ensuredCached, prUrl, redirectToPublishError);
+  if (!cached) return { success: false };
 
-  const result = await publishFindingsOrRedirect({
-    prUrl,
-    engineName,
-    findings,
-    correlationId,
-    runId,
-    redirectToPublishError,
-  });
+  const findingsResult = parseCachedFindings(cached);
+  if (!findingsResult.success) return { success: false };
 
-  redirect(
-    reviewPublishedUrl({
+  try {
+    const result = await publishFindings({
       prUrl,
-      engineName,
+      findings: findingsResult.data,
+    });
+
+    return {
+      success: true,
       publishedThreads: result.publishedThreads,
       skippedThreads: result.skippedThreads,
       totalThreads: result.totalThreads,
-    }),
-  );
+      wasCapped: result.wasCapped,
+      cap: result.cap,
+    };
+  } catch (err) {
+    const errorToLog = toErrorForLogging(err, "publishFindings failed.");
+
+    logger.error(
+      { correlationId, prUrl, runId, engineName, err: errorToLog },
+      "publishFindings failed",
+    );
+
+    return { success: false };
+  }
 }

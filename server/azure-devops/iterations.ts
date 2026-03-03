@@ -3,7 +3,7 @@ import "server-only";
 import type { CommentIterationContext } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 import { createAzureDevOpsClient } from "@/server/azure-devops/client";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 
 export type PullRequestIterationContext = {
   iterationContext: CommentIterationContext;

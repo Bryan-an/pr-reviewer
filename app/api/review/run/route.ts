@@ -3,7 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { reviewRequestSchema } from "@/lib/validation/review-request";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 import { isEmptyDiffError } from "@/server/review/errors";
 import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
 

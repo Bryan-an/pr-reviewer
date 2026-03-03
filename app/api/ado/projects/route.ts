@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 import { ADO_API_SEARCH_PARAM } from "@/app/api/ado/_lib/search-params";
 import { listAzureDevOpsProjects } from "@/server/azure-devops/projects";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

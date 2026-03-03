@@ -1,11 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Loader2Icon, RefreshCwIcon, SendIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
+import { logger } from "@/lib/logging/logger";
 
+import type { PublishActionResult } from "../_actions/publish-action";
+import type { RerunActionResult } from "../_actions/rerun-action";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import { reviewUrl } from "../_lib/routes";
 import { useReviewActions } from "./review-actions-context";
 
 // ---------------------------------------------------------------------------
@@ -17,8 +23,8 @@ type ReviewActionFooterProps = Readonly<{
   effectiveRunId: string | undefined;
   engineName: string;
   correlationId: string;
-  publishAction: (formData: FormData) => void | Promise<void>;
-  rerunAction: (formData: FormData) => void | Promise<void>;
+  publishAction: (formData: FormData) => Promise<PublishActionResult>;
+  rerunAction: (formData: FormData) => Promise<RerunActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------
@@ -33,12 +39,77 @@ export function ReviewActionFooter({
   publishAction,
   rerunAction,
 }: ReviewActionFooterProps) {
+  const router = useRouter();
+
   const { isPublishing, isRerunning, isAnyPending, startPublishTransition, startRerunTransition } =
     useReviewActions();
 
+  function handlePublishSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startPublishTransition(async () => {
+      let result: PublishActionResult;
+
+      try {
+        result = await publishAction(formData);
+      } catch (err) {
+        logger.error(err, "[publish] unexpected error");
+
+        toast.error(
+          "Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.",
+        );
+
+        return;
+      }
+
+      if (result.success) {
+        const threadLabel = result.publishedThreads === 1 ? "thread" : "threads";
+
+        const skippedPart =
+          result.skippedThreads > 0
+            ? ` Skipped ${result.skippedThreads} already-posted ${result.skippedThreads === 1 ? "thread" : "threads"}.`
+            : "";
+
+        const capPart = result.wasCapped ? ` (capped at ${result.cap})` : "";
+
+        toast.success(
+          `Published ${result.publishedThreads} ${threadLabel}${capPart}.${skippedPart} Total considered: ${result.totalThreads}.`,
+        );
+      } else {
+        toast.error(
+          "Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.",
+        );
+      }
+    });
+  }
+
+  function handleRerunSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startRerunTransition(async () => {
+      let result: RerunActionResult;
+
+      try {
+        result = await rerunAction(formData);
+      } catch (err) {
+        logger.error(err, "[rerun] unexpected error");
+        toast.error("Review re-run failed. Please try again.");
+        return;
+      }
+
+      if (result.success) {
+        router.replace(reviewUrl({ prUrl, runId: result.runId }));
+      } else {
+        toast.error("Review re-run failed. Please try again.");
+      }
+    });
+  }
+
   return (
     <CardFooter className="flex flex-wrap gap-3">
-      <form action={(formData) => startPublishTransition(() => publishAction(formData))}>
+      <form onSubmit={handlePublishSubmit}>
         <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
         {effectiveRunId ? (
           <input type="hidden" name={REVIEW_FORM_FIELD.RunId} value={effectiveRunId} />
@@ -70,7 +141,7 @@ export function ReviewActionFooter({
         </Button>
       </form>
 
-      <form action={(formData) => startRerunTransition(() => rerunAction(formData))}>
+      <form onSubmit={handleRerunSubmit}>
         <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
 
         <Button

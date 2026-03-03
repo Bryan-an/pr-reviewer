@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { execa } from "execa";
 
 import { getEnv } from "@/lib/config/env";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 
 const MAX_ERROR_OUTPUT_CHARS = 1024;
 

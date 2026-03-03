@@ -8,7 +8,7 @@ import type { Finding } from "@/server/review/types";
 import { getLatestIterationContext } from "@/server/azure-devops/iterations";
 import { createPullRequestThread, listPullRequestThreads } from "@/server/azure-devops/threads";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 import { formatThreads } from "@/server/review/publish/format-threads";
 import { runReview } from "@/server/review/run-review";
 

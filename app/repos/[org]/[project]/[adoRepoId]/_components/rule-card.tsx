@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useOptimistic, useState } from "react";
+import { type ReactNode, startTransition, useOptimistic, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { Collapsible } from "radix-ui";
@@ -39,14 +39,17 @@ export function RuleCard({
   const [optimisticEnabled, setOptimisticEnabled] = useOptimistic(rule.enabled);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  async function handleToggle(formData: FormData) {
-    setOptimisticEnabled(!optimisticEnabled);
+  function handleToggle(formData: FormData) {
+    startTransition(async () => {
+      setOptimisticEnabled(!optimisticEnabled);
 
-    try {
-      await toggleAction(formData);
-    } catch {
-      toast.error("Failed to toggle rule.");
-    }
+      try {
+        await toggleAction(formData);
+        toast.success(`Rule ${optimisticEnabled ? "disabled" : "enabled"}.`);
+      } catch {
+        toast.error("Failed to toggle rule.");
+      }
+    });
   }
 
   return (
