@@ -62,9 +62,9 @@ function looksLikeCode(line: string): boolean {
 }
 
 function looksLikeDiffLine(line: string): boolean {
-  const l = line.trim();
-  if (!/^[+-]/.test(l)) return false;
-  const rest = l.slice(1);
+  // Diff markers (+/-) must be at column 0; trimming would misclassify indented markdown lists.
+  if (!/^[+-]/.test(line)) return false;
+  const rest = line.slice(1);
   // Significant indentation after +/- strongly suggests a code diff, not a markdown list.
   if (/^\s{2,}\S/.test(rest)) return true;
   // Avoid treating markdown list items like "- foo" as diff unless they look code-ish.
