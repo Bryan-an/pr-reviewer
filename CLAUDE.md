@@ -77,6 +77,15 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 - `ReviewRun` → `Finding[]` (review execution + results)
 - `Repository` → `RepoRule[]` (per-repo markdown review rules, managed via `/repos` UI)
 
+### Azure DevOps thread anchoring
+
+Line-anchored PR comment threads require **both** `threadContext` (file path + positions) and `pullRequestThreadContext` (`changeTrackingId` + `iterationContext` from the iterations API). Key gotchas:
+
+- `CommentPosition.offset` is `int32` — use `2_147_483_647` for "end of line", not `Number.MAX_SAFE_INTEGER`
+- `threadContext.filePath` must have a leading `/`
+- `changeTrackingId` is per-file, resolved via `getPullRequestIterationChanges()` — see `server/azure-devops/iterations.ts`
+- Iteration context fetch is best-effort (try/catch) — failure degrades to general threads, doesn't block publishing
+
 ## Conventions
 
 - **Navigation links**: use `buttonVariants()` on `<Link>` — not `Button asChild` — for navigation
@@ -107,7 +116,7 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 - **Destructive confirmations**: use shadcn `AlertDialog` (not `window.confirm()`). Use uncontrolled pattern — `AlertDialogAction` auto-closes via Radix internals, no `useState` needed. Pass `variant="destructive"` to `AlertDialogAction`
 - **Server Component error handling**: pages calling external APIs (Azure DevOps) should wrap calls in `try/catch`, log with `logger.error()`, and return an inline error UI with a "Back" link — don't let errors propagate to the error boundary
 - **Tailwind Typography**: register via `@plugin "@tailwindcss/typography"` in `globals.css`. Override `--tw-prose-*` vars on `.prose` selector (not `:root`) — the plugin sets defaults directly on `.prose`, and a direct declaration beats an inherited one regardless of layers. Keep `.prose` overrides unlayered to win over the plugin's layered output
-- **Markdown rendering**: `components/markdown.tsx` uses `prose max-w-none` (base = 16px) + `rehype-highlight` (sync). Prose token colors mapped to design system in `globals.css`. Use `rehype-highlight` (not Shiki) — Shiki is async and incompatible with `"use client"` components. Callers should not pass `text-sm` or `text-muted-foreground` — prose handles sizing and body color via `--tw-prose-body`
+- **Markdown rendering**: `components/markdown.tsx` uses `prose max-w-none break-words` (base = 16px) + `rehype-highlight` (sync). Prose token colors mapped to design system in `globals.css`. Use `rehype-highlight` (not Shiki) — Shiki is async and incompatible with `"use client"` components. Callers may pass `text-sm` for tighter contexts (e.g., finding cards) but should not pass `text-muted-foreground` — prose handles body color via `--tw-prose-body`
 - **Markdown editor**: `markdown-rule-editor.tsx` uses `HighlightedTextarea` (transparent textarea over highlighted `<pre><code>` backdrop) for live syntax highlighting. Formatting utilities live in `lib/utils/markdown-formatting.ts`. Textarea selection/cursor positioning uses `flushSync` (from `react-dom`) + `setSelectionRange` — not `useLayoutEffect` + ref, which breaks when `form.setValue` with `shouldValidate` triggers multiple renders. List indentation uses 4 spaces (not 2) — CommonMark requires indent >= parent marker width (3 for ordered `1. `, 2 for bullet `- `); 4 spaces is universally safe
 - **highlight.js theme**: a single unified GitHub Light / Dark Dimmed hljs theme in `globals.css` serves both prose code blocks and the markdown editor overlay. Must be unlayered CSS to override prose's layered `pre code` color rules. Tokens shared with the markdown grammar (`.hljs-code`, `.hljs-bullet`, `.hljs-quote`, `.hljs-link`) are split from their original groups so they can have markdown-friendly styles without affecting other tokens in the same group
 - **highlight.js imports**: use tree-shaken `highlight.js/lib/core` + register only needed languages (not the full bundle). Added as a direct dependency because pnpm strict isolation blocks transitive imports via `rehype-highlight`
