@@ -320,10 +320,11 @@ function isCleanNoFindingsOutput(text: string): boolean {
 
 function parseLineRange(value: string | undefined): { start?: number; end?: number } {
   if (!value) return {};
-  const match = /^(\d+)(?:\s*(?:to|-)\s*(\d+))?/.exec(value.trim());
+  const match = /^(\d+)(?:\s*(?:to|-)\s*(\d+))?$/.exec(value.trim());
   if (!match?.[1]) return {};
   const start = parseInt(match[1], 10);
   const end = match[2] ? parseInt(match[2], 10) : start;
+  if (start < 1 || end < 1 || end < start) return {};
   return { start, end };
 }
 
