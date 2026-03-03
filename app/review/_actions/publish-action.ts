@@ -29,7 +29,6 @@ async function publishFindingsOrRedirect(params: {
   try {
     return await publishFindings({
       prUrl: params.prUrl,
-      engineName: params.engineName,
       findings: params.findings,
     });
   } catch (err) {

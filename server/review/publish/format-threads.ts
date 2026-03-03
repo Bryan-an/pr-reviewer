@@ -3,12 +3,7 @@ import "server-only";
 import { SEVERITY } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
-import {
-  adoBlockquote,
-  adoBold,
-  adoInlineCode,
-  adoNormalizeNewlines,
-} from "@/server/review/publish/ado-markdown";
+import { adoBlockquote, adoBold, adoNormalizeNewlines } from "@/server/review/publish/ado-markdown";
 
 export type PublishableThread = {
   /**
@@ -105,8 +100,7 @@ function sortFindingsForThread(findings: Finding[]): Finding[] {
 }
 
 export function formatThreads(params: {
-  pr: { org: string; project: string; repoName: string; prId: number; title: string };
-  engineName: string;
+  prId: number;
   findings: Finding[];
   cap?: number;
 }): FormatThreadsResult {
@@ -114,45 +108,12 @@ export function formatThreads(params: {
   const unscopedFindings = params.findings.filter((f) => !f.filePath);
   const scopedFindings = sortFindingsForThread(params.findings.filter((f) => !!f.filePath));
 
-  const summaryMarker = threadMarker(`summary:pr:${params.pr.prId}`);
+  const threads: PublishableThread[] = [];
 
-  const bySeverity = params.findings.reduce<Record<Severity, number>>(
-    (acc, f) => {
-      acc[f.severity] += 1;
-      return acc;
-    },
-    { info: 0, warn: 0, error: 0 },
-  );
-
-  const summaryLines: string[] = [
-    adoBold("PR Reviewer: findings summary"),
-    "",
-    `- ${adoBold("Repo:")} ${params.pr.repoName}`,
-    `- ${adoBold("PR:")} #${params.pr.prId}`,
-    `- ${adoBold("Title:")} ${params.pr.title}`,
-    `- ${adoBold("Engine:")} ${adoInlineCode(params.engineName)}`,
-    `- ${adoBold("Total findings:")} ${params.findings.length}`,
-    "",
-    adoBold("Counts"),
-    `- Errors: ${bySeverity.error}`,
-    `- Warnings: ${bySeverity.warn}`,
-    `- Info: ${bySeverity.info}`,
-    "",
-    summaryMarker,
-  ];
-
-  const threads: PublishableThread[] = [
-    {
-      threadMarker: summaryMarker,
-      content: summaryLines.join("\n"),
-      findingIds: [],
-    },
-  ];
-
-  const generalMarker = threadMarker(`general:pr:${params.pr.prId}`);
+  const generalMarker = threadMarker(`general:pr:${params.prId}`);
   const hasGeneralThread = unscopedFindings.length > 0;
 
-  if (hasGeneralThread && cap >= 2) {
+  if (hasGeneralThread) {
     const sorted = sortFindingsForThread(unscopedFindings);
 
     threads.push({
@@ -168,15 +129,14 @@ export function formatThreads(params: {
     });
   }
 
-  const reservedThreads = 1 + (hasGeneralThread && cap >= 2 ? 1 : 0);
+  const reservedThreads = hasGeneralThread ? 1 : 0;
   const maxFindingThreads = Math.max(0, cap - reservedThreads);
   const selectedFindings = scopedFindings.slice(0, maxFindingThreads);
 
-  const wasCapped =
-    scopedFindings.length > selectedFindings.length || (hasGeneralThread && cap < 2);
+  const wasCapped = scopedFindings.length > selectedFindings.length;
 
   for (const f of selectedFindings) {
-    const marker = threadMarker(`finding:${f.id}:pr:${params.pr.prId}`);
+    const marker = threadMarker(`finding:${f.id}:pr:${params.prId}`);
 
     threads.push({
       threadMarker: marker,
@@ -188,8 +148,8 @@ export function formatThreads(params: {
     });
   }
 
-  // If we’re capped, add a small note to the summary for transparency.
-  if (wasCapped) {
+  // If we’re capped, add a note to the first thread for transparency.
+  if (wasCapped && threads.length > 0) {
     threads[0] = {
       ...threads[0],
       content:

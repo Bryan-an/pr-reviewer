@@ -54,7 +54,6 @@ function normalizePath(p: string): string {
 
 export async function publishFindings(params: {
   prUrl: string;
-  engineName: string;
   findings: Finding[];
 }): Promise<PublishReviewResult> {
   const parsed = reviewRequestSchema.safeParse({ prUrl: params.prUrl });
@@ -72,14 +71,7 @@ export async function publishFindings(params: {
   });
 
   const { threads, wasCapped, cap } = formatThreads({
-    pr: {
-      org: pr.org,
-      project: pr.project,
-      repoName: pr.repo.name,
-      prId: pr.pr.id,
-      title: pr.pr.title,
-    },
-    engineName: params.engineName,
+    prId: pr.pr.id,
     findings: params.findings,
   });
 
@@ -202,7 +194,6 @@ export async function publishReview(params: { prUrl: string }): Promise<PublishR
 
   return await publishFindings({
     prUrl: params.prUrl,
-    engineName: review.engine.name,
     findings: review.findings,
   });
 }
