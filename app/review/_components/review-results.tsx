@@ -1,12 +1,13 @@
-import { AlertCircleIcon, CheckCircle2Icon, FileIcon } from "lucide-react";
+import { FileIcon } from "lucide-react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Markdown } from "@/components/markdown";
 import { PageHeader } from "@/components/page-header";
 import type { ReviewRunResult } from "@/server/review/types";
 
+import type { PublishActionResult } from "../_actions/publish-action";
+import type { RerunActionResult } from "../_actions/rerun-action";
 import { NewReviewLink } from "./new-review-link";
 import { ReviewActionFooter } from "./review-action-footer";
 import { ReviewActionsProvider } from "./review-actions-context";
@@ -30,14 +31,8 @@ type ReviewResultsProps = Readonly<{
   effectiveRunId: string | undefined;
   prUrl: string;
   correlationId: string;
-  published: boolean;
-  publishError: boolean;
-  error: string | undefined;
-  publishedThreads: number;
-  skippedThreads: number;
-  totalThreads: number;
-  publishAction: (formData: FormData) => void | Promise<void>;
-  rerunAction: (formData: FormData) => void | Promise<void>;
+  publishAction: (formData: FormData) => Promise<PublishActionResult>;
+  rerunAction: (formData: FormData) => Promise<RerunActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------
@@ -49,23 +44,9 @@ export function ReviewResults({
   effectiveRunId,
   prUrl,
   correlationId,
-  published,
-  publishError,
-  error,
-  publishedThreads,
-  skippedThreads,
-  totalThreads,
   publishAction,
   rerunAction,
 }: ReviewResultsProps) {
-  const publishedThreadsLabel = `thread${publishedThreads === 1 ? "" : "s"}`;
-  const skippedThreadsLabel = `thread${skippedThreads === 1 ? "" : "s"}`;
-
-  const skippedMessage =
-    skippedThreads > 0
-      ? ` (skipped ${skippedThreads} already-posted ${skippedThreadsLabel}).`
-      : ".";
-
   return (
     <ReviewActionsProvider>
       <PageHeader
@@ -78,33 +59,6 @@ export function ReviewResults({
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 pt-17 pb-12">
         {/* ── Page heading ─────────────────────────────────────────────── */}
         <h1 className="text-2xl font-semibold tracking-tight">Review preview</h1>
-
-        {/* ── Status alerts ────────────────────────────────────────────── */}
-        {published ? (
-          <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200 [&>svg]:text-emerald-600 dark:[&>svg]:text-emerald-400">
-            <CheckCircle2Icon />
-            <AlertDescription>
-              Published {publishedThreads} {publishedThreadsLabel}
-              {skippedMessage} Total threads considered: {totalThreads}.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        {publishError ? (
-          <Alert variant="destructive">
-            <AlertCircleIcon />
-            <AlertDescription>
-              Publish failed. Confirm your Azure DevOps permissions and that the PR is accessible.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        {error ? (
-          <Alert variant="destructive">
-            <AlertCircleIcon />
-            <AlertDescription>Review failed. {error}</AlertDescription>
-          </Alert>
-        ) : null}
 
         {/* ── PR info + actions ────────────────────────────────────────── */}
         <Card>

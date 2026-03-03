@@ -14,7 +14,7 @@ import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { getRepoRuleById } from "@/server/db/repo-rules";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 import { MarkdownRuleEditor } from "@/app/repos/_components/markdown-rule-editor";
 import { updateRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/rules/[ruleId]/edit/_actions/update-rule-action";
 

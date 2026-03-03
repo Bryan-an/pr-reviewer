@@ -47,6 +47,7 @@ export function RuleList({
 
       try {
         await deleteAction(formData);
+        toast.success("Rule deleted.");
       } catch {
         toast.error("Failed to delete rule.");
       }

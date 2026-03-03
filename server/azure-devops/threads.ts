@@ -10,7 +10,7 @@ import type {
 import { CommentThreadStatus, CommentType } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 import { createAzureDevOpsClient } from "@/server/azure-devops/client";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 
 export type CreatePullRequestThreadParams = {
   org: string;

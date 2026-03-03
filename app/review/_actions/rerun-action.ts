@@ -1,27 +1,25 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
-import { reviewUrl } from "../_lib/routes";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 import { runAndPersistReview } from "@/server/review/get-or-run-review";
 
 import { toReviewRunError, toErrorForLogging } from "../_lib/review-action-utils";
 
-export async function rerunAction(formData: FormData) {
+export type RerunActionResult = { success: true; runId: string } | { success: false };
+
+export async function rerunAction(formData: FormData): Promise<RerunActionResult> {
   const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
-  if (!prUrl) redirect("/review");
+  if (!prUrl) return { success: false };
 
   const parsed = reviewRequestSchema.safeParse({ prUrl });
-  if (!parsed.success) redirect("/review");
-
-  let runId: string;
+  if (!parsed.success) return { success: false };
 
   try {
-    ({ runId } = await runAndPersistReview(parsed.data));
+    const { runId } = await runAndPersistReview(parsed.data);
+    return { success: true, runId };
   } catch (err) {
     const correlationId = crypto.randomUUID();
 
@@ -43,9 +41,6 @@ export async function rerunAction(formData: FormData) {
       "rerunAction failed",
     );
 
-    const message = "Review re-run failed.";
-    redirect(reviewUrl({ prUrl, error: message }));
+    return { success: false };
   }
-
-  redirect(reviewUrl({ prUrl, runId }));
 }

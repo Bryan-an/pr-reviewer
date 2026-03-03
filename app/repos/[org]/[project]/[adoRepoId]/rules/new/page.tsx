@@ -12,7 +12,7 @@ import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
-import { logger } from "@/server/logging/logger";
+import { logger } from "@/lib/logging/logger";
 import { MarkdownRuleEditor } from "@/app/repos/_components/markdown-rule-editor";
 import { createRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/rules/new/_actions/create-rule-action";
 
