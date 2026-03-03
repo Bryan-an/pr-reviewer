@@ -80,7 +80,8 @@ export async function getLatestIterationContext(params: {
       }
     }
 
-    if (!changes.nextSkip || !changes.nextTop) break;
+    if (changes.nextSkip === undefined || changes.nextTop === undefined) break;
+    if (changes.nextSkip === skip) break;
     skip = changes.nextSkip;
   }
 
