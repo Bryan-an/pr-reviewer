@@ -6,11 +6,19 @@ import { FINDING_CATEGORY, SEVERITY } from "@/lib/validation/finding";
 import type { FindingCategory, Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
 
-function stableId(parts: { filePath?: string; title: string; message: string }): string {
+function stableId(parts: {
+  filePath?: string;
+  title: string;
+  message: string;
+  lineStart?: number;
+  lineEnd?: number;
+}): string {
   const seed = JSON.stringify({
     filePath: parts.filePath ?? "",
     title: parts.title,
     message: parts.message,
+    lineStart: parts.lineStart ?? null,
+    lineEnd: parts.lineEnd ?? null,
   });
 
   const hash = crypto.createHash("sha256").update(seed).digest("base64url");
@@ -37,18 +45,30 @@ function trimLineEndingsPreserveNewlines(text: string): string {
 function looksLikeCode(line: string): boolean {
   const l = line.trim();
   if (l === "") return false;
-  if (/^(import|export|const|let|var|function|class|interface|type)\b/.test(l)) return true;
+  if (
+    /^(import|export|const|let|var|function|class|interface|type|return|if|else|for|while)\b/.test(
+      l,
+    )
+  )
+    return true;
   if (/(?:=>|;\s*$)/.test(l)) return true;
-  if (/^\s*[{}()[\]]\s*$/.test(l)) return true;
+  if (/^\s*[{}()[\]]+[,;]?\s*$/.test(l)) return true;
   if (/\/\/|\/\*/.test(l)) return true;
+  if (/\.\w+\(/.test(l)) return true;
+  if (/[{(]\s*$/.test(l)) return true;
+  if (/,\s*$/.test(l)) return true;
+  if (/^\s*\?/.test(l) || /^\s*:/.test(l)) return true;
   return false;
 }
 
 function looksLikeDiffLine(line: string): boolean {
-  const l = line.trim();
-  if (!/^[+-]\s*/.test(l)) return false;
+  // Diff markers (+/-) must be at column 0; trimming would misclassify indented markdown lists.
+  if (!/^[+-]/.test(line)) return false;
+  const rest = line.slice(1);
+  // Significant indentation after +/- strongly suggests a code diff, not a markdown list.
+  if (/^\s{2,}\S/.test(rest)) return true;
   // Avoid treating markdown list items like "- foo" as diff unless they look code-ish.
-  return looksLikeCode(l.slice(1).trim());
+  return looksLikeCode(rest.trim());
 }
 
 function consumeWhile<T>(
@@ -300,8 +320,23 @@ function isCleanNoFindingsOutput(text: string): boolean {
   return /review completed/i.test(text) && !/\bFile:\s*/i.test(text) && !hasFindingsSections(text);
 }
 
+const MAX_LINE_NUMBER = 2_147_483_647; // Prisma Int (int32) max
+
+function parseLineRange(value: string | undefined): { start?: number; end?: number } {
+  if (!value) return {};
+  const match = /^(\d+)(?:\s*(?:to|-)\s*(\d+))?$/.exec(value.trim());
+  if (!match?.[1]) return {};
+  const start = parseInt(match[1], 10);
+  const end = match[2] ? parseInt(match[2], 10) : start;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end)) return {};
+  if (start < 1 || end < 1 || end < start) return {};
+  if (start > MAX_LINE_NUMBER || end > MAX_LINE_NUMBER) return {};
+  return { start, end };
+}
+
 function parseSectionToFinding(section: string, changedFiles: string[]): Finding | null {
   const fileLine = parseSingleLineValue(section, "File:");
+  const lineLine = parseSingleLineValue(section, "Line:");
   const typeLine = parseSingleLineValue(section, "Type:");
   const commentBlock = parseLabeledBlock(section, "Comment:");
   const promptBlock = parseLabeledBlock(section, "Prompt for AI Agent:");
@@ -331,13 +366,17 @@ function parseSectionToFinding(section: string, changedFiles: string[]): Finding
     ? (bestEffortFilePath(fileLine, changedFiles) ?? fileLine.trim())
     : bestEffortFilePath(combined, changedFiles);
 
+  const lineRange = parseLineRange(lineLine);
+
   return {
-    id: stableId({ filePath, title, message }),
+    id: stableId({ filePath, title, message, lineStart: lineRange.start, lineEnd: lineRange.end }),
     severity: severityFromType(typeLine, combined),
     category: inferCategory(combined),
     title,
     message,
     filePath,
+    ...(lineRange.start !== undefined ? { lineStart: lineRange.start } : {}),
+    ...(lineRange.end !== undefined ? { lineEnd: lineRange.end } : {}),
     ...(recommendation ? { recommendation } : {}),
   };
 }

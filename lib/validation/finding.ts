@@ -43,6 +43,8 @@ export const FindingSchema = z.object({
     .transform((v) => v.trim())
     .transform((v) => (v === "" ? undefined : v))
     .optional(),
+  lineStart: z.number().int().positive().optional(),
+  lineEnd: z.number().int().positive().optional(),
   recommendation: z.string().trim().min(1).optional(),
 });
 

@@ -28,6 +28,8 @@ function toFindingCreateMany(
     title: f.title,
     message: f.message,
     filePath: f.filePath,
+    lineStart: f.lineStart,
+    lineEnd: f.lineEnd,
     recommendation: f.recommendation,
   }));
 }
@@ -52,6 +54,8 @@ function toDomainResult(params: {
     title: string;
     message: string;
     filePath: string | null;
+    lineStart: number | null;
+    lineEnd: number | null;
     recommendation: string | null;
   }>;
 }): ReviewRunResult {
@@ -62,6 +66,8 @@ function toDomainResult(params: {
     title: f.title,
     message: f.message,
     filePath: f.filePath ?? undefined,
+    lineStart: f.lineStart ?? undefined,
+    lineEnd: f.lineEnd ?? undefined,
     recommendation: f.recommendation ?? undefined,
   }));
 

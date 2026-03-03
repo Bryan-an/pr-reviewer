@@ -37,6 +37,8 @@ model Finding {
   title          String
   message        String
   filePath       String?
+  lineStart      Int?
+  lineEnd        Int?
   recommendation String?
 
   createdAt DateTime @default(now())

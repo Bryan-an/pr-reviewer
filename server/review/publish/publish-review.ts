@@ -5,8 +5,10 @@ import type { GitPullRequestCommentThread } from "azure-devops-node-api/interfac
 import { parseAzureDevOpsPrUrl } from "@/lib/azure-devops/pr-url";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import type { Finding } from "@/server/review/types";
+import { getLatestIterationContext } from "@/server/azure-devops/iterations";
 import { createPullRequestThread, listPullRequestThreads } from "@/server/azure-devops/threads";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
+import { logger } from "@/server/logging/logger";
 import { formatThreads } from "@/server/review/publish/format-threads";
 import { runReview } from "@/server/review/run-review";
 
@@ -46,6 +48,10 @@ function safeErrorMessage(error: unknown): string {
   return "Publish failed.";
 }
 
+function normalizePath(p: string): string {
+  return p.startsWith("/") ? p.slice(1) : p;
+}
+
 export async function publishFindings(params: {
   prUrl: string;
   engineName: string;
@@ -77,6 +83,23 @@ export async function publishFindings(params: {
     findings: params.findings,
   });
 
+  // Fetch iteration context for line-anchored threads (best-effort).
+  let iterCtx: Awaited<ReturnType<typeof getLatestIterationContext>> | undefined;
+
+  try {
+    iterCtx = await getLatestIterationContext({
+      org: pr.org,
+      project: pr.project,
+      repoId: pr.repo.id,
+      prId: pr.pr.id,
+    });
+  } catch (error) {
+    logger.warn(
+      { err: String(error) },
+      "publish:iteration context fetch failed, continuing without",
+    );
+  }
+
   const existing = await listPullRequestThreads({
     org: pr.org,
     project: pr.project,
@@ -103,12 +126,46 @@ export async function publishFindings(params: {
       content: t.content,
     };
 
+    // Resolve iteration context for file-scoped threads.
+    const normalizedFilePath = t.filePath ? normalizePath(t.filePath) : undefined;
+
+    const changeTrackingId =
+      normalizedFilePath && iterCtx
+        ? iterCtx.changeTrackingByPath.get(normalizedFilePath)
+        : undefined;
+
+    logger.info(
+      {
+        filePath: t.filePath,
+        normalizedFilePath,
+        lineStart: t.lineStart,
+        lineEnd: t.lineEnd,
+        changeTrackingId,
+        iterationContext: iterCtx?.iterationContext,
+        hasIterCtx: !!iterCtx,
+      },
+      "publish:thread context",
+    );
+
     try {
-      await createPullRequestThread({ ...createParamsBase, filePath: t.filePath });
+      await createPullRequestThread({
+        ...createParamsBase,
+        filePath: t.filePath,
+        lineStart: t.lineStart,
+        lineEnd: t.lineEnd,
+        changeTrackingId,
+        iterationContext: iterCtx?.iterationContext,
+      });
+
       publishedThreads += 1;
       existingContents.push(t.content);
     } catch (error) {
-      // If file-scoped threads fail (e.g. ADO requires positions), fall back to a general thread.
+      logger.warn(
+        { filePath: t.filePath, lineStart: t.lineStart, err: String(error) },
+        "publish:line-anchored thread failed, falling back to general",
+      );
+
+      // If file-scoped threads fail (e.g. ADO rejects positions), fall back to a general thread.
       if (t.filePath) {
         try {
           await createPullRequestThread(createParamsBase);

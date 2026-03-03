@@ -175,9 +175,7 @@ export function ReviewResults({
               Findings
             </h2>
 
-            <span className="text-muted-foreground text-xs">
-              Publishing is file-scoped only (no line anchoring in v1).
-            </span>
+            <span className="text-muted-foreground text-xs">One comment thread per finding.</span>
           </div>
 
           {result.findings.length === 0 ? (
@@ -190,7 +188,7 @@ export function ReviewResults({
             <ul className="flex flex-col gap-3">
               {result.findings.map((f) => (
                 <li key={f.id}>
-                  <Card>
+                  <Card className="overflow-hidden">
                     <CardHeader className="gap-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className={SEVERITY_BADGE_STYLES[f.severity]}>
@@ -198,26 +196,35 @@ export function ReviewResults({
                         </Badge>
 
                         <Badge variant="secondary">{f.category}</Badge>
-
-                        {f.filePath ? (
-                          <span className="text-muted-foreground inline-flex items-center gap-1 truncate text-xs">
-                            <FileIcon className="size-3 shrink-0" />
-                            {f.filePath}
-                          </span>
-                        ) : null}
                       </div>
+
+                      {f.filePath ? (
+                        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                          <FileIcon className="size-3 shrink-0" />
+
+                          <span className="break-all">
+                            {f.filePath}
+                            {f.lineStart ? (
+                              <span className="text-muted-foreground/70">
+                                :{f.lineStart}
+                                {f.lineEnd && f.lineEnd !== f.lineStart ? `\u2013${f.lineEnd}` : ""}
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                      ) : null}
 
                       <CardTitle className="text-sm">{f.title}</CardTitle>
                     </CardHeader>
 
                     <CardContent className="flex flex-col gap-3">
-                      <Markdown content={f.message} />
+                      <Markdown content={f.message} className="text-sm" />
 
                       {f.recommendation ? (
                         <div className="border-muted-foreground/25 border-l-2 pl-3">
-                          <p className="text-xs font-medium">Recommendation</p>
+                          <p className="mb-2 text-sm font-semibold">Recommendation</p>
 
-                          <Markdown content={f.recommendation} />
+                          <Markdown content={f.recommendation} className="text-sm" />
                         </div>
                       ) : null}
                     </CardContent>
