@@ -320,13 +320,17 @@ function isCleanNoFindingsOutput(text: string): boolean {
   return /review completed/i.test(text) && !/\bFile:\s*/i.test(text) && !hasFindingsSections(text);
 }
 
+const MAX_LINE_NUMBER = 2_147_483_647; // Prisma Int (int32) max
+
 function parseLineRange(value: string | undefined): { start?: number; end?: number } {
   if (!value) return {};
   const match = /^(\d+)(?:\s*(?:to|-)\s*(\d+))?$/.exec(value.trim());
   if (!match?.[1]) return {};
   const start = parseInt(match[1], 10);
   const end = match[2] ? parseInt(match[2], 10) : start;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end)) return {};
   if (start < 1 || end < 1 || end < start) return {};
+  if (start > MAX_LINE_NUMBER || end > MAX_LINE_NUMBER) return {};
   return { start, end };
 }
 
