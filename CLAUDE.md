@@ -79,6 +79,8 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 
 ### Azure DevOps thread anchoring
 
+Publishing lives in `server/review/publish/`: `format-threads.ts` (pure formatting → `PublishableThread[]`), `publish-review.ts` (orchestration: fetch PR, format, deduplicate via HTML-comment markers, publish loop with fallback), `threads.ts` in `server/azure-devops/` (ADO API calls). Thread types: general findings (unscoped, no file path) and per-finding (file-scoped, line-anchored). Idempotency uses `<!-- pr-reviewer:thread:... -->` markers embedded in comment content.
+
 Line-anchored PR comment threads require **both** `threadContext` (file path + positions) and `pullRequestThreadContext` (`changeTrackingId` + `iterationContext` from the iterations API). Key gotchas:
 
 - `CommentPosition.offset` is `int32` — use `2_147_483_647` for "end of line", not `Number.MAX_SAFE_INTEGER`
