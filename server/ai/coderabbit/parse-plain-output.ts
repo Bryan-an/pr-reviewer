@@ -11,12 +11,14 @@ function stableId(parts: {
   title: string;
   message: string;
   lineStart?: number;
+  lineEnd?: number;
 }): string {
   const seed = JSON.stringify({
     filePath: parts.filePath ?? "",
     title: parts.title,
     message: parts.message,
     lineStart: parts.lineStart ?? null,
+    lineEnd: parts.lineEnd ?? null,
   });
 
   const hash = crypto.createHash("sha256").update(seed).digest("base64url");
@@ -363,7 +365,7 @@ function parseSectionToFinding(section: string, changedFiles: string[]): Finding
   const lineRange = parseLineRange(lineLine);
 
   return {
-    id: stableId({ filePath, title, message, lineStart: lineRange.start }),
+    id: stableId({ filePath, title, message, lineStart: lineRange.start, lineEnd: lineRange.end }),
     severity: severityFromType(typeLine, combined),
     category: inferCategory(combined),
     title,
