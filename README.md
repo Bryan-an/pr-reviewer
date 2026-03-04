@@ -115,7 +115,7 @@ The core review workflow is fully implemented:
 - Manage **repository-scoped Markdown rules** in `/repos` (CRUD, enable/disable, sort order) and have enabled rules automatically applied during PR reviews.
 - **Review caching**: completed reviews are cached via URL and can be reloaded without rerunning; rerun is available without leaving the page.
 - AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
-- **Structured logging** with `pino` (JSON on server, `console.*` on client).
+- **Structured logging** with `pino` (JSON on server, `pino/browser` on client).
 
 ## Publishing (current behavior)
 
@@ -286,7 +286,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 
 #### Logging and observability
 
-- Structured logging via `pino` (`lib/logging/logger.ts`) — JSON output on the server, `pino/browser` on the client. Use correlation IDs for review runs.
+- All code imports `logger` from `lib/logging/logger` (shared entrypoint for client + server). Direct `console.log`/`console.error`/`console.warn` calls are prohibited. Pino outputs structured JSON on the server and delegates to `pino/browser` on the client. Use correlation IDs for review runs.
 - Log **events**, not raw secrets or full diffs by default (diffs can contain sensitive data).
 
 #### Formatting and linting
