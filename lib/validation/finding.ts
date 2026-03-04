@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { findingStatusValues } from "@/lib/validation/finding-status";
+import { FINDING_STATUS, findingStatusValues } from "@/lib/validation/finding-status";
 
 export const SEVERITY = {
   Info: "info",
@@ -48,8 +48,8 @@ export const FindingSchema = z.object({
   lineStart: z.number().int().positive().optional(),
   lineEnd: z.number().int().positive().optional(),
   recommendation: z.string().trim().min(1).optional(),
-  dbId: z.string().optional(),
-  status: z.enum(findingStatusValues).optional().default("pending"),
+  dbId: z.string().trim().min(1).optional(),
+  status: z.enum(findingStatusValues).optional().default(FINDING_STATUS.Pending),
 });
 
 export type ValidFinding = z.infer<typeof FindingSchema>;
