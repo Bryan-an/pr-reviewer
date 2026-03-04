@@ -66,7 +66,7 @@ UI (App Router pages/components)
    - Generates unified diff via `git diff` (source of truth, not ADO APIs)
    - Selects AI engine → runs review → normalizes findings via Zod
    - Persists `ReviewRun` + `Finding[]` to SQLite
-4. Results displayed in `ReviewResults` → user can publish to Azure DevOps as line-anchored comment threads (one thread per finding)
+4. Results displayed in `ReviewResults` → user can publish to Azure DevOps as line-anchored comment threads (one thread per finding). Individual finding actions (publish/ignore/restore) with optimistic UI (`useOptimistic`), or bulk publish all pending findings at once
 
 ### AI engine interface
 
@@ -74,12 +74,12 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 
 ### Database models (Prisma/SQLite)
 
-- `ReviewRun` → `Finding[]` (review execution + results)
+- `ReviewRun` → `Finding[]` (review execution + results). Each `Finding` has a `status` column (`pending`/`published`/`ignored`) — see `FindingStatus` in `lib/validation/finding-status.ts`
 - `Repository` → `RepoRule[]` (per-repo markdown review rules, managed via `/repos` UI)
 
 ### Azure DevOps thread anchoring
 
-Publishing lives in `server/review/publish/`: `format-threads.ts` (pure formatting → `PublishableThread[]`), `publish-review.ts` (orchestration: fetch PR, format, deduplicate via HTML-comment markers, publish loop with fallback), `threads.ts` in `server/azure-devops/` (ADO API calls). Thread types: general findings (unscoped, no file path) and per-finding (file-scoped, line-anchored). Idempotency uses `<!-- pr-reviewer:thread:... -->` markers embedded in comment content.
+Publishing lives in `server/review/publish/`: `format-threads.ts` (pure formatting → `PublishableThread[]`), `publish-review.ts` (orchestration: fetch PR, format, deduplicate via HTML-comment markers, publish loop with fallback), `threads.ts` in `server/azure-devops/` (ADO API calls). Thread types: general findings (unscoped, no file path) and per-finding (file-scoped, line-anchored). Idempotency uses `<!-- pr-reviewer:thread:... -->` markers embedded in comment content. Individual finding actions (publish/ignore/restore) are server actions in `app/review/_actions/finding-actions.ts`; bulk publish is in `app/review/_actions/publish-action.ts` (skips already-published and ignored findings). Finding status is persisted via `server/db/findings.ts`.
 
 Line-anchored PR comment threads require **both** `threadContext` (file path + positions) and `pullRequestThreadContext` (`changeTrackingId` + `iterationContext` from the iterations API). Key gotchas:
 

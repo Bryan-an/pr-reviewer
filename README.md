@@ -40,29 +40,30 @@ On a PR, comment:
 - Review guidance is derived from our local standards in `/.cursor/rules/*` (plus `README.md`).
 - Noisy files (like `pnpm-lock.yaml` and static assets) are excluded from review commentary via `reviews.path_filters` in `/.coderabbit.yaml`.
 
-## What “done” looks like for the MVP
+## Core capabilities
 
-- Select a PR from Azure DevOps
-- Generate an AI review aligned with your standards
-- Preview the findings
-- Publish the comments back to Azure DevOps as PR threads
+- Paste a PR URL from Azure DevOps and generate an AI review aligned with your standards
+- Preview findings in a structured UI, grouped by file and severity
+- Publish findings back to Azure DevOps as line-anchored PR comment threads — individually or in bulk
+- Manage per-finding status (pending, published, ignored) with optimistic UI updates
+- Define and manage repository-scoped Markdown review rules via `/repos`
 
-## One-page MVP Spec (v1)
+## Specification
 
 ### Problem statement
 
 Reviewing Azure DevOps pull requests repeatedly for the same classes of issues is time-consuming. This app generates **high-signal, ready-to-post** review comment threads aligned to **team-specific standards**.
 
-### Happy path (v1) — single PR only
+### Happy path
 
 - Provide Azure DevOps org + project + repo and a PR identifier (PR id or PR URL).
 - Server fetches PR metadata from Azure DevOps.
 - Server generates a **unified diff locally** from the PR branches (source of truth for review context).
 - Server runs an **AI review engine** (CodeRabbit preferred, LLM fallback) and normalizes results into structured findings.
-- UI previews findings grouped by file and severity.
-- User publishes findings back to Azure DevOps as PR comment threads.
+- UI previews findings grouped by file and severity, with per-finding status tracking (pending/published/ignored).
+- User publishes findings back to Azure DevOps as PR comment threads — individually per finding or in bulk.
 
-### Inputs (v1)
+### Inputs
 
 - **From UI**:
   - Azure DevOps pull request URL
@@ -71,7 +72,7 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 - **Secrets (server-only)**:
   - Azure DevOps PAT (provided via server environment variable; never entered in the browser)
 
-### Outputs (v1)
+### Outputs
 
 - **Previewable findings** (deterministic schema) grouped by:
   - file path
@@ -90,7 +91,7 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 - PAT is **never sent to the client** and is never logged.
 - Local unified diff is the **source of truth** for review context.
 
-### Non-goals (v1)
+### Non-goals
 
 - Browsing/listing PRs (user supplies a PR id or PR URL).
 - Persisting PATs in the database (when added later, it must be encrypted at rest with `APP_ENCRYPTION_KEY`).
@@ -105,20 +106,25 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 
 ## Status
 
-MVP is progressing:
+The core review workflow is fully implemented:
 
-- You can generate a review preview and publish findings back to Azure DevOps as PR comment threads.
-- You can manage **repository-scoped Markdown rules** in `/repos` and have enabled rules automatically applied during PR reviews.
+- Generate a review preview and publish findings back to Azure DevOps as **line-anchored PR comment threads** (with file-scoped and general fallbacks).
+- **Individual finding actions**: publish, ignore, or restore each finding independently, with optimistic UI (React 19 `useOptimistic`) and toast feedback.
+- **Bulk publish**: publish all pending findings at once; already-published and ignored findings are skipped.
+- **Finding status tracking**: each finding persists a status (`pending`/`published`/`ignored`) in the database.
+- Manage **repository-scoped Markdown rules** in `/repos` (CRUD, enable/disable, sort order) and have enabled rules automatically applied during PR reviews.
+- **Review caching**: completed reviews are cached via URL and can be reloaded without rerunning; rerun is available without leaving the page.
 - AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
+- **Structured logging** with `pino` (JSON on server, `console.*` on client).
 
 ## Publishing (current behavior)
 
-The review preview page can publish findings back to Azure DevOps as **PR comment threads**:
+The review preview page supports **two publishing modes**: bulk (all pending findings) and individual (per-finding actions). Findings are published back to Azure DevOps as **PR comment threads**:
 
-- **One summary thread**: basic run metadata (engine name, counts).
 - **One thread per finding**: each finding with a file path becomes its own thread. When line numbers are available (parsed from CodeRabbit output or inferred by the stub engine), the thread is **line-anchored** — it appears directly on the relevant lines in the Azure DevOps diff view.
 - **Fallback hierarchy**: findings with file + lines → line-anchored thread; findings with file only → file-scoped thread; findings without file → general thread. If Azure DevOps rejects a line-anchored or file-scoped thread, the app falls back to posting a general thread.
 - **Idempotency**: published threads include hidden markers so re-publishing does not duplicate threads.
+- **Per-finding actions**: each finding card has Publish, Ignore, and Restore buttons. Status changes use `useOptimistic` for instant UI feedback and persist to the database. Bulk publish skips findings that are already published or ignored.
 
 ## Repository rules (Markdown)
 
@@ -191,18 +197,16 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
   - **AI engines**: CodeRabbit CLI runner and/or LLM provider runner.
 - **Persistence**: Prisma models for settings, standards, credentials metadata, review runs, findings, and publish history.
 
-### Data flow (MVP)
+### Data flow
 
 1. **Select PR** (org/project/repo/PR id).
 2. **Fetch PR metadata** from Azure DevOps.
 3. **Generate unified diff locally** using `git` (source of truth for review context).
 4. **Run AI engine** (CodeRabbit first; fallback to LLM) to produce structured findings.
-5. **Preview** findings in the UI (grouped by file / severity).
-6. **Publish** findings back to Azure DevOps as PR comment threads.
+5. **Preview** findings in the UI (grouped by file / severity) with per-finding status tracking.
+6. **Publish** findings back to Azure DevOps as PR comment threads — individually per finding or all pending at once.
 
-### Repository structure (target)
-
-This is the structure we’ll follow as features land. Not every folder exists yet.
+### Repository structure
 
 ```text
 .
@@ -282,7 +286,7 @@ This is the structure we’ll follow as features land. Not every folder exists y
 
 #### Logging and observability
 
-- Prefer structured logging (planned: `pino`) with correlation ids for a review run.
+- Structured logging via `pino` (`lib/logging/logger.ts`) — JSON output on the server, `pino/browser` on the client. Use correlation IDs for review runs.
 - Log **events**, not raw secrets or full diffs by default (diffs can contain sensitive data).
 
 #### Formatting and linting
@@ -335,7 +339,7 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
 ### Persistence (local-first)
 
 - **`prisma`** + **`@prisma/client`**: store settings, standards, and review history.
-- **SQLite**: simplest local database for MVP; can migrate to Postgres later if needed.
+- **SQLite**: simplest local database; can migrate to Postgres later if needed.
 
 ### Security (secrets)
 
@@ -392,9 +396,9 @@ We use **GitHub Flow** (trunk-based development): keep `main` stable and integra
 
 - Tag releases from `main` when you want stable milestones (e.g., `v0.1.0`, `v0.2.0`).
 
-### Logging, testing, and quality (planned)
+### Logging, testing, and quality
 
-- **Logging**: `pino`
-- **Unit tests**: `vitest`
-- **E2E tests**: `playwright`
+- **Logging**: `pino` (implemented — see `lib/logging/logger.ts`)
+- **Unit tests**: `vitest` (planned)
+- **E2E tests**: `playwright` (planned)
 - **Formatting**: `prettier` (+ `prettier-plugin-tailwindcss`)
