@@ -19,6 +19,8 @@ export type PublishReviewResult = {
   skippedThreads: number;
   wasCapped: boolean;
   cap: number;
+  /** Finding IDs whose threads were published or already existed on ADO. */
+  processedFindingIds: string[];
 };
 
 function collectExistingCommentContent(threads: GitPullRequestCommentThread[]): string[] {
@@ -103,10 +105,12 @@ export async function publishFindings(params: {
 
   let publishedThreads = 0;
   let skippedThreads = 0;
+  const processedFindingIds: string[] = [];
 
   for (const t of threads) {
     if (markerExists(existingContents, t.threadMarker)) {
       skippedThreads += 1;
+      processedFindingIds.push(...t.findingIds);
       continue;
     }
 
@@ -150,6 +154,7 @@ export async function publishFindings(params: {
       });
 
       publishedThreads += 1;
+      processedFindingIds.push(...t.findingIds);
       existingContents.push(t.content);
     } catch (error) {
       logger.warn(
@@ -162,6 +167,7 @@ export async function publishFindings(params: {
         try {
           await createPullRequestThread(createParamsBase);
           publishedThreads += 1;
+          processedFindingIds.push(...t.findingIds);
           existingContents.push(t.content);
           continue;
         } catch (fallbackError) {
@@ -180,6 +186,7 @@ export async function publishFindings(params: {
     skippedThreads,
     wasCapped,
     cap,
+    processedFindingIds,
   };
 }
 

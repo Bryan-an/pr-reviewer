@@ -85,8 +85,13 @@ export async function publishAction(formData: FormData): Promise<PublishActionRe
       findings: pendingFindings,
     });
 
-    // Mark published findings in DB (best-effort — ADO idempotency handles retries).
-    const publishedDbIds = pendingFindings.filter((f) => f.dbId).map((f) => f.dbId as string);
+    // Mark only findings whose threads were actually published or already existed on ADO.
+    // Capped findings are excluded — they were never sent and remain pending.
+    const processedIdSet = new Set(result.processedFindingIds);
+
+    const publishedDbIds = pendingFindings
+      .filter((f) => f.dbId && processedIdSet.has(f.id))
+      .map((f) => f.dbId as string);
 
     if (publishedDbIds.length > 0) {
       try {
