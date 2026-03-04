@@ -1,9 +1,12 @@
 import "server-only";
 
 import type { FindingCategory, Severity } from "@/lib/validation/finding";
+import type { FindingStatus } from "@/lib/validation/finding-status";
 
 export type Finding = {
   id: string;
+  dbId?: string;
+  status?: FindingStatus;
   severity: Severity;
   category: FindingCategory;
   title: string;

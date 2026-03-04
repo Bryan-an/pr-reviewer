@@ -47,6 +47,7 @@ export type FindingMinAggregateOutputType = {
   lineStart: number | null;
   lineEnd: number | null;
   recommendation: string | null;
+  status: string | null;
   createdAt: Date | null;
 };
 
@@ -62,6 +63,7 @@ export type FindingMaxAggregateOutputType = {
   lineStart: number | null;
   lineEnd: number | null;
   recommendation: string | null;
+  status: string | null;
   createdAt: Date | null;
 };
 
@@ -77,6 +79,7 @@ export type FindingCountAggregateOutputType = {
   lineStart: number;
   lineEnd: number;
   recommendation: number;
+  status: number;
   createdAt: number;
   _all: number;
 };
@@ -103,6 +106,7 @@ export type FindingMinAggregateInputType = {
   lineStart?: true;
   lineEnd?: true;
   recommendation?: true;
+  status?: true;
   createdAt?: true;
 };
 
@@ -118,6 +122,7 @@ export type FindingMaxAggregateInputType = {
   lineStart?: true;
   lineEnd?: true;
   recommendation?: true;
+  status?: true;
   createdAt?: true;
 };
 
@@ -133,6 +138,7 @@ export type FindingCountAggregateInputType = {
   lineStart?: true;
   lineEnd?: true;
   recommendation?: true;
+  status?: true;
   createdAt?: true;
   _all?: true;
 };
@@ -236,6 +242,7 @@ export type FindingGroupByOutputType = {
   lineStart: number | null;
   lineEnd: number | null;
   recommendation: string | null;
+  status: string;
   createdAt: Date;
   _count: FindingCountAggregateOutputType | null;
   _avg: FindingAvgAggregateOutputType | null;
@@ -271,6 +278,7 @@ export type FindingWhereInput = {
   lineStart?: Prisma.IntNullableFilter<"Finding"> | number | null;
   lineEnd?: Prisma.IntNullableFilter<"Finding"> | number | null;
   recommendation?: Prisma.StringNullableFilter<"Finding"> | string | null;
+  status?: Prisma.StringFilter<"Finding"> | string;
   createdAt?: Prisma.DateTimeFilter<"Finding"> | Date | string;
   reviewRun?: Prisma.XOR<Prisma.ReviewRunScalarRelationFilter, Prisma.ReviewRunWhereInput>;
 };
@@ -287,6 +295,7 @@ export type FindingOrderByWithRelationInput = {
   lineStart?: Prisma.SortOrderInput | Prisma.SortOrder;
   lineEnd?: Prisma.SortOrderInput | Prisma.SortOrder;
   recommendation?: Prisma.SortOrderInput | Prisma.SortOrder;
+  status?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   reviewRun?: Prisma.ReviewRunOrderByWithRelationInput;
 };
@@ -308,6 +317,7 @@ export type FindingWhereUniqueInput = Prisma.AtLeast<
     lineStart?: Prisma.IntNullableFilter<"Finding"> | number | null;
     lineEnd?: Prisma.IntNullableFilter<"Finding"> | number | null;
     recommendation?: Prisma.StringNullableFilter<"Finding"> | string | null;
+    status?: Prisma.StringFilter<"Finding"> | string;
     createdAt?: Prisma.DateTimeFilter<"Finding"> | Date | string;
     reviewRun?: Prisma.XOR<Prisma.ReviewRunScalarRelationFilter, Prisma.ReviewRunWhereInput>;
   },
@@ -326,6 +336,7 @@ export type FindingOrderByWithAggregationInput = {
   lineStart?: Prisma.SortOrderInput | Prisma.SortOrder;
   lineEnd?: Prisma.SortOrderInput | Prisma.SortOrder;
   recommendation?: Prisma.SortOrderInput | Prisma.SortOrder;
+  status?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   _count?: Prisma.FindingCountOrderByAggregateInput;
   _avg?: Prisma.FindingAvgOrderByAggregateInput;
@@ -353,6 +364,7 @@ export type FindingScalarWhereWithAggregatesInput = {
   lineStart?: Prisma.IntNullableWithAggregatesFilter<"Finding"> | number | null;
   lineEnd?: Prisma.IntNullableWithAggregatesFilter<"Finding"> | number | null;
   recommendation?: Prisma.StringNullableWithAggregatesFilter<"Finding"> | string | null;
+  status?: Prisma.StringWithAggregatesFilter<"Finding"> | string;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Finding"> | Date | string;
 };
 
@@ -367,6 +379,7 @@ export type FindingCreateInput = {
   lineStart?: number | null;
   lineEnd?: number | null;
   recommendation?: string | null;
+  status?: string;
   createdAt?: Date | string;
   reviewRun: Prisma.ReviewRunCreateNestedOneWithoutFindingsInput;
 };
@@ -383,6 +396,7 @@ export type FindingUncheckedCreateInput = {
   lineStart?: number | null;
   lineEnd?: number | null;
   recommendation?: string | null;
+  status?: string;
   createdAt?: Date | string;
 };
 
@@ -397,6 +411,7 @@ export type FindingUpdateInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   reviewRun?: Prisma.ReviewRunUpdateOneRequiredWithoutFindingsNestedInput;
 };
@@ -413,6 +428,7 @@ export type FindingUncheckedUpdateInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -428,6 +444,7 @@ export type FindingCreateManyInput = {
   lineStart?: number | null;
   lineEnd?: number | null;
   recommendation?: string | null;
+  status?: string;
   createdAt?: Date | string;
 };
 
@@ -442,6 +459,7 @@ export type FindingUpdateManyMutationInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -457,6 +475,7 @@ export type FindingUncheckedUpdateManyInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -487,6 +506,7 @@ export type FindingCountOrderByAggregateInput = {
   lineStart?: Prisma.SortOrder;
   lineEnd?: Prisma.SortOrder;
   recommendation?: Prisma.SortOrder;
+  status?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -507,6 +527,7 @@ export type FindingMaxOrderByAggregateInput = {
   lineStart?: Prisma.SortOrder;
   lineEnd?: Prisma.SortOrder;
   recommendation?: Prisma.SortOrder;
+  status?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -522,6 +543,7 @@ export type FindingMinOrderByAggregateInput = {
   lineStart?: Prisma.SortOrder;
   lineEnd?: Prisma.SortOrder;
   recommendation?: Prisma.SortOrder;
+  status?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -639,6 +661,7 @@ export type FindingCreateWithoutReviewRunInput = {
   lineStart?: number | null;
   lineEnd?: number | null;
   recommendation?: string | null;
+  status?: string;
   createdAt?: Date | string;
 };
 
@@ -653,6 +676,7 @@ export type FindingUncheckedCreateWithoutReviewRunInput = {
   lineStart?: number | null;
   lineEnd?: number | null;
   recommendation?: string | null;
+  status?: string;
   createdAt?: Date | string;
 };
 
@@ -711,6 +735,7 @@ export type FindingScalarWhereInput = {
   lineStart?: Prisma.IntNullableFilter<"Finding"> | number | null;
   lineEnd?: Prisma.IntNullableFilter<"Finding"> | number | null;
   recommendation?: Prisma.StringNullableFilter<"Finding"> | string | null;
+  status?: Prisma.StringFilter<"Finding"> | string;
   createdAt?: Prisma.DateTimeFilter<"Finding"> | Date | string;
 };
 
@@ -725,6 +750,7 @@ export type FindingCreateManyReviewRunInput = {
   lineStart?: number | null;
   lineEnd?: number | null;
   recommendation?: string | null;
+  status?: string;
   createdAt?: Date | string;
 };
 
@@ -739,6 +765,7 @@ export type FindingUpdateWithoutReviewRunInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -753,6 +780,7 @@ export type FindingUncheckedUpdateWithoutReviewRunInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -767,6 +795,7 @@ export type FindingUncheckedUpdateManyWithoutReviewRunInput = {
   lineStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lineEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   recommendation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  status?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -785,6 +814,7 @@ export type FindingSelect<
     lineStart?: boolean;
     lineEnd?: boolean;
     recommendation?: boolean;
+    status?: boolean;
     createdAt?: boolean;
     reviewRun?: boolean | Prisma.ReviewRunDefaultArgs<ExtArgs>;
   },
@@ -806,6 +836,7 @@ export type FindingSelectCreateManyAndReturn<
     lineStart?: boolean;
     lineEnd?: boolean;
     recommendation?: boolean;
+    status?: boolean;
     createdAt?: boolean;
     reviewRun?: boolean | Prisma.ReviewRunDefaultArgs<ExtArgs>;
   },
@@ -827,6 +858,7 @@ export type FindingSelectUpdateManyAndReturn<
     lineStart?: boolean;
     lineEnd?: boolean;
     recommendation?: boolean;
+    status?: boolean;
     createdAt?: boolean;
     reviewRun?: boolean | Prisma.ReviewRunDefaultArgs<ExtArgs>;
   },
@@ -845,6 +877,7 @@ export type FindingSelectScalar = {
   lineStart?: boolean;
   lineEnd?: boolean;
   recommendation?: boolean;
+  status?: boolean;
   createdAt?: boolean;
 };
 
@@ -862,6 +895,7 @@ export type FindingOmit<
   | "lineStart"
   | "lineEnd"
   | "recommendation"
+  | "status"
   | "createdAt",
   ExtArgs["result"]["finding"]
 >;
@@ -901,6 +935,7 @@ export type $FindingPayload<
       lineStart: number | null;
       lineEnd: number | null;
       recommendation: string | null;
+      status: string;
       createdAt: Date;
     },
     ExtArgs["result"]["finding"]
@@ -1473,6 +1508,7 @@ export interface FindingFieldRefs {
   readonly lineStart: Prisma.FieldRef<"Finding", "Int">;
   readonly lineEnd: Prisma.FieldRef<"Finding", "Int">;
   readonly recommendation: Prisma.FieldRef<"Finding", "String">;
+  readonly status: Prisma.FieldRef<"Finding", "String">;
   readonly createdAt: Prisma.FieldRef<"Finding", "DateTime">;
 }
 

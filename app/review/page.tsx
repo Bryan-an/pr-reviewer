@@ -7,6 +7,11 @@ import { reviewRequestSchema, runIdSchema } from "@/lib/validation/review-reques
 import { logger } from "@/lib/logging/logger";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
 
+import {
+  publishFindingAction,
+  ignoreFindingAction,
+  restoreFindingAction,
+} from "./_actions/finding-actions";
 import { publishAction } from "./_actions/publish-action";
 import { rerunAction } from "./_actions/rerun-action";
 import { REVIEW_FORM_FIELD } from "./_lib/form-fields";
@@ -100,6 +105,9 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         correlationId={correlationId}
         publishAction={publishAction}
         rerunAction={rerunAction}
+        publishFindingAction={publishFindingAction}
+        ignoreFindingAction={ignoreFindingAction}
+        restoreFindingAction={restoreFindingAction}
       />
     );
   }
