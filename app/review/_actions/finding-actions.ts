@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
-import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
+import {
+  FINDING_STATUS,
+  type FindingStatus,
+  isValidStatusTransition,
+} from "@/lib/validation/finding-status";
 import { logger } from "@/lib/logging/logger";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { getFindingWithReviewRun, updateFindingStatus } from "@/server/db/findings";
@@ -62,6 +66,11 @@ async function updateStatusAction(
     return { success: true };
   }
 
+  if (!isValidStatusTransition(row.status as FindingStatus, targetStatus)) {
+    logger.warn(`[${actionName}] invalid transition: ${row.status} → ${targetStatus}`);
+    return { success: false };
+  }
+
   try {
     await updateFindingStatus(row.id, targetStatus);
   } catch (err) {
@@ -87,6 +96,11 @@ export async function publishFindingAction(formData: FormData): Promise<FindingA
 
   if (row.status === FINDING_STATUS.Published) {
     return { success: true };
+  }
+
+  if (!isValidStatusTransition(row.status as FindingStatus, FINDING_STATUS.Published)) {
+    logger.warn(`[publishFinding] invalid transition: ${row.status} → published`);
+    return { success: false };
   }
 
   const prUrl = row.reviewRun.prUrl;
