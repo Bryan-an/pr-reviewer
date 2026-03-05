@@ -8,4 +8,5 @@ export const REVIEW_FORM_FIELD = {
   RunId: "runId",
   EngineName: "engineName",
   CorrelationId: "correlationId",
+  FindingDbId: "findingDbId",
 } as const;

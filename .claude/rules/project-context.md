@@ -11,4 +11,4 @@ Connect to Azure DevOps → fetch PR changes → run AI review (CodeRabbit prefe
 - Primary platform: Azure DevOps (repos + PRs + comments)
 - AI engine is pluggable (`ReviewEngine` interface in `server/ai/engine.ts`)
 - Output must be actionable: specific files/locations, proposed fixes, no generic advice
-- Keep scope incremental: MVP path (review → preview → publish), then iterate
+- Core workflow is complete (review → preview → publish with per-finding actions); keep scope incremental as new features are added

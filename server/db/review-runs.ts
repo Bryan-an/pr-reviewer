@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Prisma } from "@/prisma/generated/prisma/client";
+import type { FindingStatus } from "@/lib/validation/finding-status";
 import { prisma } from "@/server/db/prisma";
 import type { Finding as DomainFinding, ReviewRunResult } from "@/server/review/types";
 
@@ -48,6 +49,7 @@ function toDomainResult(params: {
     createdAt: Date;
   };
   findings: Array<{
+    id: string;
     findingKey: string;
     severity: string;
     category: string;
@@ -57,10 +59,13 @@ function toDomainResult(params: {
     lineStart: number | null;
     lineEnd: number | null;
     recommendation: string | null;
+    status: string;
   }>;
 }): ReviewRunResult {
   const domainFindings: DomainFinding[] = params.findings.map((f) => ({
     id: f.findingKey,
+    dbId: f.id,
+    status: f.status as FindingStatus,
     severity: f.severity as DomainFinding["severity"],
     category: f.category as DomainFinding["category"],
     title: f.title,

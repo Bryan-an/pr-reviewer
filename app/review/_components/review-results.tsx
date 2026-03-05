@@ -1,26 +1,16 @@
-import { FileIcon } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Markdown } from "@/components/markdown";
 import { PageHeader } from "@/components/page-header";
+import { FINDING_STATUS } from "@/lib/validation/finding-status";
 import type { ReviewRunResult } from "@/server/review/types";
 
+import type { FindingActionResult } from "../_actions/finding-actions";
 import type { PublishActionResult } from "../_actions/publish-action";
 import type { RerunActionResult } from "../_actions/rerun-action";
+import type { FindingWithStatus } from "./finding-card";
+import { FindingsList } from "./findings-list";
 import { NewReviewLink } from "./new-review-link";
 import { ReviewActionFooter } from "./review-action-footer";
 import { ReviewActionsProvider } from "./review-actions-context";
-
-// ---------------------------------------------------------------------------
-// Severity → badge styling
-// ---------------------------------------------------------------------------
-
-const SEVERITY_BADGE_STYLES: Record<string, string> = {
-  error: "border-destructive/25 bg-destructive/10 text-destructive",
-  warn: "border-amber-600/20 bg-amber-600/8 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-400",
-  info: "border-border bg-secondary text-muted-foreground",
-};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,6 +23,9 @@ type ReviewResultsProps = Readonly<{
   correlationId: string;
   publishAction: (formData: FormData) => Promise<PublishActionResult>;
   rerunAction: (formData: FormData) => Promise<RerunActionResult>;
+  publishFindingAction: (fd: FormData) => Promise<FindingActionResult>;
+  ignoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
+  restoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------
@@ -46,7 +39,24 @@ export function ReviewResults({
   correlationId,
   publishAction,
   rerunAction,
+  publishFindingAction,
+  ignoreFindingAction,
+  restoreFindingAction,
 }: ReviewResultsProps) {
+  const findingsWithStatus: FindingWithStatus[] = result.findings.map((f) => ({
+    dbId: f.dbId ?? f.id,
+    id: f.id,
+    status: f.status ?? FINDING_STATUS.Pending,
+    severity: f.severity,
+    category: f.category,
+    title: f.title,
+    message: f.message,
+    filePath: f.filePath,
+    lineStart: f.lineStart,
+    lineEnd: f.lineEnd,
+    recommendation: f.recommendation,
+  }));
+
   return (
     <ReviewActionsProvider>
       <PageHeader
@@ -132,60 +142,19 @@ export function ReviewResults({
             <span className="text-muted-foreground text-xs">One comment thread per finding.</span>
           </div>
 
-          {result.findings.length === 0 ? (
+          {findingsWithStatus.length === 0 ? (
             <Card>
               <CardContent className="text-muted-foreground py-8 text-center text-sm">
                 No findings from the stub engine.
               </CardContent>
             </Card>
           ) : (
-            <ul className="flex flex-col gap-3">
-              {result.findings.map((f) => (
-                <li key={f.id}>
-                  <Card className="overflow-hidden">
-                    <CardHeader className="gap-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className={SEVERITY_BADGE_STYLES[f.severity]}>
-                          {f.severity}
-                        </Badge>
-
-                        <Badge variant="secondary">{f.category}</Badge>
-                      </div>
-
-                      {f.filePath ? (
-                        <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                          <FileIcon className="size-3 shrink-0" />
-
-                          <span className="break-all">
-                            {f.filePath}
-                            {f.lineStart ? (
-                              <span className="text-muted-foreground/70">
-                                :{f.lineStart}
-                                {f.lineEnd && f.lineEnd !== f.lineStart ? `\u2013${f.lineEnd}` : ""}
-                              </span>
-                            ) : null}
-                          </span>
-                        </div>
-                      ) : null}
-
-                      <CardTitle className="text-sm">{f.title}</CardTitle>
-                    </CardHeader>
-
-                    <CardContent className="flex flex-col gap-3">
-                      <Markdown content={f.message} className="text-sm" />
-
-                      {f.recommendation ? (
-                        <div className="border-muted-foreground/25 border-l-2 pl-3">
-                          <p className="mb-2 text-sm font-semibold">Recommendation</p>
-
-                          <Markdown content={f.recommendation} className="text-sm" />
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
-            </ul>
+            <FindingsList
+              findings={findingsWithStatus}
+              publishFindingAction={publishFindingAction}
+              ignoreFindingAction={ignoreFindingAction}
+              restoreFindingAction={restoreFindingAction}
+            />
           )}
         </section>
       </div>
