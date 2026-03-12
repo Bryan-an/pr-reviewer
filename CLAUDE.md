@@ -26,6 +26,8 @@ pnpm prisma generate       # Regenerate Prisma client (output: prisma/generated/
 
 No test framework is configured yet (vitest and playwright are planned).
 
+First-time setup: `mkdir -p .data && pnpm prisma migrate dev` — SQLite won't create parent directories, so `.data/` must exist before the app can create the database file.
+
 ## Git Hooks (Husky)
 
 - **pre-commit**: `lint-staged` (ESLint --fix + Prettier on staged files) + `pnpm type-check`
@@ -71,6 +73,10 @@ UI (App Router pages/components)
 ### AI engine interface
 
 Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings (including optional `lineStart`/`lineEnd` for line-level positioning). Implementations: `coderabbit/coderabbit-engine.ts` (preferred, parses `Line:` from output), `stub-engine.ts` (testing, infers lines from parsed diff). Selected via `REVIEW_ENGINE` env var.
+
+### CodeRabbit output parsing
+
+`server/ai/coderabbit/parse-plain-output.ts` converts CodeRabbit plain-text output into structured findings. Key design: `wrapCodeLikeBlocksAsMarkdown()` detects unfenced code/diff blocks and wraps them in markdown fences before storage. Diff detection uses look-ahead to bridge over blank lines, bare `+`/`-` markers, and space-prefixed context lines. Changes here must preserve: (1) markdown lists not being treated as diffs, (2) context lines included in diff fences, (3) code blocks not stealing diff lines.
 
 ### Database models (Prisma/SQLite)
 
@@ -132,7 +138,7 @@ Line-anchored PR comment threads require **both** `threadContext` (file path + p
 
 Required: `AZURE_DEVOPS_PAT`
 
-Optional: `REPOS_DIR`, `CODERABBIT_BIN`, `CODERABBIT_TIMEOUT_MS`, `REVIEW_ENGINE` (`coderabbit` | `stub`), `DATABASE_URL` (default: `file:./pr-reviewer.db`), `LOG_LEVEL`
+Optional: `REPOS_DIR`, `CODERABBIT_BIN`, `CODERABBIT_TIMEOUT_MS`, `REVIEW_ENGINE` (`coderabbit` | `stub`), `DATABASE_URL` (default: `file:<cwd>/.data/pr-reviewer.sqlite`), `LOG_LEVEL`
 
 Env schema defined in `lib/config/env.ts` with Zod validation.
 
