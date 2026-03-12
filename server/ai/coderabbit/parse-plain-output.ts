@@ -71,14 +71,24 @@ function looksLikeDiffLine(line: string): boolean {
   return looksLikeCode(rest.trim());
 }
 
-function consumeWhile<T>(
-  items: T[],
-  startIndex: number,
-  predicate: (value: T, index: number) => boolean,
-): { end: number } {
-  let i = startIndex;
-  while (i < items.length && predicate(items[i], i)) i += 1;
-  return { end: i };
+/** A bare `+` or `-` with nothing meaningful after it — a blank addition/removal in a diff. */
+function isBareMarkerLine(line: string): boolean {
+  return /^[+-]\s*$/.test(line);
+}
+
+/** True if the line can be part of an ongoing diff block (context or blank). */
+function isDiffContinuation(line: string): boolean {
+  return line.trim() === "" || /^ /.test(line);
+}
+
+/** Peek ahead from `start` past continuation lines; return true if a definite diff line follows. */
+function hasDiffLineAhead(lines: string[], start: number, maxLookahead = 3): boolean {
+  for (let j = start; j < lines.length && j < start + maxLookahead; j += 1) {
+    if (looksLikeDiffLine(lines[j]) || isBareMarkerLine(lines[j])) return true;
+    if (!isDiffContinuation(lines[j])) return false;
+  }
+
+  return false;
 }
 
 function consumeDiffBlock(
@@ -87,17 +97,45 @@ function consumeDiffBlock(
 ): { end: number; block: string[]; isDiff: boolean } {
   let plus = 0;
   let minus = 0;
+  let end = start;
+  /** Tracks the end position after the last definite diff line (avoids trailing blanks). */
+  let lastDiffEnd = start;
 
-  const { end } = consumeWhile(lines, start, (v) => looksLikeDiffLine(v));
-  const block = lines.slice(start, end);
+  while (end < lines.length) {
+    const line = lines[end];
 
-  for (const line of block) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("+")) plus += 1;
-    if (trimmed.startsWith("-")) minus += 1;
+    // Definite diff line — always include.
+    if (looksLikeDiffLine(line) || isBareMarkerLine(line)) {
+      if (line.startsWith("+")) plus += 1;
+      if (line.startsWith("-")) minus += 1;
+      end += 1;
+      lastDiffEnd = end;
+      continue;
+    }
+
+    // Blank or space-prefixed context line — include only if more diff lines follow shortly.
+    if (isDiffContinuation(line) && hasDiffLineAhead(lines, end + 1)) {
+      end += 1;
+      continue;
+    }
+
+    break;
   }
 
-  const isDiff = block.length >= 2 && (plus > 0 || minus > 0);
+  // Trim trailing blanks/context that snuck in after the last real diff line.
+  end = lastDiffEnd;
+
+  // Include trailing context lines (space-prefixed code) that visually belong in the diff.
+  const hasDiffContent = plus > 0 || minus > 0;
+
+  if (hasDiffContent) {
+    while (end < lines.length && /^ /.test(lines[end]) && looksLikeCode(lines[end].trim())) {
+      end += 1;
+    }
+  }
+
+  const block = lines.slice(start, end);
+  const isDiff = block.length >= 2 && hasDiffContent;
   return { end, block, isDiff };
 }
 
@@ -107,6 +145,9 @@ function consumeCodeBlock(lines: string[], start: number): { end: number; block:
 
   for (; i < lines.length; i += 1) {
     const current = lines[i] ?? "";
+
+    // Stop before consuming a diff line — let the main loop handle it as a diff block.
+    if (looksLikeDiffLine(current) || isBareMarkerLine(current)) break;
 
     if (looksLikeCode(current)) {
       nonBlankCodeLines += 1;
@@ -151,7 +192,11 @@ function wrapCodeLikeBlocksAsMarkdown(text: string): string {
   while (i < lines.length) {
     const line = lines[i] ?? "";
 
-    if (looksLikeDiffLine(line)) {
+    if (
+      looksLikeDiffLine(line) ||
+      (isBareMarkerLine(line) && hasDiffLineAhead(lines, i + 1)) ||
+      (/^ /.test(line) && hasDiffLineAhead(lines, i + 1))
+    ) {
       const { end, block, isDiff } = consumeDiffBlock(lines, i);
       i = end;
 
