@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useOptimistic, useState } from "react";
+import { startTransition, useEffect, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 
 import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
@@ -8,6 +8,7 @@ import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-sta
 import type { FindingActionResult } from "../_actions/finding-actions";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { FindingCard, type FindingWithStatus } from "./finding-card";
+import { useReviewActions } from "./review-actions-context";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +33,8 @@ export function FindingsList({
   ignoreFindingAction,
   restoreFindingAction,
 }: FindingsListProps) {
+  const { isAnyPending: isGlobalPending, setHasCardPending } = useReviewActions();
+
   const [optimisticFindings, updateOptimistic] = useOptimistic(
     findings,
     (state: FindingWithStatus[], update: OptimisticUpdate) =>
@@ -39,6 +42,12 @@ export function FindingsList({
   );
 
   const [pendingActions, setPendingActions] = useState<Set<string>>(new Set());
+
+  // Sync card-level pending state to context so footer buttons are disabled
+  // while any individual finding action is in flight.
+  useEffect(() => {
+    setHasCardPending(pendingActions.size > 0);
+  }, [pendingActions, setHasCardPending]);
 
   function markPending(dbId: string) {
     setPendingActions((prev) => new Set(prev).add(dbId));
@@ -127,7 +136,7 @@ export function FindingsList({
         <li key={f.dbId}>
           <FindingCard
             finding={f}
-            isPending={pendingActions.has(f.dbId)}
+            isPending={pendingActions.has(f.dbId) || isGlobalPending}
             onPublish={() => handlePublish(f.dbId)}
             onIgnore={() => handleIgnore(f.dbId)}
             onRestore={() => handleRestore(f.dbId)}
