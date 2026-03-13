@@ -41,6 +41,7 @@ model Finding {
   lineEnd        Int?
   recommendation String?
   sourceName     String?
+  codeSnippet    String?
   status         String  @default("pending")
 
   createdAt DateTime @default(now())

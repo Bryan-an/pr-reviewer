@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   CheckCircle2Icon,
+  ChevronDownIcon,
   EyeOffIcon,
   FileIcon,
   Loader2Icon,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { Collapsible } from "radix-ui";
 
+import { cn } from "@/lib/utils/cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +46,7 @@ export type FindingWithStatus = Readonly<{
   lineEnd?: number;
   recommendation?: string;
   sourceName?: string;
+  codeSnippet?: string;
 }>;
 
 type FindingCardProps = Readonly<{
@@ -101,6 +104,74 @@ function IgnoreButton({
       <EyeOffIcon className="size-3.5" />
       Ignore
     </Button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Code snippet with collapsible overflow
+// ---------------------------------------------------------------------------
+
+const SNIPPET_COLLAPSE_THRESHOLD = 10;
+const SNIPPET_COLLAPSED_PX = 144; // ≈ 6 visible lines of text-xs code
+
+function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
+  const lineCount = snippet.split("\n").length;
+  const isLong = lineCount > SNIPPET_COLLAPSE_THRESHOLD;
+  const [expanded, setExpanded] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+  const snippetContentId = useId();
+  const collapsed = isLong && !expanded;
+
+  // Measure full content height after mount (scrollHeight includes overflow).
+  // Re-measure if the snippet changes.
+  useEffect(() => {
+    if (contentRef.current) {
+      setContentHeight(contentRef.current.scrollHeight);
+    }
+  }, [snippet]);
+
+  // Before measurement completes, estimate from line count to avoid jarring first expand.
+  const expandedHeight = contentHeight || lineCount * 20 + 32;
+
+  return (
+    <div className="overflow-hidden rounded-md border">
+      <div className="relative">
+        <div
+          id={snippetContentId}
+          ref={contentRef}
+          className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+          style={{ maxHeight: collapsed ? SNIPPET_COLLAPSED_PX : expandedHeight }}
+        >
+          <Markdown
+            content={"```diff\n" + snippet + "\n```"}
+            className="text-xs [&_pre]:m-0 [&_pre]:rounded-none [&_pre]:border-0 [&_pre]:[scrollbar-color:var(--muted-foreground)_transparent] [&_pre]:[scrollbar-width:thin]"
+          />
+        </div>
+
+        <div
+          className={cn(
+            "from-muted pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t to-transparent transition-opacity duration-300",
+            collapsed ? "opacity-100" : "opacity-0",
+          )}
+        />
+      </div>
+
+      {isLong && (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={snippetContentId}
+          onClick={() => setExpanded((prev) => !prev)}
+          className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 border-t py-1.5 text-xs transition-colors"
+        >
+          <ChevronDownIcon
+            className={cn("size-3.5 transition-transform duration-300", expanded && "rotate-180")}
+          />
+          {expanded ? "Show less" : `Show ${lineCount - 6} more lines`}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -215,6 +286,8 @@ export function FindingCard({
         <Collapsible.Content className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
           <div>
             <CardContent className="flex flex-col gap-3">
+              {finding.codeSnippet && <CodeSnippetBlock snippet={finding.codeSnippet} />}
+
               <Markdown content={finding.message} className="text-sm" />
 
               {finding.recommendation ? (
