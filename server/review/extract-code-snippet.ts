@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { File as ParsedDiffFile, Change } from "parse-diff";
 
 const CONTEXT_PADDING = 3;
