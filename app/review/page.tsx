@@ -14,6 +14,7 @@ import {
 } from "./_actions/finding-actions";
 import { publishAction } from "./_actions/publish-action";
 import { rerunAction } from "./_actions/rerun-action";
+import { restoreAllAction } from "./_actions/restore-all-action";
 import { REVIEW_FORM_FIELD } from "./_lib/form-fields";
 import { ReviewResults } from "./_components/review-results";
 import { ReviewRunner } from "./_components/review-runner";
@@ -108,6 +109,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         publishFindingAction={publishFindingAction}
         ignoreFindingAction={ignoreFindingAction}
         restoreFindingAction={restoreFindingAction}
+        restoreAllAction={restoreAllAction}
       />
     );
   }
