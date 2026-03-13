@@ -80,7 +80,7 @@ By default (`REVIEW_ENGINE=coderabbit`), both CodeRabbit and Claude Code engines
 
 ### Claude Code engine
 
-Invokes `claude -p` (headless mode) with `--output-format json --max-turns 1 --system-prompt`. Repo rules are injected into the system prompt. Output is a JSON array of message objects; the result is extracted by finding the element with `type: "result"`. CLI runner: `server/ai/claude-code/run-claude-code-cli.ts`. Shared CLI diagnostics (output summarization, error logging): `server/ai/cli-diagnostics.ts`. Key gotcha: `--output-format json` produces a JSON array (`[{...}]`), not NDJSON — the parser must handle both formats.
+Invokes `claude -p` (headless mode) with `--output-format json --max-turns 1 --system-prompt`. Repo rules are injected into the user prompt (titles only, no numbered labels — findings must describe problems directly without referencing rule names/numbers). Output is a JSON array of message objects; the result is extracted by finding the element with `type: "result"`. CLI runner: `server/ai/claude-code/run-claude-code-cli.ts`. Shared CLI diagnostics (output summarization, error logging): `server/ai/cli-diagnostics.ts`. Key gotcha: `--output-format json` produces a JSON array (`[{...}]`), not NDJSON — the parser must handle both formats.
 
 ### CodeRabbit output parsing
 
