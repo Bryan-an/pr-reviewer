@@ -46,3 +46,19 @@ export class EmptyDiffError extends Error {
 export function isEmptyDiffError(error: unknown): error is EmptyDiffError {
   return error instanceof EmptyDiffError;
 }
+
+export class AllEnginesFailedError extends Error {
+  public readonly name = "AllEnginesFailedError";
+  public readonly code = "ALL_ENGINES_FAILED";
+  public readonly failures: Array<{ engineName: string; error: unknown }>;
+
+  public constructor(failures: Array<{ engineName: string; error: unknown }>) {
+    const names = failures.map((f) => f.engineName).join(", ");
+    super(`All review engines failed: ${names}`);
+    this.failures = failures;
+  }
+}
+
+export function isAllEnginesFailedError(error: unknown): error is AllEnginesFailedError {
+  return error instanceof AllEnginesFailedError;
+}

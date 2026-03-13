@@ -1,44 +1,11 @@
 import "server-only";
 
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { execa } from "execa";
 
 import { getEnv } from "@/lib/config/env";
 import { logger } from "@/lib/logging/logger";
-
-const MAX_ERROR_OUTPUT_CHARS = 1024;
-
-function normalizeText(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-function sha256Hex(text: string): string {
-  return createHash("sha256").update(text).digest("hex");
-}
-
-function summarizeOutput(
-  output: string,
-  label: "stdout" | "stderr",
-): {
-  label: "stdout" | "stderr";
-  length: number;
-  sha256: string;
-  truncated: string;
-} {
-  const trimmed = output.trim();
-
-  const truncated =
-    trimmed.length > MAX_ERROR_OUTPUT_CHARS
-      ? `${trimmed.slice(0, MAX_ERROR_OUTPUT_CHARS)}...[truncated]`
-      : trimmed;
-
-  return {
-    label,
-    length: trimmed.length,
-    sha256: sha256Hex(trimmed),
-    truncated,
-  };
-}
+import { OUTPUT_LABEL, normalizeText, summarizeOutput } from "@/server/ai/cli-diagnostics";
 
 export type RunCodeRabbitCliParams = {
   cwd: string;
@@ -83,8 +50,8 @@ export async function runCodeRabbitCli(params: RunCodeRabbitCliParams): Promise<
     const correlationId = randomUUID();
     const stderr = normalizeText(result.stderr);
     const stdout = normalizeText(result.stdout);
-    const stderrSummary = summarizeOutput(stderr, "stderr");
-    const stdoutSummary = summarizeOutput(stdout, "stdout");
+    const stderrSummary = summarizeOutput(stderr, OUTPUT_LABEL.Stderr);
+    const stdoutSummary = summarizeOutput(stdout, OUTPUT_LABEL.Stdout);
 
     logger.error(
       {
@@ -123,8 +90,8 @@ export async function runCodeRabbitCli(params: RunCodeRabbitCliParams): Promise<
 
     const stderr = normalizeText(result.stderr);
     const stdout = normalizeText(result.stdout);
-    const stderrSummary = summarizeOutput(stderr, "stderr");
-    const stdoutSummary = summarizeOutput(stdout, "stdout");
+    const stderrSummary = summarizeOutput(stderr, OUTPUT_LABEL.Stderr);
+    const stdoutSummary = summarizeOutput(stdout, OUTPUT_LABEL.Stdout);
 
     logger.error(
       {

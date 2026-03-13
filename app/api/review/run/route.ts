@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { logger } from "@/lib/logging/logger";
-import { isEmptyDiffError } from "@/server/review/errors";
+import { isAllEnginesFailedError, isEmptyDiffError } from "@/server/review/errors";
 import { getCachedReviewRun, runAndPersistReview } from "@/server/review/get-or-run-review";
 
 export async function POST(request: Request) {
@@ -49,6 +49,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: err.message }, { status: 422 });
     }
 
+    if (isAllEnginesFailedError(err)) {
+      const correlationId = crypto.randomUUID();
+      logger.error({ correlationId, prUrl, err }, "All review engines failed");
+
+      return NextResponse.json(
+        {
+          error:
+            "All review engines failed. Ensure CodeRabbit CLI and Claude Code CLI are installed and authenticated.",
+        },
+        { status: 502 },
+      );
+    }
+
     const correlationId = crypto.randomUUID();
 
     logger.error({ correlationId, prUrl, err }, "runAndPersistReview failed in review/run route");
@@ -56,7 +69,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Review failed. Ensure the PR URL is correct, AZURE_DEVOPS_PAT is set on the server, and CodeRabbit CLI is installed and authenticated.",
+          "Review failed. Ensure the PR URL is correct, AZURE_DEVOPS_PAT is set on the server, and the review engines are properly configured.",
       },
       { status: 502 },
     );

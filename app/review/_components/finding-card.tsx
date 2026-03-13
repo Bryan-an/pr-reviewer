@@ -43,6 +43,7 @@ export type FindingWithStatus = Readonly<{
   lineStart?: number;
   lineEnd?: number;
   recommendation?: string;
+  sourceName?: string;
 }>;
 
 type FindingCardProps = Readonly<{
@@ -138,6 +139,12 @@ export function FindingCard({
             </Badge>
 
             <Badge variant="secondary">{finding.category}</Badge>
+
+            {finding.sourceName && (
+              <Badge variant="outline" className="text-muted-foreground font-mono text-[10px]">
+                {finding.sourceName}
+              </Badge>
+            )}
 
             {isPublished && (
               <Badge

@@ -7,10 +7,13 @@ import { FindingSchema } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { ReviewRequest } from "@/lib/validation/review-request";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
-import { selectReviewEngine } from "@/server/ai/select-engine";
+import { deduplicateFindings } from "@/server/ai/dedup/deduplicate-findings";
+import { runEnginesInParallel } from "@/server/ai/run-engines-in-parallel";
+import { selectReviewEngines } from "@/server/ai/select-engine";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { ensureRepoCheckedOut, generateUnifiedDiff } from "@/server/git/repo";
 import {
+  AllEnginesFailedError,
   DomainValidationError,
   EmptyDiffError,
   type FindingValidationFailure,
@@ -73,9 +76,10 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
     );
   }
 
-  const engine = selectReviewEngine();
+  // ── Run engines in parallel ──────────────────────────────────────────────
+  const engines = selectReviewEngines();
 
-  const engineResult = await engine.run({
+  const context = {
     request,
     repoDir,
     pr: {
@@ -92,9 +96,26 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
     unifiedDiff,
     parsedDiff: parsed,
     changedFiles,
+  };
+
+  const outcome = await runEnginesInParallel(engines, context);
+
+  if (
+    outcome.findings.length === 0 &&
+    outcome.failures.length === engines.length &&
+    engines.length > 0
+  ) {
+    throw new AllEnginesFailedError(outcome.failures);
+  }
+
+  // ── Deduplicate cross-engine findings ────────────────────────────────────
+  const mergedFindings = await deduplicateFindings({
+    findings: outcome.findings,
+    cwd: repoDir,
   });
 
-  const rawFindings: unknown[] = engineResult.findings as unknown[];
+  // ── Validate every finding with Zod ──────────────────────────────────────
+  const rawFindings: unknown[] = mergedFindings as unknown[];
 
   const findings: Finding[] = [];
   const failures: FindingValidationFailure[] = [];
@@ -127,7 +148,7 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
       title: pr.pr.title,
       url: pr.pr.url,
     },
-    engine: { name: engineResult.engineName },
+    engine: { name: outcome.engineName },
     summary: {
       totalFindings: findings.length,
       bySeverity: countBySeverity(findings),
