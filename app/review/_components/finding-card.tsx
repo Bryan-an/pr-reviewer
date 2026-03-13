@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   CheckCircle2Icon,
   ChevronDownIcon,
@@ -120,6 +120,7 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
+  const snippetContentId = useId();
   const collapsed = isLong && !expanded;
 
   // Measure full content height after mount (scrollHeight includes overflow).
@@ -137,6 +138,7 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
     <div className="overflow-hidden rounded-md border">
       <div className="relative">
         <div
+          id={snippetContentId}
           ref={contentRef}
           className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
           style={{ maxHeight: collapsed ? SNIPPET_COLLAPSED_PX : expandedHeight }}
@@ -158,6 +160,8 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
       {isLong && (
         <button
           type="button"
+          aria-expanded={expanded}
+          aria-controls={snippetContentId}
           onClick={() => setExpanded((prev) => !prev)}
           className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 border-t py-1.5 text-xs transition-colors"
         >
