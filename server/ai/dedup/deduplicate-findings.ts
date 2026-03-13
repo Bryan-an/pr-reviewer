@@ -85,10 +85,21 @@ export async function deduplicateFindings(params: {
     const stripped = stripMarkdownFences(text);
 
     const parsed = dedupResponseSchema.parse(JSON.parse(stripped));
-    const keepSet = new Set(parsed.keep);
+    const validIds = new Set(findings.map((f) => f.id));
+    const keepSet = new Set(parsed.keep.filter((id) => validIds.has(id)));
+
+    // Guard: if keep resolved to empty but we had findings, the AI
+    // hallucinated or returned garbage — fall back to all findings.
+    if (keepSet.size === 0 && findings.length > 0) {
+      logger.warn(
+        { totalFindings: findings.length, rawKeepCount: parsed.keep.length },
+        "Dedup returned no valid IDs — returning all findings unchanged",
+      );
+
+      return findings;
+    }
 
     const deduped = findings.filter((f) => keepSet.has(f.id));
-
     const removed = findings.length - deduped.length;
 
     if (removed > 0) {
