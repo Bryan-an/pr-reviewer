@@ -21,7 +21,7 @@ Each finding in the array must have these fields:
 - "severity": one of [${severityList}]
 - "category": one of [${categoryList}]
 - "title": short summary (max 160 chars)
-- "message": detailed explanation of the rule violation
+- "message": detailed explanation of the problem found
 - "filePath": the file path from the diff (optional, omit if the finding is general)
 - "lineStart": line number in the new file where the issue starts (optional, integer)
 - "lineEnd": line number in the new file where the issue ends (optional, integer)
@@ -29,7 +29,8 @@ Each finding in the array must have these fields:
 
 ## Instructions
 
-- Check EVERY rule against the diff. For each rule violation found, create one finding.
+- Check EVERY rule against the diff. For each violation found, create one finding.
+- NEVER reference rules by name, number, or label in findings. Describe the problem directly as if the reader has no knowledge of the rules. For example, write "Constant names must use UPPER_SNAKE_CASE. \`button_text\` uses lower_snake_case." instead of "Rule 1 requires constant names to use UPPER_SNAKE_CASE."
 - Use severity "error" for clear violations, "warn" for potential issues, "info" for suggestions.
 - Include accurate file paths and line numbers from the diff hunk headers (@@).
 - If all rules are satisfied, return: {"findings": []}
@@ -45,7 +46,7 @@ export function buildUserPrompt(params: {
   rules: Array<{ title: string; markdown: string }>;
 }): string {
   const rulesSection = params.rules
-    .map((r, i) => `### Rule ${i + 1}: ${r.title}\n\n${r.markdown.trim()}`)
+    .map((r) => `### ${r.title}\n\n${r.markdown.trim()}`)
     .join("\n\n---\n\n");
 
   return `## Pull Request
