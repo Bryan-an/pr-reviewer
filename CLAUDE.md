@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Azure DevOps AI PR Reviewer — a Next.js web app that automates pull request reviews. It connects to Azure DevOps, generates local diffs, runs AI analysis (CodeRabbit CLI or stub engine), and publishes structured findings back as PR comment threads.
+Azure DevOps AI PR Reviewer — a Next.js web app that automates pull request reviews. It connects to Azure DevOps, generates local diffs, runs AI analysis (CodeRabbit + Claude Code in parallel, or stub engine), and publishes structured findings back as PR comment threads.
 
 ## Commands
 
@@ -72,7 +72,15 @@ UI (App Router pages/components)
 
 ### AI engine interface
 
-Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings (including optional `lineStart`/`lineEnd` for line-level positioning). Implementations: `coderabbit/coderabbit-engine.ts` (preferred, parses `Line:` from output), `stub-engine.ts` (testing, infers lines from parsed diff). Selected via `REVIEW_ENGINE` env var.
+Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR metadata + local repo dir + unified diff. Output: structured findings (including optional `lineStart`/`lineEnd` for line-level positioning). Implementations: `coderabbit/coderabbit-engine.ts` (general quality review), `claude-code/claude-code-engine.ts` (rule compliance via Claude Code CLI), `stub-engine.ts` (testing). Selected via `REVIEW_ENGINE` env var (`coderabbit` default, `claude-code`, `stub`).
+
+### Parallel engine execution
+
+By default (`REVIEW_ENGINE=coderabbit`), both CodeRabbit and Claude Code engines run in parallel via `Promise.allSettled` (`server/ai/run-engines-in-parallel.ts`). Claude Code self-gates: if the repo has no enabled rules, it returns empty findings (not an error). Each finding is stamped with `sourceName` by the orchestrator. After parallel execution, AI-powered deduplication (`server/ai/dedup/deduplicate-findings.ts`) merges near-duplicate findings across engines. If one engine fails, partial results from the other are used. `AllEnginesFailedError` is thrown only when ALL engines fail.
+
+### Claude Code engine
+
+Invokes `claude -p` (headless mode) with `--output-format json --max-turns 1 --system-prompt`. Repo rules are injected into the user prompt (title as heading + full markdown body, no numbered labels — findings must describe problems directly without referencing rule names/numbers). Output is a JSON array of message objects; the result is extracted by finding the element with `type: "result"`. CLI runner: `server/ai/claude-code/run-claude-code-cli.ts`. Shared CLI diagnostics (output summarization, error logging): `server/ai/cli-diagnostics.ts`. Key gotcha: `--output-format json` produces a JSON array (`[{...}]`), not NDJSON — the parser must handle both formats.
 
 ### CodeRabbit output parsing
 
@@ -80,7 +88,7 @@ Engines implement `ReviewEngine` (defined in `server/ai/engine.ts`). Input: PR m
 
 ### Database models (Prisma/SQLite)
 
-- `ReviewRun` → `Finding[]` (review execution + results). Each `Finding` has a `status` column (`pending`/`published`/`ignored`) — see `FindingStatus` in `lib/validation/finding-status.ts`
+- `ReviewRun` → `Finding[]` (review execution + results). Each `Finding` has a `status` column (`pending`/`published`/`ignored`) — see `FindingStatus` in `lib/validation/finding-status.ts`. `sourceName` (optional) tracks which engine produced the finding (displayed in UI, not published to ADO threads)
 - `Repository` → `RepoRule[]` (per-repo markdown review rules, managed via `/repos` UI)
 
 ### Azure DevOps thread anchoring
@@ -138,7 +146,7 @@ Line-anchored PR comment threads require **both** `threadContext` (file path + p
 
 Required: `AZURE_DEVOPS_PAT`
 
-Optional: `REPOS_DIR`, `CODERABBIT_BIN`, `CODERABBIT_TIMEOUT_MS`, `REVIEW_ENGINE` (`coderabbit` | `stub`), `DATABASE_URL` (default: `file:<cwd>/.data/pr-reviewer.sqlite`), `LOG_LEVEL`
+Optional: `REPOS_DIR`, `CODERABBIT_BIN`, `CODERABBIT_TIMEOUT_MS`, `CLAUDE_CODE_BIN`, `CLAUDE_CODE_TIMEOUT_MS`, `REVIEW_ENGINE` (`coderabbit` | `claude-code` | `stub`), `DATABASE_URL` (default: `file:<cwd>/.data/pr-reviewer.sqlite`), `LOG_LEVEL`
 
 Env schema defined in `lib/config/env.ts` with Zod validation.
 

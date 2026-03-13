@@ -15,6 +15,7 @@ export type Finding = {
   lineStart?: number;
   lineEnd?: number;
   recommendation?: string;
+  sourceName?: string;
 };
 
 export type ReviewRunResult = {

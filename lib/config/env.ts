@@ -4,12 +4,17 @@ import { z } from "zod";
 
 export const REVIEW_ENGINE = {
   Coderabbit: "coderabbit",
+  ClaudeCode: "claude-code",
   Stub: "stub",
 } as const;
 
 export type ReviewEngine = (typeof REVIEW_ENGINE)[keyof typeof REVIEW_ENGINE];
 
-const reviewEngineValues = [REVIEW_ENGINE.Coderabbit, REVIEW_ENGINE.Stub] as const;
+const reviewEngineValues = [
+  REVIEW_ENGINE.Coderabbit,
+  REVIEW_ENGINE.ClaudeCode,
+  REVIEW_ENGINE.Stub,
+] as const;
 
 export const LOG_LEVEL = {
   Fatal: "fatal",
@@ -38,6 +43,8 @@ const envSchema = z.object({
   REPOS_DIR: z.string().min(1).optional(),
   CODERABBIT_BIN: z.string().min(1).optional(),
   CODERABBIT_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
+  CLAUDE_CODE_BIN: z.string().min(1).optional(),
+  CLAUDE_CODE_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   REVIEW_ENGINE: z.enum(reviewEngineValues).optional(),
   DATABASE_URL: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(logLevelValues).optional(),

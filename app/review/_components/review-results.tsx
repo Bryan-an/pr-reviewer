@@ -55,6 +55,7 @@ export function ReviewResults({
     lineStart: f.lineStart,
     lineEnd: f.lineEnd,
     recommendation: f.recommendation,
+    sourceName: f.sourceName,
   }));
 
   return (
@@ -145,7 +146,7 @@ export function ReviewResults({
           {findingsWithStatus.length === 0 ? (
             <Card>
               <CardContent className="text-muted-foreground py-8 text-center text-sm">
-                No findings from the stub engine.
+                No findings — the diff looks good.
               </CardContent>
             </Card>
           ) : (
