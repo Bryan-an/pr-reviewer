@@ -33,7 +33,7 @@ export function FindingsList({
   ignoreFindingAction,
   restoreFindingAction,
 }: FindingsListProps) {
-  const { isAnyPending: isGlobalPending, setHasCardPending } = useReviewActions();
+  const { isGlobalOperationPending, setHasCardPending } = useReviewActions();
 
   const [optimisticFindings, updateOptimistic] = useOptimistic(
     findings,
@@ -136,7 +136,7 @@ export function FindingsList({
         <li key={f.dbId}>
           <FindingCard
             finding={f}
-            isPending={pendingActions.has(f.dbId) || isGlobalPending}
+            isPending={pendingActions.has(f.dbId) || isGlobalOperationPending}
             onPublish={() => handlePublish(f.dbId)}
             onIgnore={() => handleIgnore(f.dbId)}
             onRestore={() => handleRestore(f.dbId)}

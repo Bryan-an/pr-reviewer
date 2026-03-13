@@ -18,6 +18,7 @@ type ReviewActionsContextValue = Readonly<{
   isPublishing: boolean;
   isRerunning: boolean;
   isAnyPending: boolean;
+  isGlobalOperationPending: boolean;
   startPublishTransition: TransitionStartFunction;
   startRerunTransition: TransitionStartFunction;
   setHasCardPending: (value: boolean) => void;
@@ -39,6 +40,7 @@ export function ReviewActionsProvider({ children }: Readonly<{ children: ReactNo
       isPublishing,
       isRerunning,
       isAnyPending: isPublishing || isRerunning || hasCardPending,
+      isGlobalOperationPending: isPublishing || isRerunning,
       startPublishTransition,
       startRerunTransition,
       setHasCardPending,
