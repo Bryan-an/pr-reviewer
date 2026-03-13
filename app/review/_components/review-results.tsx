@@ -56,6 +56,7 @@ export function ReviewResults({
     lineEnd: f.lineEnd,
     recommendation: f.recommendation,
     sourceName: f.sourceName,
+    codeSnippet: f.codeSnippet,
   }));
 
   return (

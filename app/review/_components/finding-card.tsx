@@ -44,6 +44,7 @@ export type FindingWithStatus = Readonly<{
   lineEnd?: number;
   recommendation?: string;
   sourceName?: string;
+  codeSnippet?: string;
 }>;
 
 type FindingCardProps = Readonly<{
@@ -215,6 +216,15 @@ export function FindingCard({
         <Collapsible.Content className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
           <div>
             <CardContent className="flex flex-col gap-3">
+              {finding.codeSnippet && (
+                <div className="overflow-hidden rounded-md border">
+                  <Markdown
+                    content={"```diff\n" + finding.codeSnippet + "\n```"}
+                    className="text-xs [&_pre]:m-0 [&_pre]:rounded-none [&_pre]:border-0"
+                  />
+                </div>
+              )}
+
               <Markdown content={finding.message} className="text-sm" />
 
               {finding.recommendation ? (

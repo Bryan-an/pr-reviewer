@@ -18,6 +18,7 @@ import {
   EmptyDiffError,
   type FindingValidationFailure,
 } from "@/server/review/errors";
+import { extractCodeSnippet } from "@/server/review/extract-code-snippet";
 import type { Finding, ReviewRunResult } from "@/server/review/types";
 
 function countBySeverity(findings: { severity: Severity }[]): Record<Severity, number> {
@@ -128,7 +129,15 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
       continue;
     }
 
-    findings.push(parsedFinding.data as Finding);
+    const f = parsedFinding.data;
+
+    findings.push({
+      ...f,
+      codeSnippet:
+        f.filePath && f.lineStart
+          ? extractCodeSnippet(parsed, f.filePath, f.lineStart, f.lineEnd ?? f.lineStart)
+          : undefined,
+    } as Finding);
   }
 
   if (failures.length > 0) {

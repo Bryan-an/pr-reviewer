@@ -33,6 +33,7 @@ function toFindingCreateMany(
     lineEnd: f.lineEnd,
     recommendation: f.recommendation,
     sourceName: f.sourceName,
+    codeSnippet: f.codeSnippet,
   }));
 }
 
@@ -61,6 +62,7 @@ function toDomainResult(params: {
     lineEnd: number | null;
     recommendation: string | null;
     sourceName: string | null;
+    codeSnippet: string | null;
     status: string;
   }>;
 }): ReviewRunResult {
@@ -77,6 +79,7 @@ function toDomainResult(params: {
     lineEnd: f.lineEnd ?? undefined,
     recommendation: f.recommendation ?? undefined,
     sourceName: f.sourceName ?? undefined,
+    codeSnippet: f.codeSnippet ?? undefined,
   }));
 
   const bySeverity = domainFindings.reduce<Record<DomainFinding["severity"], number>>(
