@@ -2,6 +2,8 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
+import { z } from "zod";
+
 import { REVIEW_ENGINE } from "@/lib/config/env";
 import { stripMarkdownFences } from "@/lib/utils/strip-markdown-fences";
 import { logger } from "@/lib/logging/logger";
@@ -41,54 +43,79 @@ function stableId(finding: {
 }
 
 // ---------------------------------------------------------------------------
-// Normalize raw AI values with fallbacks to valid enum members
+// Zod schema for raw AI output — coerces types and applies safe defaults
 // ---------------------------------------------------------------------------
 
-const validSeverities = new Set<string>(Object.values(SEVERITY));
-const validCategories = new Set<string>(Object.values(FINDING_CATEGORY));
+const severityValues = Object.values(SEVERITY) as [Severity, ...Severity[]];
+const categoryValues = Object.values(FINDING_CATEGORY) as [FindingCategory, ...FindingCategory[]];
 
-function normalizeSeverity(value: string | undefined): Severity {
-  if (value && validSeverities.has(value)) return value as Severity;
-  return SEVERITY.Warn;
-}
+const rawFindingSchema = z.object({
+  severity: z
+    .string()
+    .optional()
+    .transform(
+      (v): Severity =>
+        v && (severityValues as string[]).includes(v) ? (v as Severity) : SEVERITY.Warn,
+    ),
+  category: z
+    .string()
+    .optional()
+    .transform(
+      (v): FindingCategory =>
+        v && (categoryValues as string[]).includes(v)
+          ? (v as FindingCategory)
+          : FINDING_CATEGORY.Maintainability,
+    ),
+  title: z.string().optional().default("Untitled finding"),
+  message: z.string().optional().default(""),
+  filePath: z.string().optional(),
+  lineStart: z.coerce.number().int().positive().optional().catch(undefined),
+  lineEnd: z.coerce.number().int().positive().optional().catch(undefined),
+  recommendation: z.string().optional(),
+});
 
-function normalizeCategory(value: string | undefined): FindingCategory {
-  if (value && validCategories.has(value)) return value as FindingCategory;
-  return FINDING_CATEGORY.Maintainability;
-}
+type RawFinding = z.infer<typeof rawFindingSchema>;
 
 // ---------------------------------------------------------------------------
-// JSON extraction — Claude may wrap JSON in markdown fences
+// JSON extraction + validation — Claude may wrap JSON in markdown fences
 // ---------------------------------------------------------------------------
 
-type RawFinding = {
-  severity?: string;
-  category?: string;
-  title?: string;
-  message?: string;
-  filePath?: string;
-  lineStart?: number;
-  lineEnd?: number;
-  recommendation?: string;
-};
-
-function extractJson(text: string): RawFinding[] {
+function extractFindings(text: string): RawFinding[] {
   const stripped = stripMarkdownFences(text);
   const parsed: unknown = JSON.parse(stripped);
 
   // Accept both { findings: [...] } and bare [...]
-  if (Array.isArray(parsed)) return parsed as RawFinding[];
+  let items: unknown[];
 
-  if (
+  if (Array.isArray(parsed)) {
+    items = parsed;
+  } else if (
     typeof parsed === "object" &&
     parsed !== null &&
     "findings" in parsed &&
     Array.isArray((parsed as Record<string, unknown>).findings)
   ) {
-    return (parsed as Record<string, unknown>).findings as RawFinding[];
+    items = (parsed as Record<string, unknown>).findings as unknown[];
+  } else {
+    throw new Error("Claude Code output is not a findings array or { findings: [...] } object");
   }
 
-  throw new Error("Claude Code output is not a findings array or { findings: [...] } object");
+  const findings: RawFinding[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const result = rawFindingSchema.safeParse(items[i]);
+
+    if (result.success) {
+      findings.push(result.data);
+    } else {
+      logger.warn(
+        { index: i, errors: z.treeifyError(result.error) },
+        "Dropped malformed finding from Claude Code output",
+      );
+    }
+  }
+
+  return findings;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,20 +161,20 @@ export const claudeCodeEngine: ReviewEngine = {
 
     logger.info({ costUsd, rulesCount: enabledRules.length }, "Claude Code review completed");
 
-    const rawFindings = extractJson(text);
+    const rawFindings = extractFindings(text);
 
     const findings: Finding[] = rawFindings.map((rf) => ({
       id: stableId({
         filePath: rf.filePath,
-        title: rf.title ?? "",
-        message: rf.message ?? "",
+        title: rf.title,
+        message: rf.message,
         lineStart: rf.lineStart,
         lineEnd: rf.lineEnd,
       }),
-      severity: normalizeSeverity(rf.severity),
-      category: normalizeCategory(rf.category),
-      title: rf.title ?? "Untitled finding",
-      message: rf.message ?? "",
+      severity: rf.severity,
+      category: rf.category,
+      title: rf.title,
+      message: rf.message,
       filePath: rf.filePath,
       lineStart: rf.lineStart,
       lineEnd: rf.lineEnd,
