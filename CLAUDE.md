@@ -80,7 +80,7 @@ By default (`REVIEW_ENGINE=coderabbit`), both CodeRabbit and Claude Code engines
 
 ### Claude Code engine
 
-Invokes `claude -p` (headless mode) with `--output-format json --max-turns 1 --system-prompt`. Repo rules are injected into the user prompt (title as heading + full markdown body, no numbered labels — findings must describe problems directly without referencing rule names/numbers). Output is a JSON array of message objects; the result is extracted by finding the element with `type: "result"`. CLI runner: `server/ai/claude-code/run-claude-code-cli.ts`. Shared CLI diagnostics (output summarization, error logging): `server/ai/cli-diagnostics.ts`. Key gotcha: `--output-format json` produces a JSON array (`[{...}]`), not NDJSON — the parser must handle both formats.
+Invokes `claude -p` (headless mode) with `--output-format json --max-turns 1 --system-prompt`. Repo rules are injected into the user prompt (title as heading + full markdown body, no numbered labels — findings must describe problems directly without referencing rule names/numbers). Output is a JSON array of message objects; the result is extracted by finding the element with `type: "result"`. CLI runner: `server/ai/claude-code/run-claude-code-cli.ts`. Shared CLI diagnostics (output summarization, error logging): `server/ai/cli-diagnostics.ts`. Key gotcha: `--output-format json` produces a JSON array (`[{...}]`), not NDJSON — the parser must handle both formats. Post-processing: `prependVerifyPreamble()` prepends "Verify each finding against the current code and only fix it if needed." to every recommendation — this is added programmatically in the engine, not by the AI. The system prompt instructs the AI to produce self-contained recommendations starting with `In @{filePath} around lines {lineStart} - {lineEnd}, ...` so each recommendation is actionable without cross-referencing other fields.
 
 ### CodeRabbit output parsing
 
@@ -93,7 +93,7 @@ Invokes `claude -p` (headless mode) with `--output-format json --max-turns 1 --s
 
 ### Azure DevOps thread anchoring
 
-Publishing lives in `server/review/publish/`: `format-threads.ts` (pure formatting → `PublishableThread[]`), `publish-review.ts` (orchestration: fetch PR, format, deduplicate via HTML-comment markers, publish loop with fallback), `threads.ts` in `server/azure-devops/` (ADO API calls). Thread types: general findings (unscoped, no file path) and per-finding (file-scoped, line-anchored). Idempotency uses `<!-- pr-reviewer:thread:... -->` markers embedded in comment content. Individual finding actions (publish/ignore/restore) are server actions in `app/review/_actions/finding-actions.ts`; bulk publish is in `app/review/_actions/publish-action.ts` (skips already-published and ignored findings); bulk restore-all is in `app/review/_actions/restore-all-action.ts` (resets published/ignored findings to pending — purely local, no ADO API call). Finding status is persisted via `server/db/findings.ts`.
+Publishing lives in `server/review/publish/`: `format-threads.ts` (pure formatting → `PublishableThread[]`), `publish-review.ts` (orchestration: fetch PR, format, deduplicate via HTML-comment markers, publish loop with fallback), `threads.ts` in `server/azure-devops/` (ADO API calls). `formatFinding()` renders message as a blockquote and recommendation as a fenced code block (via `adoFencedBlock()` in `ado-markdown.ts`) — ADO renders fenced blocks with a built-in copy button. `adoFencedBlock` uses dynamic fence length (like `adoInlineCode`) to safely handle recommendations containing backtick runs. Thread types: general findings (unscoped, no file path) and per-finding (file-scoped, line-anchored). Idempotency uses `<!-- pr-reviewer:thread:... -->` markers embedded in comment content. Individual finding actions (publish/ignore/restore) are server actions in `app/review/_actions/finding-actions.ts`; bulk publish is in `app/review/_actions/publish-action.ts` (skips already-published and ignored findings); bulk restore-all is in `app/review/_actions/restore-all-action.ts` (resets published/ignored findings to pending — purely local, no ADO API call). Finding status is persisted via `server/db/findings.ts`.
 
 Line-anchored PR comment threads require **both** `threadContext` (file path + positions) and `pullRequestThreadContext` (`changeTrackingId` + `iterationContext` from the iterations API). Key gotchas:
 
@@ -146,6 +146,10 @@ Line-anchored PR comment threads require **both** `threadContext` (file path + p
 - **Scrollbar styling in code blocks**: use `[scrollbar-width:thin]` + `[scrollbar-color:var(--muted-foreground)_transparent]` for theme-aware thin scrollbars. The transparent track blends with any background in both light and dark modes
 - **Dark mode**: uses `@media (prefers-color-scheme: dark)` only — no `.dark` class toggle. This means `prose-invert` cannot be used (it requires `.dark` class). Instead, prose vars reference design system tokens that automatically swap in the dark media query
 - **Package manager**: pnpm only — do not use npm or yarn
+
+## Known Issues
+
+- **Radix `useId()` hydration mismatch**: React 19.2 + Next.js 16 + Radix UI produces mismatched IDs between server and client (tracked in [radix-ui/primitives#3700](https://github.com/radix-ui/primitives/issues/3700)). This is an upstream bug — functional behavior is unaffected, only `aria-controls` references are stale. Do not attempt to fix in our code; wait for upstream resolution.
 
 ## Environment Variables
 
