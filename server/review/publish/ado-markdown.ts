@@ -25,6 +25,17 @@ export function adoHr(): string {
   return "\n\n---\n\n";
 }
 
+/**
+ * Wrap text in a fenced code block, using a fence long enough to avoid
+ * conflicts with backtick runs inside the content (mirrors `adoInlineCode`).
+ */
+export function adoFencedBlock(text: string): string {
+  const matches = text.match(/`+/g) ?? [];
+  const longestRun = matches.reduce((max, run) => Math.max(max, run.length), 0);
+  const fence = "`".repeat(Math.max(3, longestRun + 1));
+  return `${fence}\n${text}\n${fence}`;
+}
+
 export function adoNormalizeNewlines(text: string): string[] {
   return text.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
 }

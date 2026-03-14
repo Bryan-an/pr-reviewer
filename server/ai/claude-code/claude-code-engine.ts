@@ -119,6 +119,18 @@ function extractFindings(text: string): RawFinding[] {
 }
 
 // ---------------------------------------------------------------------------
+// Verify-first preamble — prepended to every recommendation so reviewers
+// check the code before assuming the finding is correct.
+// ---------------------------------------------------------------------------
+
+const VERIFY_PREAMBLE = "Verify each finding against the current code and only fix it if needed.";
+
+function prependVerifyPreamble(recommendation: string | undefined): string | undefined {
+  if (!recommendation) return recommendation;
+  return `${VERIFY_PREAMBLE}\n\n${recommendation}`;
+}
+
+// ---------------------------------------------------------------------------
 // Engine implementation
 // ---------------------------------------------------------------------------
 
@@ -178,7 +190,7 @@ export const claudeCodeEngine: ReviewEngine = {
       filePath: rf.filePath,
       lineStart: rf.lineStart,
       lineEnd: rf.lineEnd,
-      recommendation: rf.recommendation,
+      recommendation: prependVerifyPreamble(rf.recommendation),
     }));
 
     return {
