@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { FindingStatus } from "@/lib/validation/finding-status";
+import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
 import { prisma } from "@/server/db/prisma";
 
 export async function getFindingWithReviewRun(findingDbId: string) {
@@ -21,5 +21,15 @@ export async function bulkUpdateFindingStatus(findingDbIds: string[], status: Fi
   return prisma.finding.updateMany({
     where: { id: { in: findingDbIds } },
     data: { status },
+  });
+}
+
+export async function getRestorableFindingsByRunId(runId: string) {
+  return prisma.finding.findMany({
+    where: {
+      reviewRunId: runId,
+      status: { in: [FINDING_STATUS.Published, FINDING_STATUS.Ignored] },
+    },
+    select: { id: true },
   });
 }

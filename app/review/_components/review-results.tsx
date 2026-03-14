@@ -6,9 +6,11 @@ import type { ReviewRunResult } from "@/server/review/types";
 import type { FindingActionResult } from "../_actions/finding-actions";
 import type { PublishActionResult } from "../_actions/publish-action";
 import type { RerunActionResult } from "../_actions/rerun-action";
+import type { RestoreAllActionResult } from "../_actions/restore-all-action";
 import type { FindingWithStatus } from "./finding-card";
 import { FindingsList } from "./findings-list";
 import { NewReviewLink } from "./new-review-link";
+import { RestoreAllButton } from "./restore-all-button";
 import { ReviewActionFooter } from "./review-action-footer";
 import { ReviewActionsProvider } from "./review-actions-context";
 
@@ -26,6 +28,7 @@ type ReviewResultsProps = Readonly<{
   publishFindingAction: (fd: FormData) => Promise<FindingActionResult>;
   ignoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
   restoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
+  restoreAllAction: (fd: FormData) => Promise<RestoreAllActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------
@@ -42,6 +45,7 @@ export function ReviewResults({
   publishFindingAction,
   ignoreFindingAction,
   restoreFindingAction,
+  restoreAllAction,
 }: ReviewResultsProps) {
   const findingsWithStatus: FindingWithStatus[] = result.findings.map((f) => ({
     dbId: f.dbId ?? f.id,
@@ -58,6 +62,10 @@ export function ReviewResults({
     sourceName: f.sourceName,
     codeSnippet: f.codeSnippet,
   }));
+
+  const restorableCount = findingsWithStatus.filter(
+    (f) => f.status === FINDING_STATUS.Published || f.status === FINDING_STATUS.Ignored,
+  ).length;
 
   return (
     <ReviewActionsProvider>
@@ -141,7 +149,13 @@ export function ReviewResults({
               Findings
             </h2>
 
-            <span className="text-muted-foreground text-xs">One comment thread per finding.</span>
+            {restorableCount > 0 && effectiveRunId && (
+              <RestoreAllButton
+                effectiveRunId={effectiveRunId}
+                restorableCount={restorableCount}
+                restoreAllAction={restoreAllAction}
+              />
+            )}
           </div>
 
           {findingsWithStatus.length === 0 ? (

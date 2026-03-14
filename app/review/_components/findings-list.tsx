@@ -33,7 +33,7 @@ export function FindingsList({
   ignoreFindingAction,
   restoreFindingAction,
 }: FindingsListProps) {
-  const { isGlobalOperationPending, setHasCardPending } = useReviewActions();
+  const { isGlobalOperationPending, isRestoring, setHasCardPending } = useReviewActions();
 
   const [optimisticFindings, updateOptimistic] = useOptimistic(
     findings,
@@ -48,6 +48,15 @@ export function FindingsList({
   useEffect(() => {
     setHasCardPending(pendingActions.size > 0);
   }, [pendingActions, setHasCardPending]);
+
+  // When a bulk restore is in flight, project all non-pending findings as
+  // pending for an instant optimistic UI. When the transition settles,
+  // revalidatePath delivers the canonical DB state and this override disappears.
+  const displayFindings = isRestoring
+    ? optimisticFindings.map((f) =>
+        f.status !== FINDING_STATUS.Pending ? { ...f, status: FINDING_STATUS.Pending } : f,
+      )
+    : optimisticFindings;
 
   function markPending(dbId: string) {
     setPendingActions((prev) => new Set(prev).add(dbId));
@@ -132,7 +141,7 @@ export function FindingsList({
 
   return (
     <ul className="flex flex-col gap-3">
-      {optimisticFindings.map((f) => (
+      {displayFindings.map((f) => (
         <li key={f.dbId}>
           <FindingCard
             finding={f}

@@ -17,10 +17,12 @@ import {
 type ReviewActionsContextValue = Readonly<{
   isPublishing: boolean;
   isRerunning: boolean;
+  isRestoring: boolean;
   isAnyPending: boolean;
   isGlobalOperationPending: boolean;
   startPublishTransition: TransitionStartFunction;
   startRerunTransition: TransitionStartFunction;
+  startRestoreTransition: TransitionStartFunction;
   setHasCardPending: (value: boolean) => void;
 }>;
 
@@ -33,19 +35,30 @@ const ReviewActionsContext = createContext<ReviewActionsContextValue | null>(nul
 export function ReviewActionsProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [isPublishing, startPublishTransition] = useTransition();
   const [isRerunning, startRerunTransition] = useTransition();
+  const [isRestoring, startRestoreTransition] = useTransition();
   const [hasCardPending, setHasCardPending] = useState(false);
 
   const value = useMemo<ReviewActionsContextValue>(
     () => ({
       isPublishing,
       isRerunning,
-      isAnyPending: isPublishing || isRerunning || hasCardPending,
-      isGlobalOperationPending: isPublishing || isRerunning,
+      isRestoring,
+      isAnyPending: isPublishing || isRerunning || isRestoring || hasCardPending,
+      isGlobalOperationPending: isPublishing || isRerunning || isRestoring,
       startPublishTransition,
       startRerunTransition,
+      startRestoreTransition,
       setHasCardPending,
     }),
-    [isPublishing, isRerunning, hasCardPending, startPublishTransition, startRerunTransition],
+    [
+      isPublishing,
+      isRerunning,
+      isRestoring,
+      hasCardPending,
+      startPublishTransition,
+      startRerunTransition,
+      startRestoreTransition,
+    ],
   );
 
   return <ReviewActionsContext.Provider value={value}>{children}</ReviewActionsContext.Provider>;
