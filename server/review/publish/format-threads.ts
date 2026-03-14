@@ -3,7 +3,12 @@ import "server-only";
 import { SEVERITY } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
-import { adoBlockquote, adoBold, adoNormalizeNewlines } from "@/server/review/publish/ado-markdown";
+import {
+  adoBlockquote,
+  adoBold,
+  adoFencedBlock,
+  adoNormalizeNewlines,
+} from "@/server/review/publish/ado-markdown";
 
 export type PublishableThread = {
   /**
@@ -66,11 +71,7 @@ function formatFinding(f: Finding): string {
   const messageBlock = adoBlockquote([`${adoBold("Message:")}`, "", ...messageLines]);
 
   const recommendationBlock = f.recommendation
-    ? adoBlockquote([
-        `${adoBold("Recommendation:")}`,
-        "",
-        ...adoNormalizeNewlines(f.recommendation),
-      ])
+    ? [adoBold("Recommendation:"), "", adoFencedBlock(f.recommendation)].join("\n")
     : undefined;
 
   const markerLine = `<!-- pr-reviewer:finding:${f.id} -->`;

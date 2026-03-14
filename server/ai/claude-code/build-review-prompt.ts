@@ -25,7 +25,7 @@ Each finding in the array must have these fields:
 - "filePath": the file path from the diff (optional, omit if the finding is general)
 - "lineStart": line number in the new file where the issue starts (optional, integer)
 - "lineEnd": line number in the new file where the issue ends (optional, integer)
-- "recommendation": specific suggestion to fix the issue (optional)
+- "recommendation": a self-contained, actionable fix instruction (optional). When filePath, lineStart, and lineEnd are all present, start with "In @{filePath} around lines {lineStart} - {lineEnd}, " followed by a concrete description of what to change and why. When the finding is general (no file path), write a free-form instruction without a location prefix. Either way, the recommendation must be understandable on its own without reading any other fields. Example (file-scoped): "In @src/utils/config.ts around lines 12 - 15, rename the constant \`button_text\` to \`BUTTON_TEXT\` using UPPER_SNAKE_CASE to match the project naming convention for constants."
 
 ## Instructions
 
