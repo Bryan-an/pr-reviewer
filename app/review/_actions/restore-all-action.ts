@@ -6,6 +6,8 @@ import { FINDING_STATUS } from "@/lib/validation/finding-status";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { logger } from "@/lib/logging/logger";
 import { bulkUpdateFindingStatus, getRestorableFindingsByRunId } from "@/server/db/findings";
+import { getReviewRunCoordinates } from "@/server/db/review-runs";
+import { closeBulkThreadsByMarkers } from "@/server/review/publish/close-threads";
 
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 
@@ -27,7 +29,7 @@ export async function restoreAllAction(formData: FormData): Promise<RestoreAllAc
     return { success: false };
   }
 
-  let rows: { id: string }[];
+  let rows: Awaited<ReturnType<typeof getRestorableFindingsByRunId>>;
 
   try {
     rows = await getRestorableFindingsByRunId(runId);
@@ -38,6 +40,31 @@ export async function restoreAllAction(formData: FormData): Promise<RestoreAllAc
 
   if (rows.length === 0) {
     return { success: true, restoredCount: 0 };
+  }
+
+  // Best-effort: close ADO threads for published findings before restoring.
+  const publishedWithKey = rows.filter(
+    (r) => r.status === FINDING_STATUS.Published && r.findingKey,
+  );
+
+  if (publishedWithKey.length > 0) {
+    try {
+      const coords = await getReviewRunCoordinates(runId);
+
+      if (coords) {
+        const { closedCount, failedCount } = await closeBulkThreadsByMarkers({
+          org: coords.org,
+          project: coords.project,
+          repoId: coords.repoId,
+          prId: coords.prId,
+          publishedFindingKeys: publishedWithKey.map((r) => r.findingKey),
+        });
+
+        logger.info({ closedCount, failedCount }, "[restoreAll] ADO thread close summary");
+      }
+    } catch (err) {
+      logger.warn(err, "[restoreAll] ADO thread close phase failed (non-fatal), continuing");
+    }
   }
 
   const ids = rows.map((r) => r.id);

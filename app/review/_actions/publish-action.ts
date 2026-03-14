@@ -87,7 +87,7 @@ export async function publishAction(formData: FormData): Promise<PublishActionRe
 
     // Mark only findings whose threads were actually published or already existed on ADO.
     // Capped findings are excluded — they were never sent and remain pending.
-    const processedIdSet = new Set(result.processedFindingIds);
+    const processedIdSet = new Set(result.processedFindings.map((pf) => pf.findingId));
 
     const publishedDbIds = pendingFindings
       .filter((f) => f.dbId && processedIdSet.has(f.id))

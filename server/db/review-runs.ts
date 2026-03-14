@@ -157,6 +157,13 @@ export async function getLatestReviewRunByPrUrl(prUrl: string): Promise<{
   };
 }
 
+export async function getReviewRunCoordinates(runId: string) {
+  return prisma.reviewRun.findUnique({
+    where: { id: runId },
+    select: { org: true, project: true, repoId: true, prId: true },
+  });
+}
+
 export async function getReviewRunById(runId: string): Promise<{
   runId: string;
   result: ReviewRunResult;

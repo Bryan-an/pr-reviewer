@@ -42,6 +42,7 @@ model Finding {
   recommendation String?
   sourceName     String?
   codeSnippet    String?
+  adoThreadId    Int?
   status         String  @default("pending")
 
   createdAt DateTime @default(now())

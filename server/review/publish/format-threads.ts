@@ -90,6 +90,10 @@ function threadMarker(marker: string): string {
   return `<!-- pr-reviewer:thread:${marker} -->`;
 }
 
+export function buildFindingThreadMarker(findingKey: string, prId: number): string {
+  return threadMarker(`finding:${findingKey}:pr:${prId}`);
+}
+
 function sortFindingsForThread(findings: Finding[]): Finding[] {
   return [...findings].sort((a, b) => {
     const bySeverity = severityRank(a.severity) - severityRank(b.severity);

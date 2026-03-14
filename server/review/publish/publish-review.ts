@@ -6,11 +6,22 @@ import { parseAzureDevOpsPrUrl } from "@/lib/azure-devops/pr-url";
 import { reviewRequestSchema } from "@/lib/validation/review-request";
 import type { Finding } from "@/server/review/types";
 import { getLatestIterationContext } from "@/server/azure-devops/iterations";
-import { createPullRequestThread, listPullRequestThreads } from "@/server/azure-devops/threads";
+import {
+  createPullRequestThread,
+  listPullRequestThreads,
+  reopenPullRequestThread,
+} from "@/server/azure-devops/threads";
+import { CommentThreadStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
 import { logger } from "@/lib/logging/logger";
+import { updateFindingAdoThreadId } from "@/server/db/findings";
 import { formatThreads } from "@/server/review/publish/format-threads";
 import { runReview } from "@/server/review/run-review";
+
+export type ProcessedFinding = {
+  findingId: string;
+  adoThreadId: number | undefined;
+};
 
 export type PublishReviewResult = {
   totalFindings: number;
@@ -19,8 +30,8 @@ export type PublishReviewResult = {
   skippedThreads: number;
   wasCapped: boolean;
   cap: number;
-  /** Finding IDs whose threads were published or already existed on ADO. */
-  processedFindingIds: string[];
+  /** Findings whose threads were published or already existed on ADO. */
+  processedFindings: ProcessedFinding[];
 };
 
 function collectExistingCommentContent(threads: GitPullRequestCommentThread[]): string[] {
@@ -45,6 +56,31 @@ function markerExists(existingContents: string[], marker: string): boolean {
   return false;
 }
 
+type ExistingThreadMatch = {
+  threadId: number;
+  isClosed: boolean;
+};
+
+function findExistingThread(
+  existingThreads: GitPullRequestCommentThread[],
+  marker: string,
+): ExistingThreadMatch | undefined {
+  for (const thread of existingThreads) {
+    for (const comment of thread.comments ?? []) {
+      if (typeof comment.content === "string" && comment.content.includes(marker)) {
+        if (thread.id == null) return undefined;
+
+        return {
+          threadId: thread.id,
+          isClosed: thread.status === CommentThreadStatus.Closed,
+        };
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function safeErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message || "Publish failed.";
   return "Publish failed.";
@@ -52,6 +88,33 @@ function safeErrorMessage(error: unknown): string {
 
 function normalizePath(p: string): string {
   return p.startsWith("/") ? p.slice(1) : p;
+}
+
+async function persistThreadId(
+  adoThreadId: number | undefined,
+  findingIds: string[],
+  findings: Finding[],
+  processedFindings: ProcessedFinding[],
+): Promise<void> {
+  for (const fid of findingIds) {
+    processedFindings.push({ findingId: fid, adoThreadId });
+  }
+
+  if (adoThreadId == null) return;
+
+  const results = await Promise.allSettled(
+    findingIds.map((fid) => {
+      const f = findings.find((pf) => pf.id === fid);
+      if (!f?.dbId) return Promise.resolve();
+      return updateFindingAdoThreadId(f.dbId, adoThreadId);
+    }),
+  );
+
+  for (const result of results) {
+    if (result.status === "rejected") {
+      logger.warn(result.reason, "publish:failed to persist ADO thread ID (non-fatal)");
+    }
+  }
 }
 
 export async function publishFindings(params: {
@@ -105,12 +168,33 @@ export async function publishFindings(params: {
 
   let publishedThreads = 0;
   let skippedThreads = 0;
-  const processedFindingIds: string[] = [];
+  const processedFindings: ProcessedFinding[] = [];
 
   for (const t of threads) {
     if (markerExists(existingContents, t.threadMarker)) {
-      skippedThreads += 1;
-      processedFindingIds.push(...t.findingIds);
+      const match = findExistingThread(existing, t.threadMarker);
+
+      // Reopen closed threads (e.g., previously restored findings being re-published).
+      if (match?.isClosed) {
+        try {
+          await reopenPullRequestThread({
+            org: pr.org,
+            project: pr.project,
+            repoId: pr.repo.id,
+            prId: pr.pr.id,
+            threadId: match.threadId,
+          });
+
+          publishedThreads += 1;
+        } catch (err) {
+          logger.warn(err, "publish:failed to reopen closed ADO thread (non-fatal)");
+          skippedThreads += 1;
+        }
+      } else {
+        skippedThreads += 1;
+      }
+
+      await persistThreadId(match?.threadId, t.findingIds, params.findings, processedFindings);
       continue;
     }
 
@@ -144,7 +228,7 @@ export async function publishFindings(params: {
     );
 
     try {
-      await createPullRequestThread({
+      const createdThread = await createPullRequestThread({
         ...createParamsBase,
         filePath: t.filePath,
         lineStart: t.lineStart,
@@ -154,8 +238,8 @@ export async function publishFindings(params: {
       });
 
       publishedThreads += 1;
-      processedFindingIds.push(...t.findingIds);
       existingContents.push(t.content);
+      await persistThreadId(createdThread.id, t.findingIds, params.findings, processedFindings);
     } catch (error) {
       logger.warn(
         { filePath: t.filePath, lineStart: t.lineStart, err: String(error) },
@@ -165,10 +249,17 @@ export async function publishFindings(params: {
       // If file-scoped threads fail (e.g. ADO rejects positions), fall back to a general thread.
       if (t.filePath) {
         try {
-          await createPullRequestThread(createParamsBase);
+          const fallbackThread = await createPullRequestThread(createParamsBase);
           publishedThreads += 1;
-          processedFindingIds.push(...t.findingIds);
           existingContents.push(t.content);
+
+          await persistThreadId(
+            fallbackThread.id,
+            t.findingIds,
+            params.findings,
+            processedFindings,
+          );
+
           continue;
         } catch (fallbackError) {
           throw new Error(safeErrorMessage(fallbackError));
@@ -186,7 +277,7 @@ export async function publishFindings(params: {
     skippedThreads,
     wasCapped,
     cap,
-    processedFindingIds,
+    processedFindings,
   };
 }
 
