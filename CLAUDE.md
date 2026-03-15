@@ -99,6 +99,8 @@ Publishing lives in `server/review/publish/`: `format-threads.ts` (pure formatti
 
 ADO threads cannot be deleted — only their status can be changed. The full publish-restore-republish cycle: **publish** creates thread (Active) and stores `adoThreadId` on the finding → **restore** closes the thread (best-effort, non-fatal) → **re-publish** detects the closed thread via marker scan and reopens it (Active). Single restore uses stored `adoThreadId` directly (`closeSingleThread`); bulk restore uses `listPullRequestThreads` + marker matching (`closeBulkThreadsByMarkers` in `server/review/publish/close-threads.ts`). Thread IDs are persisted at publish time for both newly created and already-existing (skipped) threads via `persistThreadId` in `publish-review.ts`.
 
+Key invariant: `processedFindings` in `PublishReviewResult` drives which findings the caller marks as `published` in the DB. Only add to `processedFindings` after a successful ADO operation (thread created or reopened) — never after a failed one, or findings will be marked `published` while the ADO thread is still closed/missing.
+
 Line-anchored PR comment threads require **both** `threadContext` (file path + positions) and `pullRequestThreadContext` (`changeTrackingId` + `iterationContext` from the iterations API). Key gotchas:
 
 - `CommentPosition.offset` is `int32` — use `2_147_483_647` for "end of line", not `Number.MAX_SAFE_INTEGER`
