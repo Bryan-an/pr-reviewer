@@ -128,6 +128,40 @@ export async function createPullRequestThread(
   return result;
 }
 
+export type ClosePullRequestThreadParams = {
+  org: string;
+  project: string;
+  repoId: string;
+  prId: number;
+  threadId: number;
+};
+
+export async function closePullRequestThread(params: ClosePullRequestThreadParams): Promise<void> {
+  const webApi = createAzureDevOpsClient(params.org);
+  const gitApi = await webApi.getGitApi();
+
+  await gitApi.updateThread(
+    { status: CommentThreadStatus.Closed },
+    params.repoId,
+    params.prId,
+    params.threadId,
+    params.project,
+  );
+}
+
+export async function reopenPullRequestThread(params: ClosePullRequestThreadParams): Promise<void> {
+  const webApi = createAzureDevOpsClient(params.org);
+  const gitApi = await webApi.getGitApi();
+
+  await gitApi.updateThread(
+    { status: CommentThreadStatus.Active },
+    params.repoId,
+    params.prId,
+    params.threadId,
+    params.project,
+  );
+}
+
 export async function listPullRequestThreads(
   params: ListPullRequestThreadsParams,
 ): Promise<GitPullRequestCommentThread[]> {

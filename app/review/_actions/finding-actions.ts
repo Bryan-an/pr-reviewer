@@ -10,6 +10,7 @@ import {
 import { logger } from "@/lib/logging/logger";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { getFindingWithReviewRun, updateFindingStatus } from "@/server/db/findings";
+import { closeSingleThread } from "@/server/review/publish/close-threads";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import type { Finding } from "@/server/review/types";
 
@@ -127,9 +128,48 @@ export async function ignoreFindingAction(formData: FormData): Promise<FindingAc
 }
 
 // ---------------------------------------------------------------------------
-// Restore a finding (undo ignore)
+// Restore a finding (undo publish or ignore)
 // ---------------------------------------------------------------------------
 
 export async function restoreFindingAction(formData: FormData): Promise<FindingActionResult> {
-  return updateStatusAction(formData, FINDING_STATUS.Pending, "restoreFinding");
+  const row = await getValidatedFinding(formData);
+
+  if (!row) {
+    logger.warn("[restoreFinding] finding not found");
+    return { success: false };
+  }
+
+  if (row.status === FINDING_STATUS.Pending) {
+    return { success: true };
+  }
+
+  if (!isValidStatusTransition(row.status as FindingStatus, FINDING_STATUS.Pending)) {
+    logger.warn(`[restoreFinding] invalid transition: ${row.status} → pending`);
+    return { success: false };
+  }
+
+  // Best-effort ADO thread close for published findings with a stored thread ID.
+  if (row.status === FINDING_STATUS.Published && row.adoThreadId != null) {
+    try {
+      await closeSingleThread({
+        org: row.reviewRun.org,
+        project: row.reviewRun.project,
+        repoId: row.reviewRun.repoId,
+        prId: row.reviewRun.prId,
+        adoThreadId: row.adoThreadId,
+      });
+    } catch (err) {
+      logger.warn(err, "[restoreFinding] ADO thread close failed (non-fatal), continuing");
+    }
+  }
+
+  try {
+    await updateFindingStatus(row.id, FINDING_STATUS.Pending);
+  } catch (err) {
+    logger.error(err, "[restoreFinding] failed");
+    return { success: false };
+  }
+
+  revalidatePath("/review");
+  return { success: true };
 }
