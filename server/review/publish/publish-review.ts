@@ -186,15 +186,16 @@ export async function publishFindings(params: {
           });
 
           publishedThreads += 1;
+          await persistThreadId(match.threadId, t.findingIds, params.findings, processedFindings);
         } catch (err) {
           logger.warn(err, "publish:failed to reopen closed ADO thread (non-fatal)");
           skippedThreads += 1;
         }
       } else {
         skippedThreads += 1;
+        await persistThreadId(match?.threadId, t.findingIds, params.findings, processedFindings);
       }
 
-      await persistThreadId(match?.threadId, t.findingIds, params.findings, processedFindings);
       continue;
     }
 
