@@ -26,6 +26,10 @@ export async function closeSingleThread(
 export async function closeBulkThreadsByMarkers(
   params: ThreadCoordinates & { publishedFindingKeys: string[] },
 ): Promise<{ closedCount: number; failedCount: number }> {
+  if (params.publishedFindingKeys.length === 0) {
+    return { closedCount: 0, failedCount: 0 };
+  }
+
   const threads = await listPullRequestThreads({
     org: params.org,
     project: params.project,
