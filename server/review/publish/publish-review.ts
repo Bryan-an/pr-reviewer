@@ -66,10 +66,10 @@ function findExistingThread(
   marker: string,
 ): ExistingThreadMatch | undefined {
   for (const thread of existingThreads) {
+    if (thread.id == null) continue;
+
     for (const comment of thread.comments ?? []) {
       if (typeof comment.content === "string" && comment.content.includes(marker)) {
-        if (thread.id == null) return undefined;
-
         return {
           threadId: thread.id,
           isClosed: thread.status === CommentThreadStatus.Closed,
