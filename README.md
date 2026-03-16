@@ -282,7 +282,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 - PATs are treated as secrets:
   - provided via server-only environment variables (`AZURE_DEVOPS_PAT`)
   - never persisted in the database, never logged, never sent to the client
-- Never commit `.env*` files.
+- Never commit environment files (e.g. `.env`) — except for `.env.example`, which is tracked as a setup reference.
 
 #### Logging and observability
 
