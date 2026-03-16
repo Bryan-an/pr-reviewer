@@ -2,19 +2,19 @@
 
 ## Overview
 
-This project aims to **automate pull request reviews in Azure DevOps** using AI, generating high-signal review comments while enforcing **team-specific coding standards**.
+This project **automates pull request reviews in Azure DevOps** using AI, generating high-signal review comments while enforcing **team-specific coding standards**.
 
 It is designed for scenarios where a single reviewer (or a small group) receives many PRs and must review them manually, repeatedly checking for the same classes of issues: correctness, maintainability, security, consistency, and adherence to internal conventions.
 
-## The idea
+## How it works
 
-Build a **web app** that connects to Azure DevOps, fetches the set of changes in a pull request, runs an AI review, and then produces **ready-to-post comments** (general, file-scoped, and line-anchored) that you can publish back to the PR.
+A **web app** that connects to Azure DevOps, fetches the set of changes in a pull request, runs an AI review, and produces **ready-to-post comments** (general, file-scoped, and line-anchored) that you can publish back to the PR.
 
-The reviewer should be able to provide their own standards (architecture rules, naming, error handling, testing expectations, etc.) so the AI review is aligned with the team’s expectations rather than generic advice.
+The reviewer can provide their own standards (architecture rules, naming, error handling, testing expectations, etc.) so the AI review is aligned with the team’s expectations rather than generic advice.
 
 ## AI approach (high level)
 
-The review engine is intended to be **pluggable**:
+The review engine is **pluggable**:
 
 - Prefer using **CodeRabbit** (when available) to leverage its review capabilities and standards enforcement.
 - Fall back to a direct LLM provider when CodeRabbit is not available or not suitable.
@@ -94,7 +94,7 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 ### Non-goals
 
 - Browsing/listing PRs (user supplies a PR id or PR URL).
-- Persisting PATs in the database (when added later, it must be encrypted at rest with `APP_ENCRYPTION_KEY`).
+- Persisting PATs in the database.
 - Multi-org/multi-repo management UI, teams/roles, SSO, and enterprise policy management.
 - Organization-wide policy management (beyond repository-scoped Markdown rules).
 
@@ -306,9 +306,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 - **Validation**: Zod
 - **Package manager**: pnpm
 
-## Tools & dependencies we expect to use
-
-> Exact versions will be added as we implement features. This list captures the intended building blocks.
+## Tools & dependencies
 
 ### Azure DevOps (official SDK)
 
@@ -339,7 +337,7 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
 ### Persistence (local-first)
 
 - **`prisma`** + **`@prisma/client`**: store settings, standards, and review history.
-- **SQLite**: simplest local database; can migrate to Postgres later if needed.
+- **SQLite**: local database for settings, review history, and findings.
 
 ### Security (secrets)
 
@@ -398,7 +396,5 @@ We use **GitHub Flow** (trunk-based development): keep `main` stable and integra
 
 ### Logging, testing, and quality
 
-- **Logging**: `pino` (implemented — see `lib/logging/logger.ts`)
-- **Unit tests**: `vitest` (planned)
-- **E2E tests**: `playwright` (planned)
+- **Logging**: `pino` (see `lib/logging/logger.ts`)
 - **Formatting**: `prettier` (+ `prettier-plugin-tailwindcss`)
