@@ -336,8 +336,8 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
 
 ### Persistence (local-first)
 
-- **`prisma`** + **`@prisma/client`**: store settings, standards, and review history.
-- **SQLite**: local database for settings, review history, and findings.
+- **`prisma`** + **`@prisma/client`**: ORM for review runs, findings, repositories, and review rules.
+- **SQLite**: local database for repositories, review rules, review runs, and findings.
 
 ### Security (secrets)
 
