@@ -38,7 +38,7 @@ On a PR, comment:
 
 ### How this repo is tuned
 
-- Review guidance is derived from our local standards in `/.cursor/rules/*` (plus `README.md`).
+- Review guidance is derived from our local standards in `/.claude/rules/*` and `/.cursor/rules/*` (plus `README.md`).
 - Noisy files (like `pnpm-lock.yaml` and static assets) are excluded from review commentary via `reviews.path_filters` in `/.coderabbit.yaml`.
 
 ## Core capabilities
