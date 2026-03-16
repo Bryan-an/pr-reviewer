@@ -15,9 +15,9 @@ alwaysApply: true
 
 ## Constraints / assumptions (current)
 - Primary platform: **Azure DevOps** (repos + PRs + comments).
-- The AI review engine should be **pluggable**:
-  - Prefer **CodeRabbit** when available.
-  - Fall back to a direct LLM provider when CodeRabbit is not available/suitable.
+- The AI review engine is **pluggable** via the `ReviewEngine` interface:
+  - Default: **CodeRabbit CLI + Claude Code CLI** run in parallel.
+  - Claude Code self-gates when the repo has no enabled rules.
 - Output should be **actionable and concrete**: point to specific files/locations when possible, propose fixes, avoid generic advice.
-- Keep scope incremental: focus on an MVP path (review → preview → publish), then iterate.
+- Core workflow is complete (review → preview → publish with per-finding actions); keep scope incremental as new features are added.
 

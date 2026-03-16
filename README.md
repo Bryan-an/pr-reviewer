@@ -14,10 +14,11 @@ The reviewer can provide their own standards (architecture rules, naming, error 
 
 ## AI approach (high level)
 
-The review engine is **pluggable**:
+The review engine is **pluggable** via the `ReviewEngine` interface:
 
-- Prefer using **CodeRabbit** (when available) to leverage its review capabilities and standards enforcement.
-- Fall back to a direct LLM provider when CodeRabbit is not available or not suitable.
+- **Default**: CodeRabbit CLI + Claude Code CLI run **in parallel** via `Promise.allSettled`. Findings from both are merged and deduplicated.
+- **Claude Code only**: rule-compliance checks using the Claude Code CLI.
+- **Stub**: deterministic output for testing.
 
 ## CodeRabbit
 
@@ -59,7 +60,7 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 - Provide Azure DevOps org + project + repo and a PR identifier (PR id or PR URL).
 - Server fetches PR metadata from Azure DevOps.
 - Server generates a **unified diff locally** from the PR branches (source of truth for review context).
-- Server runs an **AI review engine** (CodeRabbit preferred, LLM fallback) and normalizes results into structured findings.
+- Server runs the **AI review engines** (CodeRabbit + Claude Code in parallel) and normalizes results into structured findings.
 - UI previews findings grouped by file and severity, with per-finding status tracking (pending/published/ignored).
 - User publishes findings back to Azure DevOps as PR comment threads — individually per finding or in bulk.
 
@@ -101,7 +102,7 @@ Reviewing Azure DevOps pull requests repeatedly for the same classes of issues i
 ### Key constraints / assumptions
 
 - **Secrets are server-only**; server modules live under `server/` and must not be imported by Client Components.
-- **Pluggable AI engine** behind a stable interface (CodeRabbit preferred, LLM fallback).
+- **Pluggable AI engine** behind a stable interface (`ReviewEngine`).
 - Avoid publishing or logging raw diffs by default (diffs may contain sensitive content).
 
 ## Status
@@ -114,7 +115,7 @@ The core review workflow is fully implemented:
 - **Finding status tracking**: each finding persists a status (`pending`/`published`/`ignored`) in the database.
 - Manage **repository-scoped Markdown rules** in `/repos` (CRUD, enable/disable, sort order) and have enabled rules automatically applied during PR reviews.
 - **Review caching**: completed reviews are cached via URL and can be reloaded without rerunning; rerun is available without leaving the page.
-- AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
+- AI integration runs **CodeRabbit CLI + Claude Code CLI in parallel** by default (best-effort normalization into structured findings, with cross-engine deduplication).
 - **Structured logging** with `pino` (JSON on server, `pino/browser` on client).
 
 ## Publishing (current behavior)
@@ -168,9 +169,11 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 
 ### Optional
 
+- **Claude Code CLI** (`claude`) installed for rule-compliance reviews. When installed, it runs in parallel with CodeRabbit. If the repo has no enabled rules, Claude Code self-gates and returns empty findings.
 - **`REPOS_DIR`**: directory where the server caches cloned Azure DevOps repos (default: `.data/repos`).
 - **`CODERABBIT_BIN`**: override the CodeRabbit CLI binary path/name (default: `coderabbit`).
-- **`REVIEW_ENGINE`**: choose the engine (`coderabbit` or `stub`). Default: `coderabbit`.
+- **`CLAUDE_CODE_BIN`**: override the Claude Code CLI binary path/name (default: `claude`).
+- **`REVIEW_ENGINE`**: choose the engine mode (`coderabbit`, `claude-code`, or `stub`). Default: `coderabbit` (runs both CodeRabbit + Claude Code in parallel).
 
 ## Known limitations
 
@@ -182,7 +185,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 ### Architecture goals
 
 - **High-signal, deterministic output**: AI findings must be structured, actionable, and easy to publish back to Azure DevOps as comment threads.
-- **Pluggable review engines**: support multiple engines (CodeRabbit preferred, LLM fallback) behind a stable interface.
+- **Pluggable review engines**: CodeRabbit + Claude Code in parallel by default, behind a stable `ReviewEngine` interface.
 - **Server-only handling of secrets**: Azure DevOps PATs are provided via environment variables and never reach the browser.
 - **Thin UI, strong domain layer**: Next.js routes and UI components orchestrate; the review pipeline owns the business logic.
 
@@ -194,7 +197,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 - **Integrations**:
   - **Azure DevOps adapter**: PR metadata, files, and publishing comment threads (via `azure-devops-node-api`).
   - **Git adapter**: clone/fetch and generate unified diffs locally (`git diff ...` via `execa`).
-  - **AI engines**: CodeRabbit CLI runner and/or LLM provider runner.
+  - **AI engines**: CodeRabbit CLI + Claude Code CLI runners.
 - **Persistence**: Prisma models for review runs, findings, repositories, and review rules.
 
 ### Data flow
@@ -202,7 +205,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 1. **Select PR** (org/project/repo/PR id).
 2. **Fetch PR metadata** from Azure DevOps.
 3. **Generate unified diff locally** using `git` (source of truth for review context).
-4. **Run AI engine** (CodeRabbit first; fallback to LLM) to produce structured findings.
+4. **Run AI engines** (CodeRabbit + Claude Code in parallel) to produce structured findings.
 5. **Preview** findings in the UI (grouped by file / severity) with per-finding status tracking.
 6. **Publish** findings back to Azure DevOps as PR comment threads — individually per finding or all pending at once.
 
@@ -301,7 +304,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 - **Styling/UI**: Tailwind CSS (+ `shadcn/ui` for accessible components)
 - **Azure DevOps integration**: **Official SDK** `azure-devops-node-api`
 - **Diff generation**: `git` (local clone/fetch) + Node process runner
-- **AI review engine**: CodeRabbit (preferred) + direct LLM fallback
+- **AI review engines**: CodeRabbit CLI + Claude Code CLI (in parallel)
 - **Storage (local-first)**: SQLite + Prisma
 - **Validation**: Zod
 - **Package manager**: pnpm
@@ -321,12 +324,9 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
 
 ### AI review engines (pluggable)
 
-- **Preferred: CodeRabbit CLI** (executed via Node):
-  - Use it when available to leverage its review capabilities and standards enforcement.
-  - Run it via `execa` and translate its output into a structured findings format.
-- **Fallback: direct LLM provider**:
-  - **OpenAI**: `openai`
-  - Output should be **structured JSON** validated with Zod to keep publishing deterministic.
+- **CodeRabbit CLI**: general quality review, executed via `execa`. Output parsed into structured findings.
+- **Claude Code CLI**: rule-compliance review, executed via `execa` in headless mode (`claude -p`). Self-gates when the repo has no enabled rules.
+- Both engines run **in parallel** by default. Findings are merged, deduplicated, and validated with Zod.
 
 ### Standards, validation, and forms
 
