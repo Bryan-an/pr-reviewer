@@ -115,7 +115,7 @@ The core review workflow is fully implemented:
 - **Finding status tracking**: each finding persists a status (`pending`/`published`/`ignored`) in the database.
 - Manage **repository-scoped Markdown rules** in `/repos` (CRUD, enable/disable, sort order) and have enabled rules automatically applied during PR reviews.
 - **Review caching**: completed reviews are cached via URL and can be reloaded without rerunning; rerun is available without leaving the page.
-- AI integration uses the **CodeRabbit CLI** (best-effort normalization into structured findings).
+- AI integration runs **CodeRabbit CLI + Claude Code CLI in parallel** by default (best-effort normalization into structured findings, with cross-engine deduplication).
 - **Structured logging** with `pino` (JSON on server, `pino/browser` on client).
 
 ## Publishing (current behavior)
@@ -169,9 +169,11 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 
 ### Optional
 
+- **Claude Code CLI** (`claude`) installed for rule-compliance reviews. When installed, it runs in parallel with CodeRabbit. If the repo has no enabled rules, Claude Code self-gates and returns empty findings.
 - **`REPOS_DIR`**: directory where the server caches cloned Azure DevOps repos (default: `.data/repos`).
 - **`CODERABBIT_BIN`**: override the CodeRabbit CLI binary path/name (default: `coderabbit`).
-- **`REVIEW_ENGINE`**: choose the engine (`coderabbit` or `stub`). Default: `coderabbit`.
+- **`CLAUDE_CODE_BIN`**: override the Claude Code CLI binary path/name (default: `claude`).
+- **`REVIEW_ENGINE`**: choose the engine mode (`coderabbit`, `claude-code`, or `stub`). Default: `coderabbit` (runs both CodeRabbit + Claude Code in parallel).
 
 ## Known limitations
 
