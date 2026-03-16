@@ -11,7 +11,7 @@
 ## Hard rules
 
 - Server-only modules under `server/` must have `import "server-only"` — never import from Client Components
-- Encrypt PATs at rest (AES-256-GCM); never log or send secrets to client
+- PATs are provided via server-only environment variables; never persisted in the database, never logged, never sent to client
 - Validate at boundaries (requests, persistence, AI output) with Zod; prefer `unknown` over `any`
 - Use typed domain errors; never swallow external errors; surface safe summaries at the edge
 

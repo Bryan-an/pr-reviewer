@@ -183,7 +183,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 
 - **High-signal, deterministic output**: AI findings must be structured, actionable, and easy to publish back to Azure DevOps as comment threads.
 - **Pluggable review engines**: support multiple engines (CodeRabbit preferred, LLM fallback) behind a stable interface.
-- **Server-only handling of secrets**: Azure DevOps PATs and encryption keys never reach the browser.
+- **Server-only handling of secrets**: Azure DevOps PATs are provided via environment variables and never reach the browser.
 - **Thin UI, strong domain layer**: Next.js routes and UI components orchestrate; the review pipeline owns the business logic.
 
 ### High-level component model
@@ -195,7 +195,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
   - **Azure DevOps adapter**: PR metadata, files, and publishing comment threads (via `azure-devops-node-api`).
   - **Git adapter**: clone/fetch and generate unified diffs locally (`git diff ...` via `execa`).
   - **AI engines**: CodeRabbit CLI runner and/or LLM provider runner.
-- **Persistence**: Prisma models for settings, standards, credentials metadata, review runs, findings, and publish history.
+- **Persistence**: Prisma models for review runs, findings, repositories, and review rules.
 
 ### Data flow
 
@@ -224,7 +224,7 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 │   ├── config/                   # env parsing, feature flags
 │   ├── validation/               # zod schemas for inputs/DTOs
 │   ├── utils/                    # small pure helpers (no side effects)
-│   └── crypto/                   # encryption helpers (server-only)
+│   └── logging/                  # pino logger (client + server)
 ├── server/                       # server-only modules (no React imports)
 │   ├── azure-devops/             # SDK client + publishing threads
 │   ├── git/                      # clone/fetch/diff generation
@@ -280,9 +280,9 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 #### Security (credentials)
 
 - PATs are treated as secrets:
-  - stored encrypted at rest (AES-256-GCM) using `APP_ENCRYPTION_KEY`
-  - never logged, never sent to the client
-- Use environment variables for secrets; never commit `.env*`.
+  - provided via server-only environment variables (`AZURE_DEVOPS_PAT`)
+  - never persisted in the database, never logged, never sent to the client
+- Never commit `.env*` files.
 
 #### Logging and observability
 
@@ -341,8 +341,8 @@ Azure DevOps APIs are great for PR metadata and commenting. For a reliable **ful
 
 ### Security (secrets)
 
-- Store Azure DevOps PATs **encrypted at rest** (using Node’s `crypto`, e.g. AES-256-GCM) with an `APP_ENCRYPTION_KEY`.
-- Never commit secrets; keep them in environment variables and/or encrypted storage.
+- Azure DevOps PATs are provided via server-only environment variables — never persisted in the database, never logged, never sent to the client.
+- Never commit secrets; keep them in environment variables.
 
 ### Linting & formatting
 
