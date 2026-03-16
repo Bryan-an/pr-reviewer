@@ -9,6 +9,5 @@ Use these by default; don't introduce alternatives without explicit request.
 - **AI**: CodeRabbit CLI (preferred), OpenAI fallback with Zod-validated output
 - **Validation**: Zod; forms via `react-hook-form` + `@hookform/resolvers`
 - **Markdown**: `react-markdown`
-- **DB**: Prisma + SQLite (Postgres later)
+- **DB**: Prisma + SQLite
 - **Logging**: `pino`
-- **Tests** (planned): `vitest` + `playwright`

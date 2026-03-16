@@ -1,7 +1,10 @@
 {
   "name": "pr-reviewer",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "AI-powered pull request reviewer for Azure DevOps — generates structured, line-anchored review comments using CodeRabbit and Claude Code",
+  "license": "MIT",
+  "author": "Bryan Andagoya",
   "scripts": {
     "dev": "next dev -p 3100",
     "build": "next build",

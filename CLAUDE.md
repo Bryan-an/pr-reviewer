@@ -24,7 +24,7 @@ pnpm prisma migrate dev    # Apply migrations in dev
 pnpm prisma generate       # Regenerate Prisma client (output: prisma/generated/prisma/)
 ```
 
-No test framework is configured yet (vitest and playwright are planned).
+No test framework is configured.
 
 First-time setup: `mkdir -p .data && pnpm prisma migrate dev` — SQLite won't create parent directories, so `.data/` must exist before the app can create the database file.
 

@@ -9,7 +9,7 @@ alwaysApply: true
 
 - Produce **high-signal, deterministic** review output (structured findings → publishable comment threads).
 - Keep the AI layer **pluggable** (CodeRabbit preferred, LLM fallback) behind a stable interface.
-- Ensure **secrets are server-only** (Azure DevOps PATs, encryption keys never reach the browser).
+- Ensure **secrets are server-only** (Azure DevOps PATs are provided via environment variables and never reach the browser).
 - Keep **UI thin**; put business logic in a **domain/review pipeline**.
 
 ## Layering & boundaries
@@ -30,7 +30,7 @@ Add `import "server-only";` to server-only modules as a guardrail.
 
 - `app/`: routes, layouts, route handlers (`app/api/**/route.ts`), route-scoped UI in `app/**/_components/`
 - `components/`: shared React components; `components/ui/` reserved for shadcn/ui
-- `lib/`: shared utilities (config/env parsing, validation schemas, crypto helpers, pure utils)
+- `lib/`: shared utilities (config/env parsing, validation schemas, logging, pure utils)
 - `server/`: server-only domain + integrations (azure-devops/git/ai/review/db)
 - `prisma/`: schema + migrations
 - `scripts/`: maintenance/one-off scripts
@@ -40,6 +40,6 @@ Add `import "server-only";` to server-only modules as a guardrail.
 - **Naming**: folders/routes/files in `kebab-case`; React exports in `PascalCase`; values/functions in `camelCase`.
 - **Validation**: validate at boundaries (requests, persistence, AI output). Prefer `unknown` + Zod over `any`.
 - **Error handling**: use typed domain errors; never swallow external errors; surface safe summaries at the edge.
-- **Security**: encrypt PATs at rest (AES-256-GCM using `APP_ENCRYPTION_KEY`); never log or send secrets to client.
+- **Security**: PATs are provided via server-only environment variables; never persisted in the database, never logged, never sent to client.
 - **Logging**: structured, event-focused logs; avoid logging raw diffs by default.
 - **Quality**: keep ESLint/Prettier on; don’t disable rules without a documented reason.

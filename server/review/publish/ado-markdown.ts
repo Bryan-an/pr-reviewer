@@ -21,10 +21,6 @@ export function adoBold(value: string): string {
   return `**${value}**`;
 }
 
-export function adoHr(): string {
-  return "\n\n---\n\n";
-}
-
 /**
  * Wrap text in a fenced code block, using a fence long enough to avoid
  * conflicts with backtick runs inside the content (mirrors `adoInlineCode`).
@@ -53,38 +49,4 @@ export function adoBlockquote(lines: string[]): string {
       return `> ${line}`;
     })
     .join("\n");
-}
-
-/**
- * Join lines with Markdown hard-breaks.
- *
- * Empty-string lines become paragraph breaks (blank line).
- */
-export function adoJoinLines(lines: string[]): string {
-  const out: string[] = [];
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i] ?? "";
-    const next = i + 1 < lines.length ? lines[i + 1] : undefined;
-
-    if (line === "") {
-      // Blank line (paragraph break)
-      out.push("\n");
-      continue;
-    }
-
-    out.push(line);
-
-    if (next === undefined) continue;
-
-    if (next === "") {
-      out.push("\n");
-      continue;
-    }
-
-    // Hard break: two spaces before newline.
-    out.push("  \n");
-  }
-
-  return out.join("");
 }
