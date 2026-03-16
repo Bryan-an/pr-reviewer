@@ -24,8 +24,9 @@ Use these technologies by default when designing or implementing features in thi
 
 ## AI engines (pluggable)
 
-- Preferred: CodeRabbit CLI (run via `execa`).
-- Fallback: OpenAI via `openai` (structured JSON outputs validated with Zod).
+- **CodeRabbit CLI**: general quality review (run via `execa`).
+- **Claude Code CLI**: rule-compliance review (run via `execa` in headless mode).
+- Both run **in parallel** by default. Output validated with Zod.
 
 ## Forms, validation, rendering
 
@@ -36,11 +37,9 @@ Use these technologies by default when designing or implementing features in thi
 ## Persistence (local-first)
 
 - Prisma: `prisma` + `@prisma/client`
-- SQLite for MVP (Postgres later if needed)
+- SQLite
 
-## Observability & quality (planned)
+## Observability & quality
 
 - Logging: `pino`
-- Unit tests: `vitest`
-- E2E tests: `playwright`
 - Formatting: `prettier` (+ `prettier-plugin-tailwindcss`)

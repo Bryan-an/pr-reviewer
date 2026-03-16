@@ -8,7 +8,7 @@ alwaysApply: true
 ## Goals
 
 - Produce **high-signal, deterministic** review output (structured findings → publishable comment threads).
-- Keep the AI layer **pluggable** (CodeRabbit preferred, LLM fallback) behind a stable interface.
+- Keep the AI layer **pluggable** (CodeRabbit + Claude Code in parallel) behind a stable `ReviewEngine` interface.
 - Ensure **secrets are server-only** (Azure DevOps PATs are provided via environment variables and never reach the browser).
 - Keep **UI thin**; put business logic in a **domain/review pipeline**.
 

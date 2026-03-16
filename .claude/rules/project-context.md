@@ -4,7 +4,7 @@ Azure DevOps AI PR Reviewer — a web app that automates PR reviews.
 
 ## Core flow
 
-Connect to Azure DevOps → fetch PR changes → run AI review (CodeRabbit preferred, LLM fallback) → produce structured findings → publish as PR comment threads.
+Connect to Azure DevOps → fetch PR changes → run AI review (CodeRabbit + Claude Code in parallel) → produce structured findings → publish as PR comment threads.
 
 ## Constraints
 
