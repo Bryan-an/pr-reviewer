@@ -1,5 +1,9 @@
 # PR Reviewer (Azure DevOps + AI)
 
+## Demo
+
+https://github.com/user-attachments/assets/ca6e9f1f-cfcb-4f77-859b-752bbd6e2a73
+
 ## Overview
 
 This project **automates pull request reviews in Azure DevOps** using AI, generating high-signal review comments while enforcing **team-specific coding standards**.
