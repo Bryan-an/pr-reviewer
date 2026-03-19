@@ -42,7 +42,7 @@ On a PR, comment:
 
 ### How this repo is tuned
 
-- Review guidance is derived from our local standards in `/.claude/rules/*` and `/.cursor/rules/*` (plus `README.md`).
+- Review guidance is derived from our local standards in `/.claude/rules/*` (plus `README.md`).
 - Noisy files (like `pnpm-lock.yaml` and static assets) are excluded from review commentary via `reviews.path_filters` in `/.coderabbit.yaml`.
 
 ## Core capabilities
@@ -219,30 +219,45 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 .
 ├── app/                          # Next.js routes (App Router)
 │   ├── layout.tsx
-│   ├── page.tsx
-│   ├── (dashboard)/              # Optional route group (no URL segment)
+│   ├── page.tsx                  # Home page (PR URL input)
 │   ├── api/                      # Route handlers (server endpoints)
-│   │   └── .../route.ts
-│   └── _components/              # Route-scoped components (non-routing)
-├── components/
-│   ├── ui/                       # shadcn/ui components (kebab-case files)
-│   └── ...                       # shared, reusable components
-├── lib/
-│   ├── config/                   # env parsing, feature flags
-│   ├── validation/               # zod schemas for inputs/DTOs
-│   ├── utils/                    # small pure helpers (no side effects)
-│   └── logging/                  # pino logger (client + server)
-├── server/                       # server-only modules (no React imports)
-│   ├── azure-devops/             # SDK client + publishing threads
-│   ├── git/                      # clone/fetch/diff generation
-│   ├── ai/                       # engines + normalization to findings
-│   ├── review/                   # domain orchestration (use-cases)
-│   └── db/                       # prisma client + repositories
+│   │   ├── ado/                  # Azure DevOps proxy endpoints
+│   │   └── review/run/           # Review execution endpoint
+│   ├── repos/                    # Repository + rules management
+│   │   ├── [org]/[project]/[adoRepoId]/  # Dynamic repo routes
+│   │   │   ├── _actions/         # Rule-level server actions
+│   │   │   ├── _components/      # Rule UI components
+│   │   │   └── rules/            # Rule create/edit sub-routes
+│   │   ├── _actions/             # Org-level server actions
+│   │   ├── _components/          # Repos list UI components
+│   │   └── _lib/                 # Routes, search params, constants
+│   └── review/                   # Review results + publishing
+│       ├── _actions/             # Finding + publish server actions
+│       ├── _components/          # Review UI components
+│       └── _lib/                 # Routes, search params, constants
+├── components/                   # Shared UI components
+│   └── ui/                       # shadcn/ui primitives (do not edit)
+├── hooks/                        # Shared client-side hooks
+├── lib/                          # Shared utilities (client + server)
+│   ├── azure-devops/             # PR URL parsing
+│   ├── config/                   # Env parsing (Zod)
+│   ├── logging/                  # pino logger (client + server)
+│   ├── utils/                    # Small pure helpers (no side effects)
+│   └── validation/               # Zod schemas for inputs/DTOs
+├── server/                       # Server-only modules (import "server-only")
+│   ├── ai/                       # AI engines + normalization
+│   │   ├── claude-code/          # Claude Code CLI runner
+│   │   ├── coderabbit/           # CodeRabbit CLI runner + output parser
+│   │   └── dedup/                # Cross-engine finding deduplication
+│   ├── azure-devops/             # SDK client + thread publishing
+│   ├── db/                       # Prisma client + data access
+│   ├── git/                      # Clone/fetch/diff generation
+│   └── review/                   # Domain orchestration
+│       └── publish/              # Thread formatting + publishing
 ├── prisma/
 │   ├── schema.prisma
-│   └── migrations/
-├── scripts/                      # one-off scripts and maintenance tasks
-├── public/
+│   ├── migrations/
+│   └── generated/                # Generated Prisma client
 └── ...
 ```
 
@@ -302,69 +317,22 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 - Lint with `pnpm lint`.
 - Don’t disable ESLint rules unless there’s a documented reason.
 
-## Tech stack (recommended)
+## Tech stack
 
-- **Web app**: Next.js (App Router) + TypeScript
-- **Styling/UI**: Tailwind CSS (+ `shadcn/ui` for accessible components)
-- **Azure DevOps integration**: **Official SDK** `azure-devops-node-api`
-- **Diff generation**: `git` (local clone/fetch) + Node process runner
-- **AI review engines**: CodeRabbit CLI + Claude Code CLI (in parallel)
-- **Storage (local-first)**: SQLite + Prisma
-- **Validation**: Zod
-- **Package manager**: pnpm
+| Layer               | Technology                                               |
+| ------------------- | -------------------------------------------------------- |
+| **Framework**       | Next.js (App Router) + TypeScript                        |
+| **Styling / UI**    | Tailwind CSS + shadcn/ui                                 |
+| **Azure DevOps**    | `azure-devops-node-api` SDK                              |
+| **Diff generation** | Local `git diff` via `execa`, parsed with `parse-diff`   |
+| **AI engines**      | CodeRabbit CLI + Claude Code CLI (in parallel)           |
+| **Validation**      | Zod; forms via `react-hook-form` + `@hookform/resolvers` |
+| **Markdown**        | `react-markdown` + `rehype-highlight`                    |
+| **Persistence**     | Prisma + SQLite                                          |
+| **Logging**         | `pino` (JSON on server, `pino/browser` on client)        |
+| **Package manager** | pnpm                                                     |
 
-## Tools & dependencies
-
-### Azure DevOps (official SDK)
-
-- **`azure-devops-node-api`**: typed client for Git PR APIs (list PRs, get details, create comment threads).
-
-### Git + diff parsing (required for high-quality reviews)
-
-Azure DevOps APIs are great for PR metadata and commenting. For a reliable **full unified diff**, we generate it locally using `git`:
-
-- **`execa`** (or similar): run `git` and other CLIs safely from Node.
-- **`parse-diff`** (or similar): parse unified diffs to map findings to files/hunks/lines.
-
-### AI review engines (pluggable)
-
-- **CodeRabbit CLI**: general quality review, executed via `execa`. Output parsed into structured findings.
-- **Claude Code CLI**: rule-compliance review, executed via `execa` in headless mode (`claude -p`). Self-gates when the repo has no enabled rules.
-- Both engines run **in parallel** by default. Findings are merged, deduplicated, and validated with Zod.
-
-### Standards, validation, and forms
-
-- **`zod`**: schema validation for config, findings, and API boundaries.
-- **`react-hook-form`** + **`@hookform/resolvers`**: settings + standards editor forms.
-- **`react-markdown`**: render summaries/findings in the UI.
-
-### Persistence (local-first)
-
-- **`prisma`** + **`@prisma/client`**: ORM for review runs, findings, repositories, and review rules.
-- **SQLite**: local database for repositories, review rules, review runs, and findings.
-
-### Security (secrets)
-
-- Azure DevOps PATs are provided via server-only environment variables — never persisted in the database, never logged, never sent to the client.
-- Never commit secrets; keep them in environment variables.
-
-### Linting & formatting
-
-- **Linting**: ESLint
-  - Run: `pnpm lint`
-- **Formatting**: Prettier (with Tailwind plugin)
-  - Format: `pnpm format`
-  - Check (CI): `pnpm format:check`
-
-### Git hooks (code quality)
-
-We use **Husky** to enforce quality checks locally before code reaches the remote:
-
-- **pre-commit**: runs `lint-staged` + `pnpm type-check`
-- **commit-msg**: validates commit messages with **commitlint** (Conventional Commits). Max-length rules are disabled to allow AI-generated messages.
-- **pre-push**: runs `pnpm build`
-
-## Git workflow (recommended)
+## Git workflow
 
 We use **GitHub Flow** (trunk-based development): keep `main` stable and integrate changes via short-lived branches and PRs.
 
@@ -388,17 +356,10 @@ We use **GitHub Flow** (trunk-based development): keep `main` stable and integra
 
 - Open a PR early (draft is fine) and keep it small and focused.
 - Prefer descriptive PR titles and include a brief summary + test notes.
-
-### Merging
-
 - Prefer **squash merge** into `main` (keeps history readable).
-- Avoid merging directly to `main` without a PR.
 
-### Releases (optional)
+### Git hooks (Husky)
 
-- Tag releases from `main` when you want stable milestones (e.g., `v0.1.0`, `v0.2.0`).
-
-### Logging, testing, and quality
-
-- **Logging**: `pino` (see `lib/logging/logger.ts`)
-- **Formatting**: `prettier` (+ `prettier-plugin-tailwindcss`)
+- **pre-commit**: `lint-staged` (ESLint --fix + Prettier on staged files) + `pnpm type-check`
+- **commit-msg**: commitlint (Conventional Commits). Max-length rules are disabled for AI-generated messages.
+- **pre-push**: `pnpm build`
