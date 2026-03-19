@@ -5,12 +5,17 @@ disable-model-invocation: true
 allowed-tools: Bash
 ---
 
-Clear the CodeRabbit CLI cache by running these commands:
+Clear the CodeRabbit CLI cache by running this command:
 
 ```bash
-rm -rf "$HOME/.coderabbit/reviews"
-rm -rf "$HOME/.coderabbit/logs"
-rm -rf "$HOME/Library/Application Support/CodeRabbit"
+for dir in "$HOME/.coderabbit/reviews" "$HOME/.coderabbit/logs"; do
+  if [ -d "$dir" ]; then
+    rm -rf "$dir"
+    echo "Removed: $dir"
+  else
+    echo "Skipped (not found): $dir"
+  fi
+done
 ```
 
-After running, confirm to the user which directories were removed.
+After running, confirm to the user which directories were removed and which were skipped.
