@@ -258,7 +258,6 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 │   ├── schema.prisma
 │   ├── migrations/
 │   └── generated/                # Generated Prisma client
-├── scripts/                      # One-off scripts and maintenance tasks
 └── ...
 ```
 
