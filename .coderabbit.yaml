@@ -67,5 +67,6 @@ knowledge_base:
   code_guidelines:
     enabled: true
     filePatterns:
-      - "**/.cursor/rules/*"
+      - "CLAUDE.md"
+      - "**/.claude/rules/*"
       - "README.md"

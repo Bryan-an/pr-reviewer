@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Azure DevOps AI PR Reviewer — a Next.js web app that automates pull request reviews. It connects to Azure DevOps, generates local diffs, runs AI analysis (CodeRabbit + Claude Code in parallel, or stub engine), and publishes structured findings back as PR comment threads.
+Azure DevOps AI PR Reviewer — a Next.js web app that automates pull request reviews. It connects to Azure DevOps, generates local diffs, runs AI analysis (CodeRabbit + Claude Code in parallel, or stub engine), and publishes structured findings back as PR comment threads. Output must be actionable: specific files/locations, proposed fixes, no generic advice. Core workflow is complete (review → preview → publish with per-finding actions); keep scope incremental as new features are added.
 
 ## Commands
 
