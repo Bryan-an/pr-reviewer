@@ -6,7 +6,6 @@ import {
   ChevronDownIcon,
   EyeOffIcon,
   FileIcon,
-  Loader2Icon,
   SendIcon,
   UndoIcon,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import { cn } from "@/lib/utils/cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Markdown } from "@/components/markdown";
 import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
 
@@ -66,28 +66,10 @@ function RestoreButton({
   onRestore,
 }: Readonly<{ isPending: boolean; onRestore: () => void }>) {
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={isPending}
-      onClick={onRestore}
-      className="grid grid-cols-1 grid-rows-1 justify-items-center"
-    >
-      <span
-        className={cn(
-          "col-start-1 row-start-1 inline-flex items-center gap-1.5",
-          isPending && "invisible",
-        )}
-      >
-        <UndoIcon className="size-3.5" />
-        Restore
-      </span>
-      {isPending && (
-        <span className="col-start-1 row-start-1 inline-flex items-center gap-1.5">
-          <Loader2Icon className="size-3.5 animate-spin" />
-        </span>
-      )}
-    </Button>
+    <LoadingButton variant="outline" size="sm" loading={isPending} onClick={onRestore}>
+      <UndoIcon className="size-3.5" />
+      Restore
+    </LoadingButton>
   );
 }
 
@@ -303,28 +285,15 @@ export function FindingCard({
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 {!isPublished && !isIgnored && (
                   <>
-                    <Button
+                    <LoadingButton
                       variant="outline"
                       size="sm"
-                      disabled={isPending}
+                      loading={isPending}
                       onClick={onPublish}
-                      className="grid grid-cols-1 grid-rows-1 justify-items-center"
                     >
-                      <span
-                        className={cn(
-                          "col-start-1 row-start-1 inline-flex items-center gap-1.5",
-                          isPending && "invisible",
-                        )}
-                      >
-                        <SendIcon className="size-3.5" />
-                        Publish
-                      </span>
-                      {isPending && (
-                        <span className="col-start-1 row-start-1 inline-flex items-center gap-1.5">
-                          <Loader2Icon className="size-3.5 animate-spin" />
-                        </span>
-                      )}
-                    </Button>
+                      <SendIcon className="size-3.5" />
+                      Publish
+                    </LoadingButton>
 
                     <IgnoreButton isPending={isPending} onIgnore={onIgnore} />
                   </>

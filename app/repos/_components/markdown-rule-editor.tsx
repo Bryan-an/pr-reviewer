@@ -5,13 +5,13 @@ import Link from "next/link";
 import { flushSync } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2Icon } from "lucide-react";
 import { Tabs } from "radix-ui";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/cn";
 import { Markdown } from "@/components/markdown";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -385,31 +385,9 @@ export function MarkdownRuleEditor({
             Cancel
           </Link>
 
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="grid grid-cols-1 grid-rows-1 justify-items-center"
-          >
-            <span
-              className={cn(
-                "col-start-1 row-start-1 inline-flex items-center gap-2",
-                isPending && "invisible",
-              )}
-              aria-hidden={isPending}
-            >
-              {submitLabel}
-            </span>
-            <span
-              className={cn(
-                "col-start-1 row-start-1 inline-flex items-center gap-2",
-                !isPending && "invisible",
-              )}
-              aria-hidden={!isPending}
-            >
-              <Loader2Icon className="animate-spin" />
-              {pendingLabel}
-            </span>
-          </Button>
+          <LoadingButton type="submit" loading={isPending} loadingText={pendingLabel}>
+            {submitLabel}
+          </LoadingButton>
         </div>
       </form>
     </Form>
