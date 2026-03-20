@@ -221,7 +221,6 @@ If there are no enabled rules for the repo, the app runs CodeRabbit CLI without 
 │   ├── layout.tsx
 │   ├── page.tsx                  # Home page (PR URL input)
 │   ├── api/                      # Route handlers (server endpoints)
-│   │   ├── ado/                  # Azure DevOps proxy endpoints
 │   │   └── review/run/           # Review execution endpoint
 │   ├── repos/                    # Repository + rules management
 │   │   ├── [org]/[project]/[adoRepoId]/  # Dynamic repo routes
