@@ -10,7 +10,7 @@ import { ORG_COOKIE } from "@/app/repos/_lib/cookies";
 
 export async function setOrgAction(formData: FormData) {
   const org = getTrimmedStringFormField(formData, REPOS_FORM_FIELD.Org);
-  if (!org) redirect("/repos");
+  if (!org) redirect(reposListUrl());
 
   const jar = await cookies();
 
