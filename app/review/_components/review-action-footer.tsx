@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Loader2Icon, RefreshCwIcon, SendIcon } from "lucide-react";
+import { RefreshCwIcon, SendIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { logger } from "@/lib/logging/logger";
 
 import type { PublishActionResult } from "../_actions/publish-action";
@@ -117,56 +117,30 @@ export function ReviewActionFooter({
         <input type="hidden" name={REVIEW_FORM_FIELD.EngineName} value={engineName} />
         <input type="hidden" name={REVIEW_FORM_FIELD.CorrelationId} value={correlationId} />
 
-        <Button
+        <LoadingButton
           type="submit"
           disabled={isAnyPending}
-          className="grid grid-cols-1 grid-rows-1 justify-items-center"
+          loading={isPublishing}
+          loadingText="Publishing…"
         >
-          <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
-            aria-hidden={isPublishing}
-            style={isPublishing ? { visibility: "hidden" } : undefined}
-          >
-            <SendIcon />
-            Publish to Azure DevOps
-          </span>
-          <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
-            aria-hidden={!isPublishing}
-            style={!isPublishing ? { visibility: "hidden" } : undefined}
-          >
-            <Loader2Icon className="animate-spin" />
-            Publishing&hellip;
-          </span>
-        </Button>
+          <SendIcon />
+          Publish to Azure DevOps
+        </LoadingButton>
       </form>
 
       <form onSubmit={handleRerunSubmit}>
         <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
 
-        <Button
+        <LoadingButton
           type="submit"
           variant="outline"
           disabled={isAnyPending}
-          className="grid grid-cols-1 grid-rows-1 justify-items-center"
+          loading={isRerunning}
+          loadingText="Re-running…"
         >
-          <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
-            aria-hidden={isRerunning}
-            style={isRerunning ? { visibility: "hidden" } : undefined}
-          >
-            <RefreshCwIcon />
-            Re-run review
-          </span>
-          <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
-            aria-hidden={!isRerunning}
-            style={!isRerunning ? { visibility: "hidden" } : undefined}
-          >
-            <Loader2Icon className="animate-spin" />
-            Re-running&hellip;
-          </span>
-        </Button>
+          <RefreshCwIcon />
+          Re-run review
+        </LoadingButton>
       </form>
     </CardFooter>
   );

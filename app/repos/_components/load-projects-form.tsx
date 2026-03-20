@@ -1,10 +1,10 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
+import { FolderSyncIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { useOrgLoading } from "./org-loading-context";
 
@@ -29,27 +29,10 @@ export function LoadProjectsForm({ defaultOrg }: LoadProjectsFormProps) {
         />
       </div>
 
-      <Button
-        type="submit"
-        disabled={isPending}
-        className="grid grid-cols-1 grid-rows-1 justify-items-center"
-      >
-        <span
-          className="col-start-1 row-start-1 inline-flex items-center gap-2"
-          aria-hidden={isPending}
-          style={isPending ? { visibility: "hidden" } : undefined}
-        >
-          Load projects
-        </span>
-        <span
-          className="col-start-1 row-start-1 inline-flex items-center gap-2"
-          aria-hidden={!isPending}
-          style={isPending ? undefined : { visibility: "hidden" }}
-        >
-          <Loader2Icon className="animate-spin" />
-          Loading&hellip;
-        </span>
-      </Button>
+      <LoadingButton type="submit" loading={isPending} loadingText="Loading…">
+        <FolderSyncIcon className="size-4" />
+        Load projects
+      </LoadingButton>
     </form>
   );
 }

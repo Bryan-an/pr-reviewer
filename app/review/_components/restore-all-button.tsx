@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2Icon, UndoIcon } from "lucide-react";
+import { UndoIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { logger } from "@/lib/logging/logger";
 
 import type { RestoreAllActionResult } from "../_actions/restore-all-action";
@@ -70,27 +70,16 @@ export function RestoreAllButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button
+        <LoadingButton
           variant="outline"
           size="sm"
           disabled={isAnyPending}
-          className="grid grid-cols-1 grid-rows-1 justify-items-center"
+          loading={isRestoring}
+          loadingText="Restoring…"
         >
-          <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-1.5"
-            aria-hidden={isRestoring}
-            style={isRestoring ? { visibility: "hidden" } : undefined}
-          >
-            <UndoIcon className="size-3.5" />
-            Restore All
-          </span>
-          {isRestoring && (
-            <span className="col-start-1 row-start-1 inline-flex items-center gap-1.5">
-              <Loader2Icon className="size-3.5 animate-spin" />
-              Restoring&hellip;
-            </span>
-          )}
-        </Button>
+          <UndoIcon className="size-3.5" />
+          Restore All
+        </LoadingButton>
       </AlertDialogTrigger>
 
       <AlertDialogContent size="sm">
