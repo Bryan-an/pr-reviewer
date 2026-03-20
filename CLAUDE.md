@@ -26,7 +26,7 @@ pnpm prisma generate       # Regenerate Prisma client (output: prisma/generated/
 
 No test framework is configured.
 
-First-time setup: `mkdir -p .data && pnpm prisma migrate dev` — SQLite won't create parent directories, so `.data/` must exist before the app can create the database file.
+First-time setup: `mkdir -p .data && pnpm prisma migrate dev` — SQLite won't create parent directories, so `.data/` must exist before the app can create the database file. Also run `pnpm prisma migrate dev` after pulling new migrations — `prisma generate` (via `postinstall`) updates the client but does NOT apply migrations to the database, causing `P2022` column-not-found errors.
 
 ## Git Hooks (Husky)
 
@@ -54,7 +54,7 @@ UI (App Router pages/components)
 - `components/` — shared UI: `page-header.tsx` (sticky auto-hide header), `loading-guard.tsx`, `markdown.tsx`
 - `components/ui/` — shadcn/ui primitives (do not manually edit) + custom UI components (`highlighted-textarea.tsx`)
 - `hooks/` — shared client-side hooks (e.g., `use-auto-hide-header.ts`)
-- `lib/` — shared utilities: env config (Zod), validation schemas, URL parsing, universal logger (`lib/logging/logger.ts` — pino, works in both client and server)
+- `lib/` — shared utilities: env config (Zod), validation schemas, URL parsing, universal logger (`lib/logging/logger.ts` — pino, works in both client and server; `pino.stdSerializers.err` for proper error serialization; `pino-pretty` transport in dev/server only)
 - `server/` — all server-only code (`import "server-only"` guardrail); never import from Client Components
 - `prisma/` — schema + migrations; generated client at `prisma/generated/prisma/`
 
@@ -156,6 +156,7 @@ Line-anchored PR comment threads require **both** `threadContext` (file path + p
 ## Known Issues
 
 - **Radix `useId()` hydration mismatch**: React 19.2 + Next.js 16 + Radix UI produces mismatched IDs between server and client (tracked in [radix-ui/primitives#3700](https://github.com/radix-ui/primitives/issues/3700)). This is an upstream bug — functional behavior is unaffected, only `aria-controls` references are stale. Do not attempt to fix in our code; wait for upstream resolution.
+- **Deleting route files**: after removing `app/api/` route files, delete `.next/` to clear stale type references in `.next/types/validator.ts` — otherwise `tsc --noEmit` (and the pre-commit hook) will fail
 
 ## Environment Variables
 
