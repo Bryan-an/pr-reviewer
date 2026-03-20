@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
+import { FolderSyncIcon, Loader2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export function LoadProjectsForm({ defaultOrg }: LoadProjectsFormProps) {
           aria-hidden={isPending}
           style={isPending ? { visibility: "hidden" } : undefined}
         >
+          <FolderSyncIcon className="size-4" />
           Load projects
         </span>
         <span
