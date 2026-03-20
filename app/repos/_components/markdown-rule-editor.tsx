@@ -391,16 +391,20 @@ export function MarkdownRuleEditor({
             className="grid grid-cols-1 grid-rows-1 justify-items-center"
           >
             <span
-              className="col-start-1 row-start-1 inline-flex items-center gap-2"
+              className={cn(
+                "col-start-1 row-start-1 inline-flex items-center gap-2",
+                isPending && "invisible",
+              )}
               aria-hidden={isPending}
-              style={isPending ? { visibility: "hidden" } : undefined}
             >
               {submitLabel}
             </span>
             <span
-              className="col-start-1 row-start-1 inline-flex items-center gap-2"
+              className={cn(
+                "col-start-1 row-start-1 inline-flex items-center gap-2",
+                !isPending && "invisible",
+              )}
               aria-hidden={!isPending}
-              style={isPending ? undefined : { visibility: "hidden" }}
             >
               <Loader2Icon className="animate-spin" />
               {pendingLabel}

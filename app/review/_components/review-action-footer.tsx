@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Loader2Icon, RefreshCwIcon, SendIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
 import { logger } from "@/lib/logging/logger";
@@ -123,17 +124,21 @@ export function ReviewActionFooter({
           className="grid grid-cols-1 grid-rows-1 justify-items-center"
         >
           <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
+            className={cn(
+              "col-start-1 row-start-1 inline-flex items-center gap-2",
+              isPublishing && "invisible",
+            )}
             aria-hidden={isPublishing}
-            style={isPublishing ? { visibility: "hidden" } : undefined}
           >
             <SendIcon />
             Publish to Azure DevOps
           </span>
           <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
+            className={cn(
+              "col-start-1 row-start-1 inline-flex items-center gap-2",
+              !isPublishing && "invisible",
+            )}
             aria-hidden={!isPublishing}
-            style={!isPublishing ? { visibility: "hidden" } : undefined}
           >
             <Loader2Icon className="animate-spin" />
             Publishing&hellip;
@@ -151,17 +156,21 @@ export function ReviewActionFooter({
           className="grid grid-cols-1 grid-rows-1 justify-items-center"
         >
           <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
+            className={cn(
+              "col-start-1 row-start-1 inline-flex items-center gap-2",
+              isRerunning && "invisible",
+            )}
             aria-hidden={isRerunning}
-            style={isRerunning ? { visibility: "hidden" } : undefined}
           >
             <RefreshCwIcon />
             Re-run review
           </span>
           <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-2"
+            className={cn(
+              "col-start-1 row-start-1 inline-flex items-center gap-2",
+              !isRerunning && "invisible",
+            )}
             aria-hidden={!isRerunning}
-            style={!isRerunning ? { visibility: "hidden" } : undefined}
           >
             <Loader2Icon className="animate-spin" />
             Re-running&hellip;

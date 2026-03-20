@@ -2,6 +2,7 @@
 
 import { FolderSyncIcon, Loader2Icon } from "lucide-react";
 
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,17 +36,21 @@ export function LoadProjectsForm({ defaultOrg }: LoadProjectsFormProps) {
         className="grid grid-cols-1 grid-rows-1 justify-items-center"
       >
         <span
-          className="col-start-1 row-start-1 inline-flex items-center gap-2"
+          className={cn(
+            "col-start-1 row-start-1 inline-flex items-center gap-2",
+            isPending && "invisible",
+          )}
           aria-hidden={isPending}
-          style={isPending ? { visibility: "hidden" } : undefined}
         >
           <FolderSyncIcon className="size-4" />
           Load projects
         </span>
         <span
-          className="col-start-1 row-start-1 inline-flex items-center gap-2"
+          className={cn(
+            "col-start-1 row-start-1 inline-flex items-center gap-2",
+            !isPending && "invisible",
+          )}
           aria-hidden={!isPending}
-          style={isPending ? undefined : { visibility: "hidden" }}
         >
           <Loader2Icon className="animate-spin" />
           Loading&hellip;

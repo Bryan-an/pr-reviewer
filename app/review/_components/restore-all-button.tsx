@@ -3,6 +3,7 @@
 import { Loader2Icon, UndoIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils/cn";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,9 +78,11 @@ export function RestoreAllButton({
           className="grid grid-cols-1 grid-rows-1 justify-items-center"
         >
           <span
-            className="col-start-1 row-start-1 inline-flex items-center gap-1.5"
+            className={cn(
+              "col-start-1 row-start-1 inline-flex items-center gap-1.5",
+              isRestoring && "invisible",
+            )}
             aria-hidden={isRestoring}
-            style={isRestoring ? { visibility: "hidden" } : undefined}
           >
             <UndoIcon className="size-3.5" />
             Restore All

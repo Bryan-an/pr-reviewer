@@ -74,8 +74,10 @@ function RestoreButton({
       className="grid grid-cols-1 grid-rows-1 justify-items-center"
     >
       <span
-        className="col-start-1 row-start-1 inline-flex items-center gap-1.5"
-        style={isPending ? { visibility: "hidden" } : undefined}
+        className={cn(
+          "col-start-1 row-start-1 inline-flex items-center gap-1.5",
+          isPending && "invisible",
+        )}
       >
         <UndoIcon className="size-3.5" />
         Restore
@@ -309,8 +311,10 @@ export function FindingCard({
                       className="grid grid-cols-1 grid-rows-1 justify-items-center"
                     >
                       <span
-                        className="col-start-1 row-start-1 inline-flex items-center gap-1.5"
-                        style={isPending ? { visibility: "hidden" } : undefined}
+                        className={cn(
+                          "col-start-1 row-start-1 inline-flex items-center gap-1.5",
+                          isPending && "invisible",
+                        )}
                       >
                         <SendIcon className="size-3.5" />
                         Publish
