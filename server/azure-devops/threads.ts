@@ -94,38 +94,43 @@ function buildThread(params: {
 export async function createPullRequestThread(
   params: CreatePullRequestThreadParams,
 ): Promise<GitPullRequestCommentThread> {
-  const webApi = createAzureDevOpsClient(params.org);
-  const gitApi = await webApi.getGitApi();
+  try {
+    const webApi = createAzureDevOpsClient(params.org);
+    const gitApi = await webApi.getGitApi();
 
-  const thread = buildThread({
-    content: params.content,
-    filePath: params.filePath,
-    lineStart: params.lineStart,
-    lineEnd: params.lineEnd,
-    changeTrackingId: params.changeTrackingId,
-    iterationContext: params.iterationContext,
-  });
+    const thread = buildThread({
+      content: params.content,
+      filePath: params.filePath,
+      lineStart: params.lineStart,
+      lineEnd: params.lineEnd,
+      changeTrackingId: params.changeTrackingId,
+      iterationContext: params.iterationContext,
+    });
 
-  logger.info(
-    {
-      threadContext: thread.threadContext,
-      pullRequestThreadContext: thread.pullRequestThreadContext,
-    },
-    "publish:thread object being sent to ADO",
-  );
+    logger.info(
+      {
+        threadContext: thread.threadContext,
+        pullRequestThreadContext: thread.pullRequestThreadContext,
+      },
+      "publish:thread object being sent to ADO",
+    );
 
-  const result = await gitApi.createThread(thread, params.repoId, params.prId, params.project);
+    const result = await gitApi.createThread(thread, params.repoId, params.prId, params.project);
 
-  logger.info(
-    {
-      id: result.id,
-      threadContext: result.threadContext,
-      pullRequestThreadContext: result.pullRequestThreadContext,
-    },
-    "publish:ADO response",
-  );
+    logger.info(
+      {
+        id: result.id,
+        threadContext: result.threadContext,
+        pullRequestThreadContext: result.pullRequestThreadContext,
+      },
+      "publish:ADO response",
+    );
 
-  return result;
+    return result;
+  } catch (err) {
+    logger.error(err, "Failed to create Azure DevOps PR thread");
+    throw err;
+  }
 }
 
 export type ClosePullRequestThreadParams = {
@@ -137,36 +142,51 @@ export type ClosePullRequestThreadParams = {
 };
 
 export async function closePullRequestThread(params: ClosePullRequestThreadParams): Promise<void> {
-  const webApi = createAzureDevOpsClient(params.org);
-  const gitApi = await webApi.getGitApi();
+  try {
+    const webApi = createAzureDevOpsClient(params.org);
+    const gitApi = await webApi.getGitApi();
 
-  await gitApi.updateThread(
-    { status: CommentThreadStatus.Closed },
-    params.repoId,
-    params.prId,
-    params.threadId,
-    params.project,
-  );
+    await gitApi.updateThread(
+      { status: CommentThreadStatus.Closed },
+      params.repoId,
+      params.prId,
+      params.threadId,
+      params.project,
+    );
+  } catch (err) {
+    logger.error(err, "Failed to close Azure DevOps PR thread");
+    throw err;
+  }
 }
 
 export async function reopenPullRequestThread(params: ClosePullRequestThreadParams): Promise<void> {
-  const webApi = createAzureDevOpsClient(params.org);
-  const gitApi = await webApi.getGitApi();
+  try {
+    const webApi = createAzureDevOpsClient(params.org);
+    const gitApi = await webApi.getGitApi();
 
-  await gitApi.updateThread(
-    { status: CommentThreadStatus.Active },
-    params.repoId,
-    params.prId,
-    params.threadId,
-    params.project,
-  );
+    await gitApi.updateThread(
+      { status: CommentThreadStatus.Active },
+      params.repoId,
+      params.prId,
+      params.threadId,
+      params.project,
+    );
+  } catch (err) {
+    logger.error(err, "Failed to reopen Azure DevOps PR thread");
+    throw err;
+  }
 }
 
 export async function listPullRequestThreads(
   params: ListPullRequestThreadsParams,
 ): Promise<GitPullRequestCommentThread[]> {
-  const webApi = createAzureDevOpsClient(params.org);
-  const gitApi = await webApi.getGitApi();
+  try {
+    const webApi = createAzureDevOpsClient(params.org);
+    const gitApi = await webApi.getGitApi();
 
-  return await gitApi.getThreads(params.repoId, params.prId, params.project);
+    return await gitApi.getThreads(params.repoId, params.prId, params.project);
+  } catch (err) {
+    logger.error(err, "Failed to list Azure DevOps PR threads");
+    throw err;
+  }
 }

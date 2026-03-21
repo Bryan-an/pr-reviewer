@@ -4,6 +4,7 @@ import type { GitRepository } from "azure-devops-node-api/interfaces/GitInterfac
 import { z } from "zod";
 
 import { createAzureDevOpsClient } from "@/server/azure-devops/client";
+import { logger } from "@/lib/logging/logger";
 
 const orgSchema = z.string().trim().min(1);
 const projectSchema = z.string().trim().min(1);
@@ -21,25 +22,30 @@ export async function listAzureDevOpsRepositories(params: {
   org: string;
   project: string;
 }): Promise<{ repositories: AzureDevOpsRepository[] }> {
-  const org = orgSchema.parse(params.org);
-  const project = projectSchema.parse(params.project);
+  try {
+    const org = orgSchema.parse(params.org);
+    const project = projectSchema.parse(params.project);
 
-  const webApi = createAzureDevOpsClient(org);
-  const gitApi = await webApi.getGitApi();
+    const webApi = createAzureDevOpsClient(org);
+    const gitApi = await webApi.getGitApi();
 
-  const repos: GitRepository[] = await gitApi.getRepositories(project);
+    const repos: GitRepository[] = await gitApi.getRepositories(project);
 
-  return {
-    repositories: repos
-      .map((r) => ({
-        id: r.id ?? "",
-        name: r.name ?? "",
-        remoteUrl: r.remoteUrl ?? "",
-        projectId: r.project?.id ?? undefined,
-        projectName: r.project?.name ?? undefined,
-      }))
-      .filter((r) => r.id !== "" && r.name.trim() !== "" && r.remoteUrl.trim() !== ""),
-  };
+    return {
+      repositories: repos
+        .map((r) => ({
+          id: r.id ?? "",
+          name: r.name ?? "",
+          remoteUrl: r.remoteUrl ?? "",
+          projectId: r.project?.id ?? undefined,
+          projectName: r.project?.name ?? undefined,
+        }))
+        .filter((r) => r.id !== "" && r.name.trim() !== "" && r.remoteUrl.trim() !== ""),
+    };
+  } catch (err) {
+    logger.error(err, "Failed to list Azure DevOps repositories");
+    throw err;
+  }
 }
 
 export async function getAzureDevOpsRepository(params: {
@@ -47,28 +53,33 @@ export async function getAzureDevOpsRepository(params: {
   project: string;
   repoIdOrName: string;
 }): Promise<AzureDevOpsRepository> {
-  const org = orgSchema.parse(params.org);
-  const project = projectSchema.parse(params.project);
-  const repoIdOrName = repoIdOrNameSchema.parse(params.repoIdOrName);
+  try {
+    const org = orgSchema.parse(params.org);
+    const project = projectSchema.parse(params.project);
+    const repoIdOrName = repoIdOrNameSchema.parse(params.repoIdOrName);
 
-  const webApi = createAzureDevOpsClient(org);
-  const gitApi = await webApi.getGitApi();
+    const webApi = createAzureDevOpsClient(org);
+    const gitApi = await webApi.getGitApi();
 
-  const repo = await gitApi.getRepository(repoIdOrName, project);
+    const repo = await gitApi.getRepository(repoIdOrName, project);
 
-  const id = repo.id ?? "";
-  const name = repo.name ?? "";
-  const remoteUrl = repo.remoteUrl ?? "";
+    const id = repo.id ?? "";
+    const name = repo.name ?? "";
+    const remoteUrl = repo.remoteUrl ?? "";
 
-  if (id === "" || name.trim() === "" || remoteUrl.trim() === "") {
-    throw new Error("Azure DevOps repository is missing required metadata.");
+    if (id === "" || name.trim() === "" || remoteUrl.trim() === "") {
+      throw new Error("Azure DevOps repository is missing required metadata.");
+    }
+
+    return {
+      id,
+      name,
+      remoteUrl,
+      projectId: repo.project?.id ?? undefined,
+      projectName: repo.project?.name ?? undefined,
+    };
+  } catch (err) {
+    logger.error(err, "Failed to get Azure DevOps repository");
+    throw err;
   }
-
-  return {
-    id,
-    name,
-    remoteUrl,
-    projectId: repo.project?.id ?? undefined,
-    projectName: repo.project?.name ?? undefined,
-  };
 }
