@@ -1,10 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
-import { repoBasePath, repoEditRuleErrorUrl } from "@/app/repos/_lib/routes";
+import { logger } from "@/lib/logging/logger";
+import type { RuleActionResult, RuleFormData } from "@/app/repos/_lib/rule-action-result";
+import { repoBasePath } from "@/app/repos/_lib/routes";
 import { getRepoRuleById, updateRepoRule } from "@/server/db/repo-rules";
 
 type UpdateRuleContext = {
@@ -15,39 +15,33 @@ type UpdateRuleContext = {
   adoRepoId: string;
 };
 
-export async function updateRuleAction(context: UpdateRuleContext, formData: FormData) {
+export async function updateRuleAction(
+  context: UpdateRuleContext,
+  data: RuleFormData,
+): Promise<RuleActionResult> {
   const { repositoryId, ruleId, org, project, adoRepoId } = context;
-  const title = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Title);
-  const markdown = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Markdown);
-  const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
-  const sortOrderRaw = getTrimmedStringFormField(formData, RULE_FORM_FIELD.SortOrder);
-  const sortOrder = Number(sortOrderRaw);
 
-  if (!title) {
-    redirect(repoEditRuleErrorUrl(org, project, adoRepoId, ruleId, "title"));
+  try {
+    const current = await getRepoRuleById({ id: ruleId });
+
+    if (!current || current.repositoryId !== repositoryId) {
+      return { success: false, message: "Rule not found or does not belong to this repository." };
+    }
+
+    await updateRepoRule({
+      id: ruleId,
+      title: data.title,
+      markdown: data.markdown,
+      enabled: data.enabled,
+      sortOrder: data.sortOrder,
+    });
+  } catch (err) {
+    logger.error(err, "[updateRule] failed");
+    return { success: false, message: "Failed to update rule. Please try again." };
   }
 
-  if (!markdown) {
-    redirect(repoEditRuleErrorUrl(org, project, adoRepoId, ruleId, "markdown"));
-  }
+  const redirectTo = repoBasePath(org, project, adoRepoId);
+  revalidatePath(redirectTo);
 
-  if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
-    redirect(repoEditRuleErrorUrl(org, project, adoRepoId, ruleId, "sortOrder"));
-  }
-
-  const current = await getRepoRuleById({ id: ruleId });
-
-  if (!current || current.repositoryId !== repositoryId) {
-    throw new Error("Rule does not belong to this repository.");
-  }
-
-  await updateRepoRule({
-    id: ruleId,
-    title,
-    markdown,
-    enabled,
-    sortOrder,
-  });
-
-  redirect(repoBasePath(org, project, adoRepoId));
+  return { success: true, redirectTo };
 }

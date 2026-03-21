@@ -13,6 +13,5 @@ export const REPOS_SEARCH_PARAM = {
  * Search parameter key constants for rule management pages.
  */
 export const RULE_SEARCH_PARAM = {
-  Error: "error",
   From: "from",
 } as const;

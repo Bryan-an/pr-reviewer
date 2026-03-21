@@ -1,10 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
-import { repoBasePath, repoNewRuleErrorUrl } from "@/app/repos/_lib/routes";
+import { logger } from "@/lib/logging/logger";
+import type { RuleActionResult, RuleFormData } from "@/app/repos/_lib/rule-action-result";
+import { repoBasePath } from "@/app/repos/_lib/routes";
 import { createRepoRule } from "@/server/db/repo-rules";
 
 type CreateRuleContext = {
@@ -14,33 +14,27 @@ type CreateRuleContext = {
   adoRepoId: string;
 };
 
-export async function createRuleAction(context: CreateRuleContext, formData: FormData) {
+export async function createRuleAction(
+  context: CreateRuleContext,
+  data: RuleFormData,
+): Promise<RuleActionResult> {
   const { repositoryId, org, project, adoRepoId } = context;
-  const title = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Title);
-  const markdown = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Markdown);
-  const enabled = getTrimmedStringFormField(formData, RULE_FORM_FIELD.Enabled) === "1";
-  const sortOrderRaw = getTrimmedStringFormField(formData, RULE_FORM_FIELD.SortOrder);
-  const sortOrder = Number(sortOrderRaw);
 
-  if (!title) {
-    redirect(repoNewRuleErrorUrl(org, project, adoRepoId, "title"));
+  try {
+    await createRepoRule({
+      repositoryId,
+      title: data.title,
+      markdown: data.markdown,
+      enabled: data.enabled,
+      sortOrder: data.sortOrder,
+    });
+  } catch (err) {
+    logger.error(err, "[createRule] failed");
+    return { success: false, message: "Failed to create rule. Please try again." };
   }
 
-  if (!markdown) {
-    redirect(repoNewRuleErrorUrl(org, project, adoRepoId, "markdown"));
-  }
+  const redirectTo = repoBasePath(org, project, adoRepoId);
+  revalidatePath(redirectTo);
 
-  if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder) || sortOrder < 0) {
-    redirect(repoNewRuleErrorUrl(org, project, adoRepoId, "sortOrder"));
-  }
-
-  await createRepoRule({
-    repositoryId,
-    title,
-    markdown,
-    enabled,
-    sortOrder,
-  });
-
-  redirect(repoBasePath(org, project, adoRepoId));
+  return { success: true, redirectTo };
 }

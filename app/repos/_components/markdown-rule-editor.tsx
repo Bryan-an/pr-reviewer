@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { HighlightedTextarea } from "@/components/ui/highlighted-textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
+import type { RuleActionResult, RuleFormData } from "@/app/repos/_lib/rule-action-result";
 import { ruleFormSchema, type RuleFormValues } from "@/app/repos/_lib/rule-schema";
 import { SHORTCUT_MAP, TOOLBAR_GROUPS } from "@/app/repos/_lib/toolbar-config";
 import {
@@ -45,19 +47,8 @@ type MarkdownRuleEditorProps = Readonly<{
   submitLabel: string;
   pendingLabel: string;
   cancelHref: string;
-  formAction: (formData: FormData) => void | Promise<void>;
+  onSave: (data: RuleFormData) => Promise<RuleActionResult>;
 }>;
-
-/** redirect() rejects the action promise with a NEXT_REDIRECT digest error. */
-function isRedirectDigest(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "digest" in error &&
-    typeof (error as { digest: unknown }).digest === "string" &&
-    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-  );
-}
 
 const MODE = { Write: "write", Preview: "preview" } as const;
 type Mode = (typeof MODE)[keyof typeof MODE];
@@ -67,8 +58,9 @@ export function MarkdownRuleEditor({
   submitLabel,
   pendingLabel,
   cancelHref,
-  formAction,
+  onSave,
 }: MarkdownRuleEditorProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>(MODE.Write);
   const [isPending, setIsPending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -85,27 +77,32 @@ export function MarkdownRuleEditor({
     reValidateMode: "onChange",
   });
 
-  function onValid(values: RuleFormValues) {
+  async function onValid(values: RuleFormValues) {
     if (isPending) return;
     setIsPending(true);
 
-    const fd = new FormData();
-    fd.set(RULE_FORM_FIELD.Title, values.title);
-    fd.set(RULE_FORM_FIELD.Markdown, values.markdown);
-
     const trimmed = values.sortOrder.trim();
-    const sortOrderNum = trimmed === "" ? 0 : Number(trimmed);
-    fd.set(RULE_FORM_FIELD.SortOrder, String(sortOrderNum));
+    const sortOrder = trimmed === "" ? 0 : Number(trimmed);
 
-    if (values.enabled) {
-      fd.set(RULE_FORM_FIELD.Enabled, "1");
-    }
+    try {
+      const result = await onSave({
+        title: values.title,
+        markdown: values.markdown,
+        enabled: values.enabled,
+        sortOrder,
+      });
 
-    Promise.resolve(formAction(fd)).catch((error: unknown) => {
-      if (isRedirectDigest(error)) return;
+      if (result.success) {
+        toast.success("Rule saved.");
+        router.push(result.redirectTo);
+      } else {
+        setIsPending(false);
+        toast.error(result.message);
+      }
+    } catch {
       setIsPending(false);
       toast.error("Failed to save rule. Please try again.");
-    });
+    }
   }
 
   // Synchronously commits the new value to the DOM so setSelectionRange sticks.
@@ -187,17 +184,13 @@ export function MarkdownRuleEditor({
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [applyFormat, applyResult, form]);
 
   return (
     <Form {...form}>
-      <form
-        action={formAction}
-        onSubmit={form.handleSubmit(onValid)}
-        className="flex flex-col gap-4"
-      >
+      <form onSubmit={form.handleSubmit(onValid)} className="flex flex-col gap-4">
         <div
           className={cn("flex flex-col gap-4 transition-opacity", isPending && "opacity-50")}
           inert={isPending || undefined}
@@ -223,27 +216,26 @@ export function MarkdownRuleEditor({
             <FormField
               control={form.control}
               name={RULE_FORM_FIELD.SortOrder}
-              render={({ field }) => {
-                const n = Number(field.value);
-                const displayNumber = Number.isFinite(n) && Number.isInteger(n) ? n : 0;
+              render={({ field }) => (
+                <FormItem className="flex flex-col gap-2">
+                  <FormLabel>Order</FormLabel>
 
-                return (
-                  <FormItem className="flex flex-col gap-2">
-                    <FormLabel>Order</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      onChange={(e) => {
+                        field.onChange(e.target.value.replaceAll(/\D/g, ""));
+                      }}
+                    />
+                  </FormControl>
 
-                    <FormControl>
-                      <Input {...field} inputMode="numeric" />
-                    </FormControl>
+                  <span className="text-muted-foreground text-xs">Lower numbers apply first.</span>
 
-                    <span className="text-muted-foreground text-xs">
-                      Lower numbers apply first. Current:{" "}
-                      <span className="font-medium">{displayNumber}</span>
-                    </span>
-
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
 
@@ -254,8 +246,6 @@ export function MarkdownRuleEditor({
               <FormItem className="flex flex-row items-center gap-2">
                 <FormControl>
                   <Checkbox
-                    name={field.name}
-                    value="1"
                     checked={field.value}
                     onCheckedChange={field.onChange}
                     ref={field.ref}
@@ -350,8 +340,12 @@ export function MarkdownRuleEditor({
                         </FormControl>
                       </Tabs.Content>
 
-                      {/* Preview panel — unmounts when inactive (no state to preserve) */}
-                      <Tabs.Content value={MODE.Preview} className="min-h-52 p-4 outline-none">
+                      {/* Preview panel — forceMount prevents scroll jump on tab switch */}
+                      <Tabs.Content
+                        value={MODE.Preview}
+                        forceMount
+                        className="min-h-52 p-4 outline-none data-[state=inactive]:hidden"
+                      >
                         {field.value.trim() ? (
                           <Markdown content={field.value} />
                         ) : (
