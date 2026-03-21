@@ -6,10 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { getRuleErrorBannerMessage } from "@/app/repos/_lib/rule-error-messages";
-import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
-import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
@@ -20,20 +17,14 @@ import { updateRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/rules/
 
 type EditRulePageProps = Readonly<{
   params: Promise<{ org: string; project: string; adoRepoId: string; ruleId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-export default async function EditRulePage({ params, searchParams }: EditRulePageProps) {
+export default async function EditRulePage({ params }: EditRulePageProps) {
   const p = await params;
   const org = safeDecodeURIComponent(p.org);
   const project = safeDecodeURIComponent(p.project);
   const adoRepoId = safeDecodeURIComponent(p.adoRepoId);
   const ruleId = safeDecodeURIComponent(p.ruleId);
-
-  const sp = (await searchParams) ?? {};
-  const errorCode = getFirst(sp[RULE_SEARCH_PARAM.Error]);
-
-  const errorBannerMessage = getRuleErrorBannerMessage(errorCode);
 
   let repo: Awaited<ReturnType<typeof getAzureDevOpsRepository>>;
   let storedRepo: Awaited<ReturnType<typeof upsertRepositoryFromAdoRepo>>;
@@ -123,17 +114,10 @@ export default async function EditRulePage({ params, searchParams }: EditRulePag
           </p>
         </div>
 
-        {errorBannerMessage ? (
-          <Alert variant="destructive">
-            <AlertCircleIcon />
-            <AlertDescription>{errorBannerMessage}</AlertDescription>
-          </Alert>
-        ) : null}
-
         <Card>
           <CardContent>
             <MarkdownRuleEditor
-              formAction={boundUpdateAction}
+              onSave={boundUpdateAction}
               initial={{
                 title: existing.title,
                 markdown: existing.markdown,

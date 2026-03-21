@@ -21,17 +21,6 @@ export function repoNewRulePath(org: string, project: string, repoId: string): s
   return joinPathSegments("/repos", org, project, repoId, "rules", "new");
 }
 
-export function repoNewRuleErrorUrl(
-  org: string,
-  project: string,
-  repoId: string,
-  errorCode: string,
-): string {
-  return buildUrl(repoNewRulePath(org, project, repoId), {
-    [RULE_SEARCH_PARAM.Error]: errorCode,
-  });
-}
-
 export function repoEditRulePath(
   org: string,
   project: string,
@@ -39,18 +28,6 @@ export function repoEditRulePath(
   ruleId: string,
 ): string {
   return joinPathSegments("/repos", org, project, repoId, "rules", ruleId, "edit");
-}
-
-export function repoEditRuleErrorUrl(
-  org: string,
-  project: string,
-  repoId: string,
-  ruleId: string,
-  errorCode: string,
-): string {
-  return buildUrl(repoEditRulePath(org, project, repoId, ruleId), {
-    [RULE_SEARCH_PARAM.Error]: errorCode,
-  });
 }
 
 export function reposListUrl(params?: {
