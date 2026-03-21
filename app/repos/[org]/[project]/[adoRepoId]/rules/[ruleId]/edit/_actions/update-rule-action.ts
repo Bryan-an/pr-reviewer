@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { logger } from "@/lib/logging/logger";
 import type { RuleActionResult, RuleFormData } from "@/app/repos/_lib/rule-action-result";
 import { repoBasePath } from "@/app/repos/_lib/routes";
@@ -38,5 +40,8 @@ export async function updateRuleAction(
     return { success: false, message: "Failed to update rule. Please try again." };
   }
 
-  return { success: true, redirectTo: repoBasePath(org, project, adoRepoId) };
+  const redirectTo = repoBasePath(org, project, adoRepoId);
+  revalidatePath(redirectTo);
+
+  return { success: true, redirectTo };
 }
