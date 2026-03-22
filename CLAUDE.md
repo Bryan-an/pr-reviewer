@@ -172,5 +172,5 @@ Env schema defined in `lib/config/env.ts` with Zod validation.
 ## Claude Code Tooling
 
 - `.claude/rules/` — project conventions enforced contextually (architecture, enums, naming, git workflow, etc.)
-- `.claude/skills/` — auto-invoked skills for Next.js App Router, server/client components, Prisma, shadcn/ui, TDD, and debugging
-- `.mcp.json` — MCP server config (shadcn component registry)
+- `.claude/skills/` — project skills: `clear-coderabbit-cli-cache`, `create-migration` (Prisma migration workflow with validation), `verify-review-pipeline` (stub engine smoke test)
+- `.mcp.json` — MCP server config (shadcn component registry, ESLint)
