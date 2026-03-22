@@ -10,6 +10,14 @@ allowed-tools: Read, Edit, Bash, Grep
 
 Create and apply a Prisma migration following the project's conventions. The migration name is `$ARGUMENTS` (kebab-case slug).
 
+## Prerequisites
+
+If `$ARGUMENTS` is empty (no migration name provided), stop immediately and ask the user:
+
+> "Please provide a migration name, e.g. `/create-migration add-status-column`"
+
+Do not proceed to any of the steps below without a migration name.
+
 ## Steps
 
 1. **Edit the schema** — modify `prisma/schema.prisma` as needed for the requested change (new model, new column, relation, index, etc.). Follow existing conventions in the schema (SQLite provider, `cuid()` IDs, `@default(now())` for timestamps, `@@index` for query patterns).
