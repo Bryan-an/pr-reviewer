@@ -35,23 +35,32 @@ If not running, tell the user to start it with `pnpm dev` in another terminal be
 3. **Run a review with the stub engine**. The PR URL comes from `$ARGUMENTS`. If no URL is provided, ask the user for one — a real Azure DevOps PR URL is required because the pipeline fetches PR metadata and clones the repo:
 
 ```bash
-curl -s -X POST http://localhost:3100/api/review/run \
+response=$(curl -s -X POST http://localhost:3100/api/review/run \
   -H "Content-Type: application/json" \
-  -d "{\"prUrl\": \"$ARGUMENTS\"}" \
-  -w "\nHTTP_STATUS:%{http_code}"
+  -d "$(jq -n --arg url "$ARGUMENTS" '{prUrl: $url}')" \
+  -w "\nHTTP_STATUS:%{http_code}")
+echo "$response"
 ```
 
 The request body is `{ "prUrl": "<url>" }`. The `REVIEW_ENGINE` env var in `.env` controls which engine runs — set it to `stub` before running to use the stub engine, or leave it as-is to test the real engines.
 
-4. **Verify the response** — a successful run returns `{ "runId": "<cuid>" }` with HTTP 200. Check:
-   - HTTP status is 200
-   - Response contains a `runId`
+4. **Verify the response and extract runId** — a successful run returns `{ "runId": "<cuid>" }` with HTTP 200. Parse out the `runId`:
+
+```bash
+run_id=$(echo "$response" | head -1 | jq -r '.runId')
+echo "runId: $run_id"
+```
+
+Check:
+
+- HTTP status is 200 (last line of `$response` contains `HTTP_STATUS:200`)
+- `$run_id` is non-empty and not `null`
 
 5. **Verify database persistence** — query SQLite to confirm the ReviewRun and its Findings were persisted:
 
 ```bash
-sqlite3 .data/pr-reviewer.sqlite "SELECT id, prUrl, engineName, createdAt FROM ReviewRun ORDER BY createdAt DESC LIMIT 1;"
-sqlite3 .data/pr-reviewer.sqlite "SELECT COUNT(*) as finding_count FROM Finding WHERE reviewRunId = '<runId>';"
+sqlite3 .data/pr-reviewer.sqlite "SELECT id, prUrl, engineName, createdAt FROM ReviewRun WHERE id = '$run_id';"
+sqlite3 .data/pr-reviewer.sqlite "SELECT COUNT(*) as finding_count FROM Finding WHERE reviewRunId = '$run_id';"
 ```
 
 6. **Report results** to the user:
