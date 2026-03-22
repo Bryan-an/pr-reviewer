@@ -3,6 +3,7 @@ import "server-only";
 import type { TeamProjectReference } from "azure-devops-node-api/interfaces/CoreInterfaces";
 
 import { createAzureDevOpsClient } from "@/server/azure-devops/client";
+import { logger } from "@/lib/logging/logger";
 
 export type AzureDevOpsProject = {
   id: string;
@@ -15,22 +16,27 @@ export async function listAzureDevOpsProjects(params: {
   top?: number;
   skip?: number;
 }): Promise<{ projects: AzureDevOpsProject[] }> {
-  const webApi = createAzureDevOpsClient(params.org);
-  const coreApi = await webApi.getCoreApi();
+  try {
+    const webApi = createAzureDevOpsClient(params.org);
+    const coreApi = await webApi.getCoreApi();
 
-  const projects: TeamProjectReference[] = await coreApi.getProjects(
-    undefined,
-    params.top ?? 100,
-    params.skip ?? 0,
-  );
+    const projects: TeamProjectReference[] = await coreApi.getProjects(
+      undefined,
+      params.top ?? 100,
+      params.skip ?? 0,
+    );
 
-  return {
-    projects: projects
-      .map((p) => ({
-        id: p.id ?? "",
-        name: p.name ?? "",
-        state: p.state ?? undefined,
-      }))
-      .filter((p) => p.id !== "" && p.name.trim() !== ""),
-  };
+    return {
+      projects: projects
+        .map((p) => ({
+          id: p.id ?? "",
+          name: p.name ?? "",
+          state: p.state ?? undefined,
+        }))
+        .filter((p) => p.id !== "" && p.name.trim() !== ""),
+    };
+  } catch (err) {
+    logger.error(err, "Failed to list Azure DevOps projects");
+    throw err;
+  }
 }

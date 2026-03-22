@@ -28,64 +28,69 @@ export async function getLatestIterationContext(params: {
   repoId: string;
   prId: number;
 }): Promise<PullRequestIterationContext | undefined> {
-  const webApi = createAzureDevOpsClient(params.org);
-  const gitApi = await webApi.getGitApi();
+  try {
+    const webApi = createAzureDevOpsClient(params.org);
+    const gitApi = await webApi.getGitApi();
 
-  const iterations = await gitApi.getPullRequestIterations(
-    params.repoId,
-    params.prId,
-    params.project,
-  );
-
-  logger.info({ iterationCount: iterations?.length ?? 0 }, "publish:iterations fetched");
-
-  if (!iterations || iterations.length === 0) return undefined;
-
-  const latestIteration = iterations[iterations.length - 1];
-  const iterationId = latestIteration.id;
-
-  logger.info({ iterationId }, "publish:latest iteration");
-
-  if (iterationId === undefined) return undefined;
-
-  const iterationContext: CommentIterationContext = {
-    firstComparingIteration: 1,
-    secondComparingIteration: iterationId,
-  };
-
-  const changeTrackingByPath = new Map<string, number>();
-
-  // Paginate through all changes in the iteration.
-  let skip = 0;
-  const top = 500;
-
-  for (;;) {
-    const changes = await gitApi.getPullRequestIterationChanges(
+    const iterations = await gitApi.getPullRequestIterations(
       params.repoId,
       params.prId,
-      iterationId,
       params.project,
-      top,
-      skip,
     );
 
-    for (const entry of changes.changeEntries ?? []) {
-      const path = entry.item?.path;
-      const trackingId = entry.changeTrackingId;
+    logger.info({ iterationCount: iterations?.length ?? 0 }, "publish:iterations fetched");
 
-      logger.debug({ path, trackingId }, "publish:iteration change entry");
+    if (!iterations || iterations.length === 0) return undefined;
 
-      if (path && trackingId !== undefined) {
-        changeTrackingByPath.set(normalizePath(path), trackingId);
+    const latestIteration = iterations[iterations.length - 1];
+    const iterationId = latestIteration.id;
+
+    logger.info({ iterationId }, "publish:latest iteration");
+
+    if (iterationId === undefined) return undefined;
+
+    const iterationContext: CommentIterationContext = {
+      firstComparingIteration: 1,
+      secondComparingIteration: iterationId,
+    };
+
+    const changeTrackingByPath = new Map<string, number>();
+
+    // Paginate through all changes in the iteration.
+    let skip = 0;
+    const top = 500;
+
+    for (;;) {
+      const changes = await gitApi.getPullRequestIterationChanges(
+        params.repoId,
+        params.prId,
+        iterationId,
+        params.project,
+        top,
+        skip,
+      );
+
+      for (const entry of changes.changeEntries ?? []) {
+        const path = entry.item?.path;
+        const trackingId = entry.changeTrackingId;
+
+        logger.debug({ path, trackingId }, "publish:iteration change entry");
+
+        if (path && trackingId !== undefined) {
+          changeTrackingByPath.set(normalizePath(path), trackingId);
+        }
       }
+
+      if (changes.nextSkip === undefined || changes.nextTop === undefined) break;
+      if (changes.nextSkip === skip) break;
+      skip = changes.nextSkip;
     }
 
-    if (changes.nextSkip === undefined || changes.nextTop === undefined) break;
-    if (changes.nextSkip === skip) break;
-    skip = changes.nextSkip;
+    logger.info({ paths: [...changeTrackingByPath.keys()] }, "publish:changeTrackingByPath built");
+
+    return { iterationContext, changeTrackingByPath };
+  } catch (err) {
+    logger.error(err, "Failed to get Azure DevOps PR iteration context");
+    throw err;
   }
-
-  logger.info({ paths: [...changeTrackingByPath.keys()] }, "publish:changeTrackingByPath built");
-
-  return { iterationContext, changeTrackingByPath };
 }
