@@ -157,10 +157,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
 
                       <TableCell>
                         {count > 0 ? (
-                          <Badge
-                            variant="secondary"
-                            className="bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
-                          >
+                          <Badge variant="secondary">
                             {count} rule{count === 1 ? "" : "s"}
                           </Badge>
                         ) : (
