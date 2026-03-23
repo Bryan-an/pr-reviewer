@@ -61,7 +61,7 @@ export function ReposFilterForm({
 
   // Fix #2: Shared timer ref so immediate handlers can cancel pending debounce.
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isMounted = useRef(false);
+  const hasInitialRenderRef = useRef(false);
 
   // Derived from committed URL state (initial props), not local controlled state,
   // so the reset button appears/disappears in sync with the actual URL.
@@ -82,8 +82,8 @@ export function ReposFilterForm({
 
   // Debounce text input → URL navigation
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
+    if (!hasInitialRenderRef.current) {
+      hasInitialRenderRef.current = true;
       return;
     }
 
