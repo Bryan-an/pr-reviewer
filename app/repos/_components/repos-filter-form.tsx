@@ -42,6 +42,7 @@ export function ReposFilterForm({
   const orderId = useId();
   const hasRulesId = useId();
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(initialQ);
   const [order, setOrder] = useState(initialOrder);
   const [hasRules, setHasRules] = useState(initialHasRules);
@@ -114,6 +115,13 @@ export function ReposFilterForm({
     navigateToRepos(buildFilterUrl({ hasRules: checked }), { replace: true });
   }
 
+  function handleClearSearch() {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    setInputValue("");
+    navigateToRepos(buildFilterUrl({ q: "" }), { replace: true });
+    searchInputRef.current?.focus();
+  }
+
   return (
     <TooltipProvider>
       <div className="flex items-start gap-2">
@@ -123,13 +131,29 @@ export function ReposFilterForm({
               Search
             </Label>
 
-            <Input
-              id={searchId}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Search repositories…"
-              disabled={isPending}
-            />
+            <div className="relative">
+              <Input
+                id={searchId}
+                ref={searchInputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Search repositories…"
+                disabled={isPending}
+                className={inputValue ? "pr-8" : undefined}
+              />
+
+              {inputValue ? (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  disabled={isPending}
+                  onClick={handleClearSearch}
+                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-2 -translate-y-1/2 rounded-sm p-0.5 transition-colors focus-visible:ring-[3px] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="sm:col-span-1">
