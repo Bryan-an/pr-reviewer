@@ -68,7 +68,7 @@ export function RuleCard({
                     <Badge variant="outline">Disabled</Badge>
                   )}
 
-                  <span className="text-muted-foreground text-xs">order {rule.sortOrder}</span>
+                  <span className="text-muted-foreground text-xs">Order {rule.sortOrder}</span>
                 </div>
 
                 <div className="text-muted-foreground text-xs">
