@@ -65,10 +65,10 @@ export function RuleCard({
                   {optimisticEnabled ? (
                     <Badge>Enabled</Badge>
                   ) : (
-                    <Badge variant="outline">Disabled</Badge>
+                    <Badge variant="secondary">Disabled</Badge>
                   )}
 
-                  <span className="text-muted-foreground text-xs">Order {rule.sortOrder}</span>
+                  <Badge variant="outline">Order {rule.sortOrder}</Badge>
                 </div>
 
                 <div className="text-muted-foreground text-xs">
