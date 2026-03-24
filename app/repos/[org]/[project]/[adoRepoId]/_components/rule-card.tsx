@@ -63,9 +63,9 @@ export function RuleCard({
                   <div className="text-lg font-semibold">{rule.title}</div>
 
                   {optimisticEnabled ? (
-                    <Badge>enabled</Badge>
+                    <Badge>Enabled</Badge>
                   ) : (
-                    <Badge variant="outline">disabled</Badge>
+                    <Badge variant="outline">Disabled</Badge>
                   )}
 
                   <span className="text-muted-foreground text-xs">order {rule.sortOrder}</span>
