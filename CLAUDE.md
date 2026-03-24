@@ -129,6 +129,8 @@ Line-anchored PR comment threads require **both** `threadContext` (file path + p
   export const SEVERITY = { Info: "info", Warn: "warn" } as const;
   export type Severity = (typeof SEVERITY)[keyof typeof SEVERITY];
   ```
+- **UI label casing**: hardcoded UI labels (badges, buttons, status text) use sentence case — `Enabled`, `Disabled`, `Order`, `Ignored`. Dynamic data values (`severity`, `category`) keep their source casing
+- **Conditional classes**: use `cn()` for conditional class composition — not template literals. Prefer `cn("base", condition && "active")` over `` `base ${condition ? "active" : ""}` ``
 - **Naming**: files/folders in `kebab-case`, React exports `PascalCase`, values/functions `camelCase`
 - **Validation**: validate at boundaries with Zod; prefer `unknown` + Zod over `any`
 - **Forms (react-hook-form)**: use `react-hook-form` + `zodResolver` + shadcn `Form`/`FormField`/`FormControl`/`FormMessage`. Place form schemas in route-scoped `_lib/` files (e.g., `rule-schema.ts`). Component owns the `<form>` element — use `onSubmit={form.handleSubmit(onValid)}` only (no `action` prop). `onValid` converts validated form values to a typed data object and calls the server action directly (no `FormData` intermediary). Handle the discriminated union result: `toast.success()` + `router.push()` on success, `toast.error()` on failure. For loading state, use local `isPending` state: set `true` in `onValid`, reset on failure only (navigation handles success). Wrap form fields in a `div` with `inert={isPending || undefined}` + `opacity-50` + `transition-opacity` to disable interaction during submission; keep the button row outside this wrapper since it has its own pending states (`LoadingButton` spinner + disabled Cancel link)
