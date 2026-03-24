@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { REPOS_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { REPOS_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
-import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
+import { REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 import { ORG_COOKIE } from "@/app/repos/_lib/cookies";
 import { getFirst, getTrimmedFirst, parseNonNegativeIntParam } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
@@ -31,7 +31,6 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
 
   const project = getTrimmedFirst(params[REPOS_FORM_FIELD.Project]);
   const q = getTrimmedFirst(params[REPOS_FORM_FIELD.Query]);
-  const sort = getTrimmedFirst(params[REPOS_SEARCH_PARAM.Sort], REPOS_SORT_FIELD.Name);
   const order = getTrimmedFirst(params[REPOS_FORM_FIELD.Order], REPOS_SORT_ORDER.Asc);
   const hasRules = getFirst(params[REPOS_FORM_FIELD.HasRules]) === "1";
   const page = parseNonNegativeIntParam(getFirst(params[REPOS_SEARCH_PARAM.Page]), 0);
@@ -89,7 +88,6 @@ export default async function ReposPage({ searchParams }: ReposPageProps) {
                   project={project}
                   decodedProject={decodedProject}
                   q={q}
-                  sort={sort}
                   order={order}
                   hasRules={hasRules}
                   page={page}

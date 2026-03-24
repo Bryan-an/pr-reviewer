@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { REPOS_SECTION_ID } from "@/app/repos/_lib/dom-ids";
 import { repoManageUrl, reposListUrl } from "@/app/repos/_lib/routes";
-import { REPOS_SORT_FIELD, REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
+import { REPOS_SORT_ORDER } from "@/app/repos/_lib/sort";
 
 import { listAzureDevOpsRepositories } from "@/server/azure-devops/repositories";
 import { getRepositoryRuleCountsForAdoRepos } from "@/server/db/repositories";
@@ -31,7 +31,6 @@ export type RepositoriesListProps = Readonly<{
   project: string;
   decodedProject: string;
   q: string;
-  sort: string;
   order: string;
   hasRules: boolean;
   page: number;
@@ -69,8 +68,7 @@ export async function RepositoriesList(props: RepositoriesListProps) {
 
   const sorted = filtered.slice().sort((a, b) => a.name.localeCompare(b.name));
 
-  if (props.sort === REPOS_SORT_FIELD.Name && props.order === REPOS_SORT_ORDER.Desc)
-    sorted.reverse();
+  if (props.order === REPOS_SORT_ORDER.Desc) sorted.reverse();
 
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -83,7 +81,6 @@ export async function RepositoriesList(props: RepositoriesListProps) {
     org: props.decodedOrg,
     project: props.decodedProject,
     q: props.q || undefined,
-    sort: props.sort || undefined,
     order: props.order || undefined,
     hasRules: props.hasRules || undefined,
   };

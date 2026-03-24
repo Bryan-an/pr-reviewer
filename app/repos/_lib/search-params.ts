@@ -5,7 +5,6 @@
  * use REPOS_FORM_FIELD from "./form-fields" instead.
  */
 export const REPOS_SEARCH_PARAM = {
-  Sort: "sort",
   Page: "page",
 } as const;
 

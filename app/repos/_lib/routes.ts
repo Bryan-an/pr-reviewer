@@ -34,7 +34,6 @@ export function reposListUrl(params?: {
   org?: string;
   project?: string;
   q?: string;
-  sort?: string;
   order?: string;
   hasRules?: boolean;
   page?: number;
@@ -43,7 +42,6 @@ export function reposListUrl(params?: {
     [REPOS_FORM_FIELD.Org]: params?.org,
     [REPOS_FORM_FIELD.Project]: params?.project,
     [REPOS_FORM_FIELD.Query]: params?.q,
-    [REPOS_SEARCH_PARAM.Sort]: params?.sort,
     [REPOS_FORM_FIELD.Order]: params?.order,
     [REPOS_FORM_FIELD.HasRules]: params?.hasRules ? "1" : undefined,
     [REPOS_SEARCH_PARAM.Page]: params?.page,
