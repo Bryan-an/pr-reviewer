@@ -11,7 +11,6 @@ type ReposPaginationProps = Readonly<{
     org: string;
     project: string;
     q?: string;
-    sort?: string;
     order?: string;
     hasRules?: boolean;
   };
