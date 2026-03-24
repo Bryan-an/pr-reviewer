@@ -56,17 +56,17 @@ export default function EditRuleLoading() {
                   {/* Toolbar: 4 groups [2, 1, 3, 2] matching TOOLBAR_GROUPS */}
                   <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
                     {Array.from({ length: 2 }, (_, i) => (
-                      <Skeleton key={i} className="size-7 rounded-md" />
+                      <Skeleton key={`a${i}`} className="size-7 rounded-md" />
                     ))}
                     <div className="bg-border mx-1 h-4 w-px" />
                     <Skeleton className="size-7 rounded-md" />
                     <div className="bg-border mx-1 h-4 w-px" />
                     {Array.from({ length: 3 }, (_, i) => (
-                      <Skeleton key={i} className="size-7 rounded-md" />
+                      <Skeleton key={`b${i}`} className="size-7 rounded-md" />
                     ))}
                     <div className="bg-border mx-1 h-4 w-px" />
                     {Array.from({ length: 2 }, (_, i) => (
-                      <Skeleton key={i} className="size-7 rounded-md" />
+                      <Skeleton key={`c${i}`} className="size-7 rounded-md" />
                     ))}
                   </div>
 
