@@ -7,6 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { Collapsible } from "radix-ui";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils/cn";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -104,7 +105,10 @@ export function RuleCard({
                 <Button variant="outline" size="sm">
                   Preview
                   <ChevronDown
-                    className={`size-4 transition-transform duration-200 ${previewOpen ? "rotate-180" : ""}`}
+                    className={cn(
+                      "size-4 transition-transform duration-200",
+                      previewOpen && "rotate-180",
+                    )}
                   />
                 </Button>
               </Collapsible.Trigger>
