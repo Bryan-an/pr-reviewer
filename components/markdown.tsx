@@ -20,7 +20,12 @@ const markdownComponents: Components = {
 
 export function Markdown({ content, className }: MarkdownProps) {
   return (
-    <div className={cn("prose max-w-none wrap-break-word", className)}>
+    <div
+      className={cn(
+        "prose max-w-none wrap-break-word [&_pre]:[scrollbar-color:var(--muted-foreground)_transparent] [&_pre]:[scrollbar-width:thin]",
+        className,
+      )}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[rehypeHighlight]}

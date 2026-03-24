@@ -129,7 +129,7 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
         >
           <Markdown
             content={"```diff\n" + snippet + "\n```"}
-            className="text-xs [&_pre]:m-0 [&_pre]:rounded-none [&_pre]:border-0 [&_pre]:[scrollbar-color:var(--muted-foreground)_transparent] [&_pre]:[scrollbar-width:thin]"
+            className="text-xs [&_pre]:m-0 [&_pre]:rounded-none [&_pre]:border-0"
           />
         </div>
 
