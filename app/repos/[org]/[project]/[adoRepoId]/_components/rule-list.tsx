@@ -4,7 +4,6 @@ import { type ReactNode, startTransition, useOptimistic } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { toast } from "sonner";
 
-import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { repoEditRulePath } from "@/app/repos/_lib/routes";
 import { RuleCard } from "@/app/repos/[org]/[project]/[adoRepoId]/_components/rule-card";
 
@@ -19,7 +18,7 @@ type RuleListRule = Readonly<{
 type RuleListProps = Readonly<{
   rules: RuleListRule[];
   ruleContent: Record<string, ReactNode>;
-  deleteAction: (formData: FormData) => Promise<void>;
+  deleteAction: (ruleId: string) => Promise<void>;
   toggleAction: (formData: FormData) => Promise<void>;
   org: string;
   project: string;
@@ -42,11 +41,8 @@ export function RuleList({
     startTransition(async () => {
       setOptimisticRules((prev) => prev.filter((r) => r.id !== ruleId));
 
-      const formData = new FormData();
-      formData.append(RULE_FORM_FIELD.Id, ruleId);
-
       try {
-        await deleteAction(formData);
+        await deleteAction(ruleId);
         toast.success("Rule deleted.");
       } catch {
         toast.error("Failed to delete rule.");
