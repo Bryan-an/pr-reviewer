@@ -9,6 +9,7 @@ import { repoNewRulePath, reposListUrl } from "@/app/repos/_lib/routes";
 import { RULE_SEARCH_PARAM } from "@/app/repos/_lib/search-params";
 import { getFirst } from "@/lib/utils/search-params";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
+import { logger } from "@/lib/logging/logger";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { listRepoRules } from "@/server/db/repo-rules";
@@ -27,15 +28,30 @@ export default async function RepoRulesPage({ params, searchParams }: RepoRulesP
   const project = safeDecodeURIComponent(p.project);
   const adoRepoId = safeDecodeURIComponent(p.adoRepoId);
 
-  const repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
+  let repo: Awaited<ReturnType<typeof getAzureDevOpsRepository>>;
+  let storedRepo: Awaited<ReturnType<typeof upsertRepositoryFromAdoRepo>>;
+  let rules: Awaited<ReturnType<typeof listRepoRules>>;
 
-  const storedRepo = await upsertRepositoryFromAdoRepo({
-    org,
-    project,
-    adoRepoId: repo.id,
-    name: repo.name,
-    remoteUrl: repo.remoteUrl,
-  });
+  try {
+    repo = await getAzureDevOpsRepository({ org, project, repoIdOrName: adoRepoId });
+
+    storedRepo = await upsertRepositoryFromAdoRepo({
+      org,
+      project,
+      adoRepoId: repo.id,
+      name: repo.name,
+      remoteUrl: repo.remoteUrl,
+    });
+
+    rules = await listRepoRules({ repositoryId: storedRepo.id });
+  } catch (err) {
+    logger.error(
+      { err, org, project, adoRepoId },
+      "RepoRulesPage: failed to load repository or rules",
+    );
+
+    throw err;
+  }
 
   const ruleActionContext = {
     repositoryId: storedRepo.id,
@@ -46,8 +62,6 @@ export default async function RepoRulesPage({ params, searchParams }: RepoRulesP
 
   const boundToggleAction = toggleRuleAction.bind(null, ruleActionContext);
   const boundDeleteAction = deleteRuleAction.bind(null, ruleActionContext);
-
-  const rules = await listRepoRules({ repositoryId: storedRepo.id });
 
   const rawFrom = (getFirst(sp[RULE_SEARCH_PARAM.From]) ?? "").split("#")[0];
   const safeFrom = /^\/repos(\?|\/|$)/.test(rawFrom) && !rawFrom.includes("..") ? rawFrom : "";
