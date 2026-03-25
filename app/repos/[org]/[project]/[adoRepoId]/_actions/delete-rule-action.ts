@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { logger } from "@/lib/logging/logger";
 import { repoBasePath } from "@/app/repos/_lib/routes";
 import { deleteRepoRule, getRepoRuleById } from "@/server/db/repo-rules";
 
@@ -21,7 +22,12 @@ export async function deleteRuleAction(context: DeleteRuleContext, ruleId: strin
     throw new Error("Rule does not belong to this repository.");
   }
 
-  await deleteRepoRule({ id: ruleId });
+  try {
+    await deleteRepoRule({ id: ruleId });
+  } catch (err) {
+    logger.error(err, "[deleteRule] failed");
+    throw err;
+  }
 
   revalidatePath(repoBasePath(org, project, adoRepoId));
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { logger } from "@/lib/logging/logger";
 import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { RULE_FORM_FIELD } from "@/app/repos/_lib/form-fields";
 import { repoBasePath } from "@/app/repos/_lib/routes";
@@ -28,7 +29,12 @@ export async function toggleRuleAction(context: ToggleRuleContext, formData: For
     throw new Error("Rule does not belong to this repository.");
   }
 
-  await toggleRepoRuleEnabled({ id, enabled });
+  try {
+    await toggleRepoRuleEnabled({ id, enabled });
+  } catch (err) {
+    logger.error(err, "[toggleRule] failed");
+    throw err;
+  }
 
   revalidatePath(repoBasePath(org, project, adoRepoId));
 }
