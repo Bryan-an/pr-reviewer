@@ -1,17 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertCircleIcon } from "lucide-react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { repoBasePath, reposListUrl } from "@/app/repos/_lib/routes";
+import { repoBasePath } from "@/app/repos/_lib/routes";
 import { safeDecodeURIComponent } from "@/lib/utils/url";
+import { logger } from "@/lib/logging/logger";
 import { getAzureDevOpsRepository } from "@/server/azure-devops/repositories";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { getRepoRuleById } from "@/server/db/repo-rules";
-import { logger } from "@/lib/logging/logger";
 import { MarkdownRuleEditor } from "@/app/repos/_components/markdown-rule-editor";
 import { updateRuleAction } from "@/app/repos/[org]/[project]/[adoRepoId]/rules/[ruleId]/edit/_actions/update-rule-action";
 
@@ -45,39 +43,7 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
       "EditRulePage: getAzureDevOpsRepository/upsertRepositoryFromAdoRepo failed",
     );
 
-    const backHref = reposListUrl({ org, project });
-
-    return (
-      <>
-        <PageHeader
-          title="Edit rule"
-          showScrollToTop
-          actions={
-            <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={backHref}>
-              Back
-            </Link>
-          }
-        />
-
-        <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 pt-17 pb-12">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Edit rule</h1>
-
-            <p className="text-muted-foreground text-sm">
-              {org} · {project} · <span className="font-mono text-xs">{adoRepoId}</span>
-            </p>
-          </div>
-
-          <Alert variant="destructive">
-            <AlertCircleIcon />
-            <AlertDescription>
-              Unable to load repository details. Please verify your Azure DevOps access and try
-              again.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </>
-    );
+    throw err;
   }
 
   const existing = await getRepoRuleById({ id: ruleId });
