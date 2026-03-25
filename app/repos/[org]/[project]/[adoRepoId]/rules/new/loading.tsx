@@ -3,11 +3,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { RuleEditorSkeleton } from "@/app/repos/_components/rule-editor-skeleton";
 
-export default function EditRuleLoading() {
+export default function NewRuleLoading() {
   return (
     <>
       <PageHeader
-        title="Edit rule"
+        title="New rule"
         showScrollToTop
         actions={<Skeleton className="h-8 w-14 rounded-md" />}
       />
