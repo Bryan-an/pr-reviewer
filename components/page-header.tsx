@@ -12,7 +12,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 // ---------------------------------------------------------------------------
 
 type PageHeaderProps = Readonly<{
-  title: string;
+  title: ReactNode;
   actions?: ReactNode;
   maxWidth?: "3xl" | "5xl";
   showScrollToTop?: boolean;
@@ -59,9 +59,9 @@ export function PageHeader({
               /
             </span>
 
-            <span className="text-muted-foreground min-w-0 truncate text-sm font-medium">
+            <div className="text-muted-foreground min-w-0 truncate text-sm font-medium">
               {title}
-            </span>
+            </div>
           </div>
 
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
