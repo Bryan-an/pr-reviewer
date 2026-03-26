@@ -56,23 +56,23 @@ async function updateStatusAction(
   targetStatus: FindingStatus,
   actionName: string,
 ): Promise<FindingActionResult> {
-  const row = await getValidatedFinding(formData);
-
-  if (!row) {
-    logger.warn(`[${actionName}] finding not found`);
-    return { success: false };
-  }
-
-  if (row.status === targetStatus) {
-    return { success: true };
-  }
-
-  if (!isValidStatusTransition(row.status as FindingStatus, targetStatus)) {
-    logger.warn(`[${actionName}] invalid transition: ${row.status} → ${targetStatus}`);
-    return { success: false };
-  }
-
   try {
+    const row = await getValidatedFinding(formData);
+
+    if (!row) {
+      logger.warn(`[${actionName}] finding not found`);
+      return { success: false };
+    }
+
+    if (row.status === targetStatus) {
+      return { success: true };
+    }
+
+    if (!isValidStatusTransition(row.status as FindingStatus, targetStatus)) {
+      logger.warn(`[${actionName}] invalid transition: ${row.status} → ${targetStatus}`);
+      return { success: false };
+    }
+
     await updateFindingStatus(row.id, targetStatus);
   } catch (err) {
     logger.error(err, `[${actionName}] failed`);
@@ -88,26 +88,26 @@ async function updateStatusAction(
 // ---------------------------------------------------------------------------
 
 export async function publishFindingAction(formData: FormData): Promise<FindingActionResult> {
-  const row = await getValidatedFinding(formData);
-
-  if (!row) {
-    logger.warn("[publishFinding] finding not found");
-    return { success: false };
-  }
-
-  if (row.status === FINDING_STATUS.Published) {
-    return { success: true };
-  }
-
-  if (!isValidStatusTransition(row.status as FindingStatus, FINDING_STATUS.Published)) {
-    logger.warn(`[publishFinding] invalid transition: ${row.status} → published`);
-    return { success: false };
-  }
-
-  const prUrl = row.reviewRun.prUrl;
-  const domainFinding = toDomainFinding(row);
-
   try {
+    const row = await getValidatedFinding(formData);
+
+    if (!row) {
+      logger.warn("[publishFinding] finding not found");
+      return { success: false };
+    }
+
+    if (row.status === FINDING_STATUS.Published) {
+      return { success: true };
+    }
+
+    if (!isValidStatusTransition(row.status as FindingStatus, FINDING_STATUS.Published)) {
+      logger.warn(`[publishFinding] invalid transition: ${row.status} → published`);
+      return { success: false };
+    }
+
+    const prUrl = row.reviewRun.prUrl;
+    const domainFinding = toDomainFinding(row);
+
     await publishFindings({ prUrl, findings: [domainFinding] });
     await updateFindingStatus(row.id, FINDING_STATUS.Published);
   } catch (err) {
@@ -132,38 +132,38 @@ export async function ignoreFindingAction(formData: FormData): Promise<FindingAc
 // ---------------------------------------------------------------------------
 
 export async function restoreFindingAction(formData: FormData): Promise<FindingActionResult> {
-  const row = await getValidatedFinding(formData);
-
-  if (!row) {
-    logger.warn("[restoreFinding] finding not found");
-    return { success: false };
-  }
-
-  if (row.status === FINDING_STATUS.Pending) {
-    return { success: true };
-  }
-
-  if (!isValidStatusTransition(row.status as FindingStatus, FINDING_STATUS.Pending)) {
-    logger.warn(`[restoreFinding] invalid transition: ${row.status} → pending`);
-    return { success: false };
-  }
-
-  // Best-effort ADO thread close for published findings with a stored thread ID.
-  if (row.status === FINDING_STATUS.Published && row.adoThreadId != null) {
-    try {
-      await closeSingleThread({
-        org: row.reviewRun.org,
-        project: row.reviewRun.project,
-        repoId: row.reviewRun.repoId,
-        prId: row.reviewRun.prId,
-        adoThreadId: row.adoThreadId,
-      });
-    } catch (err) {
-      logger.warn(err, "[restoreFinding] ADO thread close failed (non-fatal), continuing");
-    }
-  }
-
   try {
+    const row = await getValidatedFinding(formData);
+
+    if (!row) {
+      logger.warn("[restoreFinding] finding not found");
+      return { success: false };
+    }
+
+    if (row.status === FINDING_STATUS.Pending) {
+      return { success: true };
+    }
+
+    if (!isValidStatusTransition(row.status as FindingStatus, FINDING_STATUS.Pending)) {
+      logger.warn(`[restoreFinding] invalid transition: ${row.status} → pending`);
+      return { success: false };
+    }
+
+    // Best-effort ADO thread close for published findings with a stored thread ID.
+    if (row.status === FINDING_STATUS.Published && row.adoThreadId != null) {
+      try {
+        await closeSingleThread({
+          org: row.reviewRun.org,
+          project: row.reviewRun.project,
+          repoId: row.reviewRun.repoId,
+          prId: row.reviewRun.prId,
+          adoThreadId: row.adoThreadId,
+        });
+      } catch (err) {
+        logger.warn(err, "[restoreFinding] ADO thread close failed (non-fatal), continuing");
+      }
+    }
+
     await updateFindingStatus(row.id, FINDING_STATUS.Pending);
   } catch (err) {
     logger.error(err, "[restoreFinding] failed");
