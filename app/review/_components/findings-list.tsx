@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
 
 import type { FindingActionResult } from "../_actions/finding-actions";
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { FindingCard, type FindingWithStatus } from "./finding-card";
 import { useReviewActions } from "./review-actions-context";
 
@@ -16,9 +15,9 @@ import { useReviewActions } from "./review-actions-context";
 
 type FindingsListProps = Readonly<{
   findings: FindingWithStatus[];
-  publishFindingAction: (fd: FormData) => Promise<FindingActionResult>;
-  ignoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
-  restoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
+  publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
+  ignoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
+  restoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
 }>;
 
 type OptimisticUpdate = { dbId: string; status: FindingStatus };
@@ -70,19 +69,13 @@ export function FindingsList({
     });
   }
 
-  function buildFormData(dbId: string): FormData {
-    const fd = new FormData();
-    fd.append(REVIEW_FORM_FIELD.FindingDbId, dbId);
-    return fd;
-  }
-
   function handlePublish(dbId: string) {
     startTransition(async () => {
       markPending(dbId);
       updateOptimistic({ dbId, status: FINDING_STATUS.Published });
 
       try {
-        const result = await publishFindingAction(buildFormData(dbId));
+        const result = await publishFindingAction(dbId);
 
         if (result.success) {
           toast.success("Finding published.");
@@ -103,7 +96,7 @@ export function FindingsList({
       updateOptimistic({ dbId, status: FINDING_STATUS.Ignored });
 
       try {
-        const result = await ignoreFindingAction(buildFormData(dbId));
+        const result = await ignoreFindingAction(dbId);
 
         if (result.success) {
           toast.success("Finding ignored.");
@@ -124,7 +117,7 @@ export function FindingsList({
       updateOptimistic({ dbId, status: FINDING_STATUS.Pending });
 
       try {
-        const result = await restoreFindingAction(buildFormData(dbId));
+        const result = await restoreFindingAction(dbId);
 
         if (result.success) {
           toast.success("Finding restored.");

@@ -8,13 +8,10 @@ import {
   isValidStatusTransition,
 } from "@/lib/validation/finding-status";
 import { logger } from "@/lib/logging/logger";
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { getFindingWithReviewRun, updateFindingStatus } from "@/server/db/findings";
 import { closeSingleThread } from "@/server/review/publish/close-threads";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import type { Finding } from "@/server/review/types";
-
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -26,9 +23,7 @@ export type FindingActionResult = { success: true } | { success: false };
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function getValidatedFinding(formData: FormData) {
-  const findingDbId = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.FindingDbId);
-
+async function getValidatedFinding(findingDbId: string) {
   if (!findingDbId) return null;
 
   return getFindingWithReviewRun(findingDbId);
@@ -52,12 +47,12 @@ function toDomainFinding(
 }
 
 async function updateStatusAction(
-  formData: FormData,
+  findingDbId: string,
   targetStatus: FindingStatus,
   actionName: string,
 ): Promise<FindingActionResult> {
   try {
-    const row = await getValidatedFinding(formData);
+    const row = await getValidatedFinding(findingDbId);
 
     if (!row) {
       logger.warn(`[${actionName}] finding not found`);
@@ -87,9 +82,9 @@ async function updateStatusAction(
 // Publish a single finding
 // ---------------------------------------------------------------------------
 
-export async function publishFindingAction(formData: FormData): Promise<FindingActionResult> {
+export async function publishFindingAction(findingDbId: string): Promise<FindingActionResult> {
   try {
-    const row = await getValidatedFinding(formData);
+    const row = await getValidatedFinding(findingDbId);
 
     if (!row) {
       logger.warn("[publishFinding] finding not found");
@@ -123,17 +118,17 @@ export async function publishFindingAction(formData: FormData): Promise<FindingA
 // Ignore a finding
 // ---------------------------------------------------------------------------
 
-export async function ignoreFindingAction(formData: FormData): Promise<FindingActionResult> {
-  return updateStatusAction(formData, FINDING_STATUS.Ignored, "ignoreFinding");
+export async function ignoreFindingAction(findingDbId: string): Promise<FindingActionResult> {
+  return updateStatusAction(findingDbId, FINDING_STATUS.Ignored, "ignoreFinding");
 }
 
 // ---------------------------------------------------------------------------
 // Restore a finding (undo publish or ignore)
 // ---------------------------------------------------------------------------
 
-export async function restoreFindingAction(formData: FormData): Promise<FindingActionResult> {
+export async function restoreFindingAction(findingDbId: string): Promise<FindingActionResult> {
   try {
-    const row = await getValidatedFinding(formData);
+    const row = await getValidatedFinding(findingDbId);
 
     if (!row) {
       logger.warn("[restoreFinding] finding not found");

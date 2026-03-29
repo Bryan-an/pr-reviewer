@@ -25,9 +25,9 @@ type ReviewResultsProps = Readonly<{
   correlationId: string;
   publishAction: (formData: FormData) => Promise<PublishActionResult>;
   rerunAction: (formData: FormData) => Promise<RerunActionResult>;
-  publishFindingAction: (fd: FormData) => Promise<FindingActionResult>;
-  ignoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
-  restoreFindingAction: (fd: FormData) => Promise<FindingActionResult>;
+  publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
+  ignoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
+  restoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
   restoreAllAction: (fd: FormData) => Promise<RestoreAllActionResult>;
 }>;
 
