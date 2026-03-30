@@ -177,5 +177,5 @@ Env schema defined in `lib/config/env.ts` with Zod validation.
 ## Claude Code Tooling
 
 - `.claude/rules/` — project conventions enforced contextually (architecture, enums, naming, git workflow, etc.)
-- `.claude/skills/` — project skills: `clear-coderabbit-cli-cache`, `create-migration` (Prisma migration workflow with validation), `verify-review-pipeline` (stub engine smoke test)
+- `.claude/skills/` — project skills: `clear-coderabbit-cli-cache`, `create-migration` (Prisma migration workflow with validation), `verify-review-pipeline` (stub engine smoke test), `video-debug` (analyze screen recordings of web app bugs via frame extraction), `video-implement` (turn screen recordings of desired behavior into implemented code)
 - `.mcp.json` — MCP server config (shadcn component registry, ESLint)
