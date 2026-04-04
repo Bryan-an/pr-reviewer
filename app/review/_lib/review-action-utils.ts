@@ -1,13 +1,6 @@
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
-import { REVIEW_FORM_FIELD } from "./form-fields";
 import { FindingSchema } from "@/lib/validation/finding";
 import type { getCachedReviewRun } from "@/server/review/get-or-run-review";
 import { ReviewRunError } from "@/server/review/errors";
-
-export function getCorrelationIdFromFormData(formData: FormData): string {
-  const correlationId = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.CorrelationId);
-  return correlationId === "" ? crypto.randomUUID() : correlationId;
-}
 
 export function toReviewRunError(params: {
   error: unknown;
