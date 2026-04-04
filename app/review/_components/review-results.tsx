@@ -4,7 +4,7 @@ import { FINDING_STATUS } from "@/lib/validation/finding-status";
 import type { ReviewRunResult } from "@/server/review/types";
 
 import type { FindingActionResult } from "../_actions/finding-actions";
-import type { PublishActionResult } from "../_actions/publish-action";
+import type { PublishActionArgs, PublishActionResult } from "../_actions/publish-action";
 import type { RerunActionResult } from "../_actions/rerun-action";
 import type { RestoreAllActionResult } from "../_actions/restore-all-action";
 import type { FindingWithStatus } from "./finding-card";
@@ -23,7 +23,7 @@ type ReviewResultsProps = Readonly<{
   effectiveRunId: string | undefined;
   prUrl: string;
   correlationId: string;
-  publishAction: (formData: FormData) => Promise<PublishActionResult>;
+  publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
   rerunAction: (formData: FormData) => Promise<RerunActionResult>;
   publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
   ignoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;

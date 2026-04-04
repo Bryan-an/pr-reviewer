@@ -3,19 +3,23 @@
 import { revalidatePath } from "next/cache";
 
 import { FINDING_STATUS } from "@/lib/validation/finding-status";
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { logger } from "@/lib/logging/logger";
 import { bulkUpdateFindingStatus } from "@/server/db/findings";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
 
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import {
-  getCorrelationIdFromFormData,
   toReviewRunError,
   parseCachedFindings,
   toErrorForLogging,
 } from "../_lib/review-action-utils";
+
+export type PublishActionArgs = {
+  prUrl: string;
+  runId: string;
+  engineName: string;
+  correlationId: string;
+};
 
 export type PublishActionResult =
   | {
@@ -28,16 +32,8 @@ export type PublishActionResult =
     }
   | { success: false };
 
-export async function publishAction(formData: FormData): Promise<PublishActionResult> {
-  const correlationId = getCorrelationIdFromFormData(formData);
-
-  const prUrl = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.PrUrl);
-  const runId = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.RunId);
-  const engineName = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.EngineName);
-
-  if (!prUrl || !runId || !engineName) {
-    return { success: false };
-  }
+export async function publishAction(args: PublishActionArgs): Promise<PublishActionResult> {
+  const { prUrl, runId, engineName, correlationId } = args;
 
   let cached: Awaited<ReturnType<typeof getCachedReviewRun>>;
 

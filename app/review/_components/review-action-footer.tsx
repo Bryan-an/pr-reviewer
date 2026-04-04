@@ -8,7 +8,7 @@ import { CardFooter } from "@/components/ui/card";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { logger } from "@/lib/logging/logger";
 
-import type { PublishActionResult } from "../_actions/publish-action";
+import type { PublishActionArgs, PublishActionResult } from "../_actions/publish-action";
 import type { RerunActionResult } from "../_actions/rerun-action";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
 import { reviewUrl } from "../_lib/routes";
@@ -23,7 +23,7 @@ type ReviewActionFooterProps = Readonly<{
   effectiveRunId: string | undefined;
   engineName: string;
   correlationId: string;
-  publishAction: (formData: FormData) => Promise<PublishActionResult>;
+  publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
   rerunAction: (formData: FormData) => Promise<RerunActionResult>;
 }>;
 
@@ -44,15 +44,19 @@ export function ReviewActionFooter({
   const { isPublishing, isRerunning, isAnyPending, startPublishTransition, startRerunTransition } =
     useReviewActions();
 
-  function handlePublishSubmit(event: React.SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+  function handlePublish() {
+    if (!effectiveRunId) return;
 
     startPublishTransition(async () => {
       let result: PublishActionResult;
 
       try {
-        result = await publishAction(formData);
+        result = await publishAction({
+          prUrl,
+          runId: effectiveRunId,
+          engineName,
+          correlationId,
+        });
       } catch (err) {
         logger.error(err, "[publish] unexpected error");
 
@@ -109,24 +113,15 @@ export function ReviewActionFooter({
 
   return (
     <CardFooter className="flex flex-wrap gap-3">
-      <form onSubmit={handlePublishSubmit}>
-        <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
-        {effectiveRunId ? (
-          <input type="hidden" name={REVIEW_FORM_FIELD.RunId} value={effectiveRunId} />
-        ) : null}
-        <input type="hidden" name={REVIEW_FORM_FIELD.EngineName} value={engineName} />
-        <input type="hidden" name={REVIEW_FORM_FIELD.CorrelationId} value={correlationId} />
-
-        <LoadingButton
-          type="submit"
-          disabled={isAnyPending}
-          loading={isPublishing}
-          loadingText="Publishing…"
-        >
-          <SendIcon />
-          Publish to Azure DevOps
-        </LoadingButton>
-      </form>
+      <LoadingButton
+        disabled={isAnyPending || !effectiveRunId}
+        loading={isPublishing}
+        loadingText="Publishing…"
+        onClick={handlePublish}
+      >
+        <SendIcon />
+        Publish to Azure DevOps
+      </LoadingButton>
 
       <form onSubmit={handleRerunSubmit}>
         <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
