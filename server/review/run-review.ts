@@ -9,7 +9,7 @@ import type { ReviewRequest } from "@/lib/validation/review-request";
 import { fetchPullRequestById } from "@/server/azure-devops/pull-requests";
 import { deduplicateFindings } from "@/server/ai/dedup/deduplicate-findings";
 import { runEnginesInParallel } from "@/server/ai/run-engines-in-parallel";
-import { selectReviewEngines } from "@/server/ai/select-engine";
+import { selectEngineConfig } from "@/server/ai/select-engine";
 import { upsertRepositoryFromAdoRepo } from "@/server/db/repositories";
 import { ensureRepoCheckedOut, generateUnifiedDiff } from "@/server/git/repo";
 import {
@@ -78,7 +78,7 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
   }
 
   // ── Run engines in parallel ──────────────────────────────────────────────
-  const engines = selectReviewEngines();
+  const { engines, configuredName } = selectEngineConfig();
 
   const context = {
     request,
@@ -157,7 +157,7 @@ export async function runReview(request: ReviewRequest): Promise<ReviewRunResult
       title: pr.pr.title,
       url: pr.pr.url,
     },
-    engine: { name: outcome.engineName },
+    engine: { name: configuredName },
     summary: {
       totalFindings: findings.length,
       bySeverity: countBySeverity(findings),

@@ -5,11 +5,9 @@ import type { EngineRunContext, EngineRunResult, ReviewEngine } from "@/server/a
 import type { Finding } from "@/server/review/types";
 
 export type ParallelEngineOutcome = {
-  /** Combined engine name (e.g. "coderabbit+claude-code") */
-  engineName: string;
   /** Merged findings from all successful engines, with sourceName stamped */
   findings: Finding[];
-  /** Engines that failed, for logging/diagnostics */
+  /** Engines that failed — `engineName` is a synthetic label (e.g. "engine[0]"), not a ReviewEngineName */
   failures: Array<{ engineName: string; error: unknown }>;
 };
 
@@ -27,14 +25,12 @@ export async function runEnginesInParallel(
   // Tag each engine promise with its index so we can correlate settled results
   const results = await Promise.allSettled(engines.map((e) => e.run(context)));
 
-  const succeededNames: string[] = [];
   const merged: Finding[] = [];
   const failures: Array<{ engineName: string; error: unknown }> = [];
 
   for (const [i, settled] of results.entries()) {
     if (settled.status === "fulfilled") {
       const engineResult: EngineRunResult = settled.value;
-      succeededNames.push(engineResult.engineName);
 
       for (const finding of engineResult.findings) {
         merged.push({
@@ -53,7 +49,6 @@ export async function runEnginesInParallel(
   }
 
   return {
-    engineName: succeededNames.sort().join("+") || "none",
     findings: merged,
     failures,
   };

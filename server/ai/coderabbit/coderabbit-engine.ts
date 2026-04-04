@@ -3,7 +3,7 @@ import "server-only";
 import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 
-import { REVIEW_ENGINE } from "@/lib/config/env";
+import { REVIEW_ENGINE } from "@/lib/validation/review-engine-name";
 import type { ReviewEngine } from "@/server/ai/engine";
 import { parseCodeRabbitPlainOutput } from "@/server/ai/coderabbit/parse-plain-output";
 import { runCodeRabbitCli } from "@/server/ai/coderabbit/run-coderabbit-cli";
