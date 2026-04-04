@@ -8,6 +8,8 @@ import { bulkUpdateFindingStatus } from "@/server/db/findings";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
 
+import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
+
 import {
   toReviewRunError,
   parseCachedFindings,
@@ -17,7 +19,7 @@ import {
 export type PublishActionArgs = {
   prUrl: string;
   runId: string;
-  engineName: string;
+  engineName: ReviewEngineName;
   correlationId: string;
 };
 

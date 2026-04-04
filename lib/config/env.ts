@@ -2,19 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-export const REVIEW_ENGINE = {
-  Coderabbit: "coderabbit",
-  ClaudeCode: "claude-code",
-  Stub: "stub",
-} as const;
-
-export type ReviewEngine = (typeof REVIEW_ENGINE)[keyof typeof REVIEW_ENGINE];
-
-const reviewEngineValues = [
-  REVIEW_ENGINE.Coderabbit,
-  REVIEW_ENGINE.ClaudeCode,
-  REVIEW_ENGINE.Stub,
-] as const;
+import { reviewEngineNameValues } from "@/lib/validation/review-engine-name";
 
 export const LOG_LEVEL = {
   Fatal: "fatal",
@@ -45,7 +33,7 @@ const envSchema = z.object({
   CODERABBIT_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   CLAUDE_CODE_BIN: z.string().min(1).optional(),
   CLAUDE_CODE_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
-  REVIEW_ENGINE: z.enum(reviewEngineValues).optional(),
+  REVIEW_ENGINE: z.enum(reviewEngineNameValues).optional(),
   DATABASE_URL: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(logLevelValues).optional(),
 });

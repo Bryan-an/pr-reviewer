@@ -8,6 +8,8 @@ import { CardFooter } from "@/components/ui/card";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { logger } from "@/lib/logging/logger";
 
+import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
+
 import type { PublishActionArgs, PublishActionResult } from "../_actions/publish-action";
 import type { RerunActionResult } from "../_actions/rerun-action";
 import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
@@ -21,7 +23,7 @@ import { useReviewActions } from "./review-actions-context";
 type ReviewActionFooterProps = Readonly<{
   prUrl: string;
   effectiveRunId: string | undefined;
-  engineName: string;
+  engineName: ReviewEngineName;
   correlationId: string;
   publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
   rerunAction: (formData: FormData) => Promise<RerunActionResult>;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { FINDING_STATUS, findingStatusValues } from "@/lib/validation/finding-status";
+import { reviewEngineNameValues } from "@/lib/validation/review-engine-name";
 
 export const SEVERITY = {
   Info: "info",
@@ -48,7 +49,7 @@ export const FindingSchema = z.object({
   lineStart: z.number().int().positive().optional(),
   lineEnd: z.number().int().positive().optional(),
   recommendation: z.string().trim().min(1).optional(),
-  sourceName: z.string().trim().min(1).optional(),
+  sourceName: z.enum(reviewEngineNameValues).optional(),
   dbId: z.string().trim().min(1).optional(),
   status: z.enum(findingStatusValues).optional().default(FINDING_STATUS.Pending),
 });

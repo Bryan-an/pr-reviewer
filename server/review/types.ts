@@ -2,6 +2,7 @@ import "server-only";
 
 import type { FindingCategory, Severity } from "@/lib/validation/finding";
 import type { FindingStatus } from "@/lib/validation/finding-status";
+import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
 
 export type Finding = {
   id: string;
@@ -15,7 +16,7 @@ export type Finding = {
   lineStart?: number;
   lineEnd?: number;
   recommendation?: string;
-  sourceName?: string;
+  sourceName?: ReviewEngineName;
   codeSnippet?: string;
 };
 
@@ -30,7 +31,7 @@ export type ReviewRunResult = {
     url?: string;
   };
   engine: {
-    name: string;
+    name: ReviewEngineName;
   };
   summary: {
     totalFindings: number;

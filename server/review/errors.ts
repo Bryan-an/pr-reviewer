@@ -42,6 +42,7 @@ export function isEmptyDiffError(error: unknown): error is EmptyDiffError {
 export class AllEnginesFailedError extends Error {
   public readonly name = "AllEnginesFailedError";
   public readonly code = "ALL_ENGINES_FAILED";
+  /** `engineName` is a synthetic label (e.g. "engine[0]"), not a ReviewEngineName */
   public readonly failures: Array<{ engineName: string; error: unknown }>;
 
   public constructor(failures: Array<{ engineName: string; error: unknown }>) {

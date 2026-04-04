@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 
 import { z } from "zod";
 
-import { REVIEW_ENGINE } from "@/lib/config/env";
+import { REVIEW_ENGINE } from "@/lib/validation/review-engine-name";
 import { stripMarkdownFences } from "@/lib/utils/strip-markdown-fences";
 import { logger } from "@/lib/logging/logger";
 import {

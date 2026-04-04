@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@/prisma/generated/prisma/client";
 import type { FindingStatus } from "@/lib/validation/finding-status";
+import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
 import { prisma } from "@/server/db/prisma";
 import type { Finding as DomainFinding, ReviewRunResult } from "@/server/review/types";
 
@@ -13,7 +14,7 @@ export type CreateReviewRunInput = {
   };
   baseSha: string;
   headSha: string;
-  engineName: string;
+  engineName: ReviewEngineName;
   findings: DomainFinding[];
 };
 
@@ -78,7 +79,8 @@ function toDomainResult(params: {
     lineStart: f.lineStart ?? undefined,
     lineEnd: f.lineEnd ?? undefined,
     recommendation: f.recommendation ?? undefined,
-    sourceName: f.sourceName ?? undefined,
+    // Prisma returns string from SQLite; narrowed at domain boundary
+    sourceName: (f.sourceName as ReviewEngineName) ?? undefined,
     codeSnippet: f.codeSnippet ?? undefined,
   }));
 
@@ -100,7 +102,8 @@ function toDomainResult(params: {
       title: params.run.title,
       url: params.run.prUrl,
     },
-    engine: { name: params.run.engineName },
+    // Prisma returns string from SQLite; narrowed at domain boundary
+    engine: { name: params.run.engineName as ReviewEngineName },
     summary: { totalFindings: domainFindings.length, bySeverity },
     findings: domainFindings,
   };

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { File as ParsedDiffFile } from "parse-diff";
 
+import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
 import type { ReviewRequest } from "@/lib/validation/review-request";
 import type { Finding } from "@/server/review/types";
 
@@ -25,7 +26,7 @@ export type EngineRunContext = {
 };
 
 export type EngineRunResult = {
-  engineName: string;
+  engineName: ReviewEngineName;
   rawOutput?: string;
   findings: Finding[];
 };
