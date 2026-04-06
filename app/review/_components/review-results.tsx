@@ -22,7 +22,6 @@ type ReviewResultsProps = Readonly<{
   result: ReviewRunResult;
   effectiveRunId: string | undefined;
   prUrl: string;
-  correlationId: string;
   publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
   rerunAction: (formData: FormData) => Promise<RerunActionResult>;
   publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
@@ -39,7 +38,6 @@ export function ReviewResults({
   result,
   effectiveRunId,
   prUrl,
-  correlationId,
   publishAction,
   rerunAction,
   publishFindingAction,
@@ -99,8 +97,6 @@ export function ReviewResults({
           <ReviewActionFooter
             prUrl={prUrl}
             effectiveRunId={effectiveRunId}
-            engineName={result.engine.name}
-            correlationId={correlationId}
             publishAction={publishAction}
             rerunAction={rerunAction}
           />

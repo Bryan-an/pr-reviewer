@@ -8,19 +8,11 @@ import { bulkUpdateFindingStatus } from "@/server/db/findings";
 import { publishFindings } from "@/server/review/publish/publish-review";
 import { getCachedReviewRun } from "@/server/review/get-or-run-review";
 
-import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
-
-import {
-  toReviewRunError,
-  parseCachedFindings,
-  toErrorForLogging,
-} from "../_lib/review-action-utils";
+import { parseCachedFindings } from "../_lib/review-action-utils";
 
 export type PublishActionArgs = {
   prUrl: string;
   runId: string;
-  engineName: ReviewEngineName;
-  correlationId: string;
 };
 
 export type PublishActionResult =
@@ -35,49 +27,31 @@ export type PublishActionResult =
   | { success: false };
 
 export async function publishAction(args: PublishActionArgs): Promise<PublishActionResult> {
-  const { prUrl, runId, engineName, correlationId } = args;
-
-  let cached: Awaited<ReturnType<typeof getCachedReviewRun>>;
+  const { prUrl, runId } = args;
 
   try {
-    cached = await getCachedReviewRun({ prUrl, runId });
-  } catch (err) {
-    const wrapped = toReviewRunError({
-      error: err,
-      message: "getCachedReviewRun failed in publishAction.",
-      correlationId,
-    });
+    const cached = await getCachedReviewRun({ prUrl, runId });
+    if (!cached) return { success: false };
 
-    logger.error(
-      { correlationId, prUrl, runId, engineName, err: wrapped },
-      "getCachedReviewRun failed",
+    const findingsResult = parseCachedFindings(cached);
+    if (!findingsResult.success) return { success: false };
+
+    // Only publish findings that are still pending (skip published + ignored).
+    const pendingFindings = findingsResult.data.filter(
+      (f) => !f.status || f.status === FINDING_STATUS.Pending,
     );
 
-    return { success: false };
-  }
+    if (pendingFindings.length === 0) {
+      return {
+        success: true,
+        publishedThreads: 0,
+        skippedThreads: findingsResult.data.length,
+        totalThreads: 0,
+        wasCapped: false,
+        cap: 50,
+      };
+    }
 
-  if (!cached) return { success: false };
-
-  const findingsResult = parseCachedFindings(cached);
-  if (!findingsResult.success) return { success: false };
-
-  // Only publish findings that are still pending (skip published + ignored).
-  const pendingFindings = findingsResult.data.filter(
-    (f) => !f.status || f.status === FINDING_STATUS.Pending,
-  );
-
-  if (pendingFindings.length === 0) {
-    return {
-      success: true,
-      publishedThreads: 0,
-      skippedThreads: findingsResult.data.length,
-      totalThreads: 0,
-      wasCapped: false,
-      cap: 50,
-    };
-  }
-
-  try {
     const result = await publishFindings({
       prUrl,
       findings: pendingFindings,
@@ -95,10 +69,7 @@ export async function publishAction(args: PublishActionArgs): Promise<PublishAct
       try {
         await bulkUpdateFindingStatus(publishedDbIds, FINDING_STATUS.Published);
       } catch (err) {
-        logger.warn(
-          { correlationId, err: err instanceof Error ? err.message : String(err) },
-          "bulk status update after publish failed (non-fatal)",
-        );
+        logger.warn(err, "[publishAction] bulk status update failed (non-fatal)");
       }
     }
 
@@ -113,13 +84,7 @@ export async function publishAction(args: PublishActionArgs): Promise<PublishAct
       cap: result.cap,
     };
   } catch (err) {
-    const errorToLog = toErrorForLogging(err, "publishFindings failed.");
-
-    logger.error(
-      { correlationId, prUrl, runId, engineName, err: errorToLog },
-      "publishFindings failed",
-    );
-
+    logger.error(err, "[publishAction] failed");
     return { success: false };
   }
 }
