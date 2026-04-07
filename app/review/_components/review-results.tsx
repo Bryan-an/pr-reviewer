@@ -5,8 +5,8 @@ import type { ReviewRunResult } from "@/server/review/types";
 
 import type { FindingActionResult } from "../_actions/finding-actions";
 import type { PublishActionArgs, PublishActionResult } from "../_actions/publish-action";
-import type { RerunActionResult } from "../_actions/rerun-action";
-import type { RestoreAllActionResult } from "../_actions/restore-all-action";
+import type { RerunActionArgs, RerunActionResult } from "../_actions/rerun-action";
+import type { RestoreAllActionArgs, RestoreAllActionResult } from "../_actions/restore-all-action";
 import type { FindingWithStatus } from "./finding-card";
 import { FindingsList } from "./findings-list";
 import { NewReviewLink } from "./new-review-link";
@@ -23,11 +23,11 @@ type ReviewResultsProps = Readonly<{
   effectiveRunId: string | undefined;
   prUrl: string;
   publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
-  rerunAction: (formData: FormData) => Promise<RerunActionResult>;
+  rerunAction: (args: RerunActionArgs) => Promise<RerunActionResult>;
   publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
   ignoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
   restoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
-  restoreAllAction: (fd: FormData) => Promise<RestoreAllActionResult>;
+  restoreAllAction: (args: RestoreAllActionArgs) => Promise<RestoreAllActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------

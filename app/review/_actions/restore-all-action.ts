@@ -3,17 +3,18 @@
 import { revalidatePath } from "next/cache";
 
 import { FINDING_STATUS } from "@/lib/validation/finding-status";
-import { getTrimmedStringFormField } from "@/lib/utils/form-data";
 import { logger } from "@/lib/logging/logger";
 import { bulkUpdateFindingStatus, getRestorableFindingsByRunId } from "@/server/db/findings";
 import { getReviewRunCoordinates } from "@/server/db/review-runs";
 import { closeBulkThreadsByMarkers } from "@/server/review/publish/close-threads";
 
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// Result type
-// ---------------------------------------------------------------------------
+export type RestoreAllActionArgs = {
+  runId: string;
+};
 
 export type RestoreAllActionResult = { success: true; restoredCount: number } | { success: false };
 
@@ -21,11 +22,13 @@ export type RestoreAllActionResult = { success: true; restoredCount: number } | 
 // Action
 // ---------------------------------------------------------------------------
 
-export async function restoreAllAction(formData: FormData): Promise<RestoreAllActionResult> {
-  const runId = getTrimmedStringFormField(formData, REVIEW_FORM_FIELD.RunId);
+export async function restoreAllAction(
+  args: RestoreAllActionArgs,
+): Promise<RestoreAllActionResult> {
+  const { runId } = args;
 
   if (!runId) {
-    logger.warn("[restoreAll] missing runId");
+    logger.warn({ runId }, "[restoreAll] missing runId");
     return { success: false };
   }
 

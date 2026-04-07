@@ -9,8 +9,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { logger } from "@/lib/logging/logger";
 
 import type { PublishActionArgs, PublishActionResult } from "../_actions/publish-action";
-import type { RerunActionResult } from "../_actions/rerun-action";
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import type { RerunActionArgs, RerunActionResult } from "../_actions/rerun-action";
 import { reviewUrl } from "../_lib/routes";
 import { useReviewActions } from "./review-actions-context";
 
@@ -22,7 +21,7 @@ type ReviewActionFooterProps = Readonly<{
   prUrl: string;
   effectiveRunId: string | undefined;
   publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
-  rerunAction: (formData: FormData) => Promise<RerunActionResult>;
+  rerunAction: (args: RerunActionArgs) => Promise<RerunActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------
@@ -82,15 +81,12 @@ export function ReviewActionFooter({
     });
   }
 
-  function handleRerunSubmit(event: React.SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
+  function handleRerun() {
     startRerunTransition(async () => {
       let result: RerunActionResult;
 
       try {
-        result = await rerunAction(formData);
+        result = await rerunAction({ prUrl });
       } catch (err) {
         logger.error(err, "[rerun] unexpected error");
         toast.error("Review re-run failed. Please try again.");
@@ -117,20 +113,16 @@ export function ReviewActionFooter({
         Publish to Azure DevOps
       </LoadingButton>
 
-      <form onSubmit={handleRerunSubmit}>
-        <input type="hidden" name={REVIEW_FORM_FIELD.PrUrl} value={prUrl} />
-
-        <LoadingButton
-          type="submit"
-          variant="outline"
-          disabled={isAnyPending}
-          loading={isRerunning}
-          loadingText="Re-running…"
-        >
-          <RefreshCwIcon />
-          Re-run review
-        </LoadingButton>
-      </form>
+      <LoadingButton
+        variant="outline"
+        disabled={isAnyPending}
+        loading={isRerunning}
+        loadingText="Re-running…"
+        onClick={handleRerun}
+      >
+        <RefreshCwIcon />
+        Re-run review
+      </LoadingButton>
     </CardFooter>
   );
 }
