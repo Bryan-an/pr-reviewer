@@ -1,7 +1,7 @@
 /**
  * Form field name constants for the review feature.
  *
- * Shared across the home page form, review action footer, rerun action, and restore-all action.
+ * Shared across the home page form, review page, and route builders.
  */
 export const REVIEW_FORM_FIELD = {
   PrUrl: "prUrl",

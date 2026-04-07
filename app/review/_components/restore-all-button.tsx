@@ -17,8 +17,7 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button";
 import { logger } from "@/lib/logging/logger";
 
-import type { RestoreAllActionResult } from "../_actions/restore-all-action";
-import { REVIEW_FORM_FIELD } from "../_lib/form-fields";
+import type { RestoreAllActionArgs, RestoreAllActionResult } from "../_actions/restore-all-action";
 import { useReviewActions } from "./review-actions-context";
 
 // ---------------------------------------------------------------------------
@@ -28,7 +27,7 @@ import { useReviewActions } from "./review-actions-context";
 type RestoreAllButtonProps = Readonly<{
   effectiveRunId: string;
   restorableCount: number;
-  restoreAllAction: (fd: FormData) => Promise<RestoreAllActionResult>;
+  restoreAllAction: (args: RestoreAllActionArgs) => Promise<RestoreAllActionResult>;
 }>;
 
 // ---------------------------------------------------------------------------
@@ -44,11 +43,8 @@ export function RestoreAllButton({
 
   function handleConfirm() {
     startRestoreTransition(async () => {
-      const fd = new FormData();
-      fd.append(REVIEW_FORM_FIELD.RunId, effectiveRunId);
-
       try {
-        const result = await restoreAllAction(fd);
+        const result = await restoreAllAction({ runId: effectiveRunId });
 
         if (result.success) {
           if (result.restoredCount === 0) {
