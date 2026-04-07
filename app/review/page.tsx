@@ -27,8 +27,6 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   const params = await searchParams;
   const prUrl = getFirst(params[REVIEW_FORM_FIELD.PrUrl]);
   const runId = getFirst(params[REVIEW_FORM_FIELD.RunId]);
-  const correlationId = crypto.randomUUID();
-
   if (!prUrl) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 py-10">
@@ -84,15 +82,11 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
           cacheLoadError = "The previous review run was not found. Starting a new review.";
         }
       } catch (err) {
-        logger.error(
-          { correlationId, prUrl, runId, err },
-          "getCachedReviewRun failed in ReviewPage",
-        );
-
+        logger.error(err, "[ReviewPage] getCachedReviewRun failed");
         cacheLoadError = "Failed to load the previous review. Starting a new review.";
       }
     } else {
-      logger.error({ correlationId, prUrl, runId }, "Invalid runId format in ReviewPage");
+      logger.warn({ runId }, "[ReviewPage] invalid runId format");
       cacheLoadError = "The review run ID is invalid. Starting a new review.";
     }
   }
@@ -103,7 +97,6 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         result={cached.result}
         effectiveRunId={cached.runId}
         prUrl={prUrl}
-        correlationId={correlationId}
         publishAction={publishAction}
         rerunAction={rerunAction}
         publishFindingAction={publishFindingAction}

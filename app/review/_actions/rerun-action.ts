@@ -6,8 +6,6 @@ import { reviewRequestSchema } from "@/lib/validation/review-request";
 import { logger } from "@/lib/logging/logger";
 import { runAndPersistReview } from "@/server/review/get-or-run-review";
 
-import { toReviewRunError, toErrorForLogging } from "../_lib/review-action-utils";
-
 export type RerunActionResult = { success: true; runId: string } | { success: false };
 
 export async function rerunAction(formData: FormData): Promise<RerunActionResult> {
@@ -21,26 +19,7 @@ export async function rerunAction(formData: FormData): Promise<RerunActionResult
     const { runId } = await runAndPersistReview(parsed.data);
     return { success: true, runId };
   } catch (err) {
-    const correlationId = crypto.randomUUID();
-
-    const wrapped = toReviewRunError({
-      error: err,
-      message: "runAndPersistReview failed in rerunAction.",
-      correlationId,
-    });
-
-    const originalErrorToLog = toErrorForLogging(err, "rerunAction failed.");
-
-    logger.error(
-      {
-        correlationId,
-        prUrl,
-        err: wrapped,
-        originalError: originalErrorToLog,
-      },
-      "rerunAction failed",
-    );
-
+    logger.error(err, "[rerunAction] failed");
     return { success: false };
   }
 }

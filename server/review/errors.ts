@@ -19,17 +19,6 @@ export class DomainValidationError extends Error {
   }
 }
 
-export class ReviewRunError extends Error {
-  public readonly name = "ReviewRunError";
-  public readonly code = "REVIEW_RUN_ERROR";
-  public readonly correlationId: string;
-
-  public constructor(params: { message: string; correlationId: string; cause?: unknown }) {
-    super(params.message, params.cause ? { cause: params.cause } : undefined);
-    this.correlationId = params.correlationId;
-  }
-}
-
 export class EmptyDiffError extends Error {
   public readonly name = "EmptyDiffError";
   public readonly code = "EMPTY_DIFF";
