@@ -17,13 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Markdown } from "@/components/markdown";
+import { type FindingCategory, type Severity } from "@/lib/validation/finding";
 import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
+import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
 
 // ---------------------------------------------------------------------------
 // Severity → badge styling
 // ---------------------------------------------------------------------------
 
-const SEVERITY_BADGE_STYLES: Record<string, string> = {
+const SEVERITY_BADGE_STYLES: Record<Severity, string> = {
   error: "border-destructive/25 bg-destructive/10 text-destructive",
   warn: "border-amber-600/20 bg-amber-600/8 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/8 dark:text-amber-400",
   info: "border-border bg-secondary text-muted-foreground",
@@ -37,15 +39,15 @@ export type FindingWithStatus = Readonly<{
   id: string;
   findingKey: string;
   status: FindingStatus;
-  severity: string;
-  category: string;
+  severity: Severity;
+  category: FindingCategory;
   title: string;
   message: string;
   filePath?: string;
   lineStart?: number;
   lineEnd?: number;
   recommendation?: string;
-  sourceName?: string;
+  sourceName?: ReviewEngineName;
   codeSnippet?: string;
 }>;
 
