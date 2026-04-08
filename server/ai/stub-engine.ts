@@ -6,7 +6,7 @@ import { FINDING_CATEGORY, SEVERITY } from "@/lib/validation/finding";
 import type { Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
 
-function stableId(seed: string): string {
+function stableFindingKey(seed: string): string {
   // Deterministic (not random) and stable across runs.
   return `stub_${Buffer.from(seed).toString("base64url")}`;
 }
@@ -55,7 +55,7 @@ export function runStubEngine(parsedDiff: File[]): Finding[] {
     if (addedLines >= 300) {
       const hunkLine = firstHunkLine(file);
       findings.push({
-        id: stableId(`large_diff:${filePath}`),
+        findingKey: stableFindingKey(`large_diff:${filePath}`),
         severity: SEVERITY.Warn,
         category: FINDING_CATEGORY.Maintainability,
         title: "Large change set",
@@ -68,7 +68,7 @@ export function runStubEngine(parsedDiff: File[]): Finding[] {
     const todoLine = firstTodoLine(file);
     if (todoLine !== undefined) {
       findings.push({
-        id: stableId(`todo_added:${filePath}`),
+        findingKey: stableFindingKey(`todo_added:${filePath}`),
         severity: SEVERITY.Info,
         category: FINDING_CATEGORY.DX,
         title: "TODO found in added code",
@@ -82,7 +82,7 @@ export function runStubEngine(parsedDiff: File[]): Finding[] {
 
     if (/pnpm-lock\.yaml$/i.test(filePath)) {
       findings.push({
-        id: stableId(`lockfile:${filePath}`),
+        findingKey: stableFindingKey(`lockfile:${filePath}`),
         severity: SEVERITY.Info,
         category: FINDING_CATEGORY.DX,
         title: "Lockfile updated",

@@ -24,9 +24,9 @@ type ReviewResultsProps = Readonly<{
   prUrl: string;
   publishAction: (args: PublishActionArgs) => Promise<PublishActionResult>;
   rerunAction: (args: RerunActionArgs) => Promise<RerunActionResult>;
-  publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
-  ignoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
-  restoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
+  publishFindingAction: (findingId: string) => Promise<FindingActionResult>;
+  ignoreFindingAction: (findingId: string) => Promise<FindingActionResult>;
+  restoreFindingAction: (findingId: string) => Promise<FindingActionResult>;
   restoreAllAction: (args: RestoreAllActionArgs) => Promise<RestoreAllActionResult>;
 }>;
 
@@ -45,9 +45,11 @@ export function ReviewResults({
   restoreFindingAction,
   restoreAllAction,
 }: ReviewResultsProps) {
+  // Findings from the DB always have a PK — the id field is optional on
+  // Finding only because AI engines produce findings before persistence.
   const findingsWithStatus: FindingWithStatus[] = result.findings.map((f) => ({
-    dbId: f.dbId ?? f.id,
-    id: f.id,
+    id: f.id!,
+    findingKey: f.findingKey,
     status: f.status ?? FINDING_STATUS.Pending,
     severity: f.severity,
     category: f.category,

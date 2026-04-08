@@ -23,18 +23,18 @@ export type FindingActionResult = { success: true } | { success: false };
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function getValidatedFinding(findingDbId: string) {
-  if (!findingDbId) return null;
+async function getValidatedFinding(findingId: string) {
+  if (!findingId) return null;
 
-  return getFindingWithReviewRun(findingDbId);
+  return getFindingWithReviewRun(findingId);
 }
 
 function toDomainFinding(
   row: NonNullable<Awaited<ReturnType<typeof getFindingWithReviewRun>>>,
 ): Finding {
   return {
-    id: row.findingKey,
-    dbId: row.id,
+    findingKey: row.findingKey,
+    id: row.id,
     severity: row.severity as Finding["severity"],
     category: row.category as Finding["category"],
     title: row.title,
@@ -47,12 +47,12 @@ function toDomainFinding(
 }
 
 async function updateStatusAction(
-  findingDbId: string,
+  findingId: string,
   targetStatus: FindingStatus,
   actionName: string,
 ): Promise<FindingActionResult> {
   try {
-    const row = await getValidatedFinding(findingDbId);
+    const row = await getValidatedFinding(findingId);
 
     if (!row) {
       logger.warn(`[${actionName}] finding not found`);
@@ -82,9 +82,9 @@ async function updateStatusAction(
 // Publish a single finding
 // ---------------------------------------------------------------------------
 
-export async function publishFindingAction(findingDbId: string): Promise<FindingActionResult> {
+export async function publishFindingAction(findingId: string): Promise<FindingActionResult> {
   try {
-    const row = await getValidatedFinding(findingDbId);
+    const row = await getValidatedFinding(findingId);
 
     if (!row) {
       logger.warn("[publishFinding] finding not found");
@@ -118,17 +118,17 @@ export async function publishFindingAction(findingDbId: string): Promise<Finding
 // Ignore a finding
 // ---------------------------------------------------------------------------
 
-export async function ignoreFindingAction(findingDbId: string): Promise<FindingActionResult> {
-  return updateStatusAction(findingDbId, FINDING_STATUS.Ignored, "ignoreFinding");
+export async function ignoreFindingAction(findingId: string): Promise<FindingActionResult> {
+  return updateStatusAction(findingId, FINDING_STATUS.Ignored, "ignoreFinding");
 }
 
 // ---------------------------------------------------------------------------
 // Restore a finding (undo publish or ignore)
 // ---------------------------------------------------------------------------
 
-export async function restoreFindingAction(findingDbId: string): Promise<FindingActionResult> {
+export async function restoreFindingAction(findingId: string): Promise<FindingActionResult> {
   try {
-    const row = await getValidatedFinding(findingDbId);
+    const row = await getValidatedFinding(findingId);
 
     if (!row) {
       logger.warn("[restoreFinding] finding not found");

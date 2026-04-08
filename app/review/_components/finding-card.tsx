@@ -34,8 +34,8 @@ const SEVERITY_BADGE_STYLES: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export type FindingWithStatus = Readonly<{
-  dbId: string;
   id: string;
+  findingKey: string;
   status: FindingStatus;
   severity: string;
   category: string;

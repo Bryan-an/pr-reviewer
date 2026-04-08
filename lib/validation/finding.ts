@@ -36,7 +36,7 @@ const categoryValues = [
 ] as const;
 
 export const FindingSchema = z.object({
-  id: z.string().trim().min(1),
+  findingKey: z.string().trim().min(1),
   severity: z.enum(severityValues),
   category: z.enum(categoryValues),
   title: z.string().trim().min(1),
@@ -50,7 +50,7 @@ export const FindingSchema = z.object({
   lineEnd: z.number().int().positive().optional(),
   recommendation: z.string().trim().min(1).optional(),
   sourceName: z.enum(reviewEngineNameValues).optional(),
-  dbId: z.string().trim().min(1).optional(),
+  id: z.string().trim().min(1).optional(),
   status: z.enum(findingStatusValues).optional().default(FINDING_STATUS.Pending),
 });
 

@@ -3,9 +3,9 @@ import "server-only";
 import { FINDING_STATUS, type FindingStatus } from "@/lib/validation/finding-status";
 import { prisma } from "@/server/db/prisma";
 
-export async function getFindingWithReviewRun(findingDbId: string) {
+export async function getFindingWithReviewRun(findingId: string) {
   return prisma.finding.findUnique({
-    where: { id: findingDbId },
+    where: { id: findingId },
     include: {
       reviewRun: {
         select: { prUrl: true, org: true, project: true, repoId: true, prId: true },
@@ -14,16 +14,16 @@ export async function getFindingWithReviewRun(findingDbId: string) {
   });
 }
 
-export async function updateFindingStatus(findingDbId: string, status: FindingStatus) {
+export async function updateFindingStatus(findingId: string, status: FindingStatus) {
   return prisma.finding.update({
-    where: { id: findingDbId },
+    where: { id: findingId },
     data: { status },
   });
 }
 
-export async function bulkUpdateFindingStatus(findingDbIds: string[], status: FindingStatus) {
+export async function bulkUpdateFindingStatus(findingIds: string[], status: FindingStatus) {
   return prisma.finding.updateMany({
-    where: { id: { in: findingDbIds } },
+    where: { id: { in: findingIds } },
     data: { status },
   });
 }
@@ -38,9 +38,9 @@ export async function getRestorableFindingsByRunId(runId: string) {
   });
 }
 
-export async function updateFindingAdoThreadId(findingDbId: string, adoThreadId: number) {
+export async function updateFindingAdoThreadId(findingId: string, adoThreadId: number) {
   await prisma.finding.update({
-    where: { id: findingDbId },
+    where: { id: findingId },
     data: { adoThreadId },
   });
 }

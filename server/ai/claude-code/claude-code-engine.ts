@@ -24,7 +24,7 @@ import type { Finding } from "@/server/review/types";
 // Stable ID generation — deterministic across runs, prefixed with `cc_`
 // ---------------------------------------------------------------------------
 
-function stableId(finding: {
+function stableFindingKey(finding: {
   filePath?: string;
   title: string;
   message: string;
@@ -176,7 +176,7 @@ export const claudeCodeEngine: ReviewEngine = {
     const rawFindings = extractFindings(text);
 
     const findings: Finding[] = rawFindings.map((rf) => ({
-      id: stableId({
+      findingKey: stableFindingKey({
         filePath: rf.filePath,
         title: rf.title,
         message: rf.message,
