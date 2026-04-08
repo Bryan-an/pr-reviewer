@@ -33,7 +33,7 @@ No prose, no markdown fences, no explanation. Just the JSON object.`;
 
 function buildDedupUserPrompt(findings: Finding[]): string {
   const compact = findings.map((f) => ({
-    id: f.id,
+    id: f.findingKey,
     sourceName: f.sourceName,
     severity: f.severity,
     category: f.category,
@@ -85,21 +85,21 @@ export async function deduplicateFindings(params: {
     const stripped = stripMarkdownFences(text);
 
     const parsed = dedupResponseSchema.parse(JSON.parse(stripped));
-    const validIds = new Set(findings.map((f) => f.id));
-    const keepSet = new Set(parsed.keep.filter((id) => validIds.has(id)));
+    const validKeys = new Set(findings.map((f) => f.findingKey));
+    const keepSet = new Set(parsed.keep.filter((key) => validKeys.has(key)));
 
     // Guard: if keep resolved to empty but we had findings, the AI
     // hallucinated or returned garbage — fall back to all findings.
     if (keepSet.size === 0 && findings.length > 0) {
       logger.warn(
         { totalFindings: findings.length, rawKeepCount: parsed.keep.length },
-        "Dedup returned no valid IDs — returning all findings unchanged",
+        "Dedup returned no valid keys — returning all findings unchanged",
       );
 
       return findings;
     }
 
-    const deduped = findings.filter((f) => keepSet.has(f.id));
+    const deduped = findings.filter((f) => keepSet.has(f.findingKey));
     const removed = findings.length - deduped.length;
 
     if (removed > 0) {

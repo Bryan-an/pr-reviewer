@@ -15,12 +15,12 @@ import { useReviewActions } from "./review-actions-context";
 
 type FindingsListProps = Readonly<{
   findings: FindingWithStatus[];
-  publishFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
-  ignoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
-  restoreFindingAction: (findingDbId: string) => Promise<FindingActionResult>;
+  publishFindingAction: (findingId: string) => Promise<FindingActionResult>;
+  ignoreFindingAction: (findingId: string) => Promise<FindingActionResult>;
+  restoreFindingAction: (findingId: string) => Promise<FindingActionResult>;
 }>;
 
-type OptimisticUpdate = { dbId: string; status: FindingStatus };
+type OptimisticUpdate = { id: string; status: FindingStatus };
 
 // ---------------------------------------------------------------------------
 // Component
@@ -37,7 +37,7 @@ export function FindingsList({
   const [optimisticFindings, updateOptimistic] = useOptimistic(
     findings,
     (state: FindingWithStatus[], update: OptimisticUpdate) =>
-      state.map((f) => (f.dbId === update.dbId ? { ...f, status: update.status } : f)),
+      state.map((f) => (f.id === update.id ? { ...f, status: update.status } : f)),
   );
 
   const [pendingActions, setPendingActions] = useState<Set<string>>(new Set());
@@ -57,25 +57,25 @@ export function FindingsList({
       )
     : optimisticFindings;
 
-  function markPending(dbId: string) {
-    setPendingActions((prev) => new Set(prev).add(dbId));
+  function markPending(id: string) {
+    setPendingActions((prev) => new Set(prev).add(id));
   }
 
-  function clearPending(dbId: string) {
+  function clearPending(id: string) {
     setPendingActions((prev) => {
       const next = new Set(prev);
-      next.delete(dbId);
+      next.delete(id);
       return next;
     });
   }
 
-  function handlePublish(dbId: string) {
+  function handlePublish(id: string) {
     startTransition(async () => {
-      markPending(dbId);
-      updateOptimistic({ dbId, status: FINDING_STATUS.Published });
+      markPending(id);
+      updateOptimistic({ id, status: FINDING_STATUS.Published });
 
       try {
-        const result = await publishFindingAction(dbId);
+        const result = await publishFindingAction(id);
 
         if (result.success) {
           toast.success("Finding published.");
@@ -85,18 +85,18 @@ export function FindingsList({
       } catch {
         toast.error("Publish failed. Check your Azure DevOps permissions.");
       } finally {
-        clearPending(dbId);
+        clearPending(id);
       }
     });
   }
 
-  function handleIgnore(dbId: string) {
+  function handleIgnore(id: string) {
     startTransition(async () => {
-      markPending(dbId);
-      updateOptimistic({ dbId, status: FINDING_STATUS.Ignored });
+      markPending(id);
+      updateOptimistic({ id, status: FINDING_STATUS.Ignored });
 
       try {
-        const result = await ignoreFindingAction(dbId);
+        const result = await ignoreFindingAction(id);
 
         if (result.success) {
           toast.success("Finding ignored.");
@@ -106,18 +106,18 @@ export function FindingsList({
       } catch {
         toast.error("Failed to ignore finding.");
       } finally {
-        clearPending(dbId);
+        clearPending(id);
       }
     });
   }
 
-  function handleRestore(dbId: string) {
+  function handleRestore(id: string) {
     startTransition(async () => {
-      markPending(dbId);
-      updateOptimistic({ dbId, status: FINDING_STATUS.Pending });
+      markPending(id);
+      updateOptimistic({ id, status: FINDING_STATUS.Pending });
 
       try {
-        const result = await restoreFindingAction(dbId);
+        const result = await restoreFindingAction(id);
 
         if (result.success) {
           toast.success("Finding restored.");
@@ -127,7 +127,7 @@ export function FindingsList({
       } catch {
         toast.error("Failed to restore finding.");
       } finally {
-        clearPending(dbId);
+        clearPending(id);
       }
     });
   }
@@ -135,13 +135,13 @@ export function FindingsList({
   return (
     <ul className="flex flex-col gap-3">
       {displayFindings.map((f) => (
-        <li key={f.dbId}>
+        <li key={f.id}>
           <FindingCard
             finding={f}
-            isPending={pendingActions.has(f.dbId) || isGlobalOperationPending}
-            onPublish={() => handlePublish(f.dbId)}
-            onIgnore={() => handleIgnore(f.dbId)}
-            onRestore={() => handleRestore(f.dbId)}
+            isPending={pendingActions.has(f.id) || isGlobalOperationPending}
+            onPublish={() => handlePublish(f.id)}
+            onIgnore={() => handleIgnore(f.id)}
+            onRestore={() => handleRestore(f.id)}
           />
         </li>
       ))}

@@ -6,7 +6,7 @@ import { FINDING_CATEGORY, SEVERITY } from "@/lib/validation/finding";
 import type { FindingCategory, Severity } from "@/lib/validation/finding";
 import type { Finding } from "@/server/review/types";
 
-function stableId(parts: {
+function stableFindingKey(parts: {
   filePath?: string;
   title: string;
   message: string;
@@ -414,7 +414,13 @@ function parseSectionToFinding(section: string, changedFiles: string[]): Finding
   const lineRange = parseLineRange(lineLine);
 
   return {
-    id: stableId({ filePath, title, message, lineStart: lineRange.start, lineEnd: lineRange.end }),
+    findingKey: stableFindingKey({
+      filePath,
+      title,
+      message,
+      lineStart: lineRange.start,
+      lineEnd: lineRange.end,
+    }),
     severity: severityFromType(typeLine, combined),
     category: inferCategory(combined),
     title,
@@ -449,7 +455,7 @@ export function parseCodeRabbitPlainOutput(params: {
       : "CodeRabbit CLI returned no structured findings.";
 
     findings.push({
-      id: stableId({ title: "CodeRabbit output could not be parsed", message }),
+      findingKey: stableFindingKey({ title: "CodeRabbit output could not be parsed", message }),
       severity: SEVERITY.Info,
       category: FINDING_CATEGORY.DX,
       title: "CodeRabbit output could not be parsed",

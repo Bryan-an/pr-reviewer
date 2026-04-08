@@ -24,7 +24,7 @@ function toFindingCreateMany(
 ): Prisma.FindingCreateManyInput[] {
   return findings.map((f) => ({
     reviewRunId,
-    findingKey: f.id,
+    findingKey: f.findingKey,
     severity: f.severity,
     category: f.category,
     title: f.title,
@@ -68,8 +68,8 @@ function toDomainResult(params: {
   }>;
 }): ReviewRunResult {
   const domainFindings: DomainFinding[] = params.findings.map((f) => ({
-    id: f.findingKey,
-    dbId: f.id,
+    findingKey: f.findingKey,
+    id: f.id,
     status: f.status as FindingStatus,
     severity: f.severity as DomainFinding["severity"],
     category: f.category as DomainFinding["category"],

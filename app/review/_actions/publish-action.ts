@@ -59,15 +59,15 @@ export async function publishAction(args: PublishActionArgs): Promise<PublishAct
 
     // Mark only findings whose threads were actually published or already existed on ADO.
     // Capped findings are excluded — they were never sent and remain pending.
-    const processedIdSet = new Set(result.processedFindings.map((pf) => pf.findingId));
+    const processedKeySet = new Set(result.processedFindings.map((pf) => pf.findingKey));
 
-    const publishedDbIds = pendingFindings
-      .filter((f) => f.dbId && processedIdSet.has(f.id))
-      .map((f) => f.dbId as string);
+    const publishedIds = pendingFindings
+      .filter((f) => f.id && processedKeySet.has(f.findingKey))
+      .map((f) => f.id as string);
 
-    if (publishedDbIds.length > 0) {
+    if (publishedIds.length > 0) {
       try {
-        await bulkUpdateFindingStatus(publishedDbIds, FINDING_STATUS.Published);
+        await bulkUpdateFindingStatus(publishedIds, FINDING_STATUS.Published);
       } catch (err) {
         logger.warn(err, "[publishAction] bulk status update failed (non-fatal)");
       }

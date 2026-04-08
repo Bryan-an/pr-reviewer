@@ -19,7 +19,7 @@ import { formatThreads } from "@/server/review/publish/format-threads";
 import { runReview } from "@/server/review/run-review";
 
 export type ProcessedFinding = {
-  findingId: string;
+  findingKey: string;
   adoThreadId: number | undefined;
 };
 
@@ -92,21 +92,21 @@ function normalizePath(p: string): string {
 
 async function persistThreadId(
   adoThreadId: number | undefined,
-  findingIds: string[],
+  findingKeys: string[],
   findings: Finding[],
   processedFindings: ProcessedFinding[],
 ): Promise<void> {
-  for (const fid of findingIds) {
-    processedFindings.push({ findingId: fid, adoThreadId });
+  for (const fkey of findingKeys) {
+    processedFindings.push({ findingKey: fkey, adoThreadId });
   }
 
   if (adoThreadId == null) return;
 
   const results = await Promise.allSettled(
-    findingIds.map((fid) => {
-      const f = findings.find((pf) => pf.id === fid);
-      if (!f?.dbId) return Promise.resolve();
-      return updateFindingAdoThreadId(f.dbId, adoThreadId);
+    findingKeys.map((fkey) => {
+      const f = findings.find((pf) => pf.findingKey === fkey);
+      if (!f?.id) return Promise.resolve();
+      return updateFindingAdoThreadId(f.id, adoThreadId);
     }),
   );
 
@@ -186,14 +186,14 @@ export async function publishFindings(params: {
           });
 
           publishedThreads += 1;
-          await persistThreadId(match.threadId, t.findingIds, params.findings, processedFindings);
+          await persistThreadId(match.threadId, t.findingKeys, params.findings, processedFindings);
         } catch (err) {
           logger.warn(err, "publish:failed to reopen closed ADO thread (non-fatal)");
           skippedThreads += 1;
         }
       } else {
         skippedThreads += 1;
-        await persistThreadId(match?.threadId, t.findingIds, params.findings, processedFindings);
+        await persistThreadId(match?.threadId, t.findingKeys, params.findings, processedFindings);
       }
 
       continue;
@@ -240,7 +240,7 @@ export async function publishFindings(params: {
 
       publishedThreads += 1;
       existingContents.push(t.content);
-      await persistThreadId(createdThread.id, t.findingIds, params.findings, processedFindings);
+      await persistThreadId(createdThread.id, t.findingKeys, params.findings, processedFindings);
     } catch (error) {
       logger.warn(
         { filePath: t.filePath, lineStart: t.lineStart, err: String(error) },
@@ -256,7 +256,7 @@ export async function publishFindings(params: {
 
           await persistThreadId(
             fallbackThread.id,
-            t.findingIds,
+            t.findingKeys,
             params.findings,
             processedFindings,
           );

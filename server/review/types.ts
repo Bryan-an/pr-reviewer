@@ -5,8 +5,8 @@ import type { FindingStatus } from "@/lib/validation/finding-status";
 import type { ReviewEngineName } from "@/lib/validation/review-engine-name";
 
 export type Finding = {
-  id: string;
-  dbId?: string;
+  findingKey: string;
+  id?: string;
   status?: FindingStatus;
   severity: Severity;
   category: FindingCategory;

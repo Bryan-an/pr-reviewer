@@ -34,7 +34,7 @@ export type PublishableThread = {
   /**
    * Findings included in this thread (for reporting/debugging).
    */
-  findingIds: string[];
+  findingKeys: string[];
 };
 
 export type FormatThreadsResult = {
@@ -74,7 +74,7 @@ function formatFinding(f: Finding): string {
     ? [adoBold("Recommendation:"), "", adoFencedBlock(f.recommendation)].join("\n")
     : undefined;
 
-  const markerLine = `<!-- pr-reviewer:finding:${f.id} -->`;
+  const markerLine = `<!-- pr-reviewer:finding:${f.findingKey} -->`;
 
   return [
     headerLine,
@@ -130,7 +130,7 @@ export function formatThreads(params: {
         "",
         generalMarker,
       ].join("\n"),
-      findingIds: sorted.map((f) => f.id),
+      findingKeys: sorted.map((f) => f.findingKey),
     });
   }
 
@@ -141,7 +141,7 @@ export function formatThreads(params: {
   const wasCapped = scopedFindings.length > selectedFindings.length;
 
   for (const f of selectedFindings) {
-    const marker = threadMarker(`finding:${f.id}:pr:${params.prId}`);
+    const marker = threadMarker(`finding:${f.findingKey}:pr:${params.prId}`);
 
     threads.push({
       threadMarker: marker,
@@ -149,7 +149,7 @@ export function formatThreads(params: {
       lineStart: f.lineStart,
       lineEnd: f.lineEnd,
       content: [formatFinding(f), "", marker].join("\n"),
-      findingIds: [f.id],
+      findingKeys: [f.findingKey],
     });
   }
 
