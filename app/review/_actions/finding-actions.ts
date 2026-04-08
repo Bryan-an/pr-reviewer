@@ -103,7 +103,24 @@ export async function publishFindingAction(findingId: string): Promise<FindingAc
     const prUrl = row.reviewRun.prUrl;
     const domainFinding = toDomainFinding(row);
 
-    await publishFindings({ prUrl, findings: [domainFinding] });
+    const result = await publishFindings({ prUrl, findings: [domainFinding] });
+
+    // Only mark as published if the finding was actually processed on ADO
+    // (thread created or reopened). adoThreadId is already persisted by
+    // publishFindings internally via persistThreadId.
+    const wasProcessed = result.processedFindings.some(
+      (pf) => pf.findingKey === domainFinding.findingKey,
+    );
+
+    if (!wasProcessed) {
+      logger.warn(
+        { findingId, findingKey: domainFinding.findingKey },
+        "[publishFinding] finding was not processed by ADO",
+      );
+
+      return { success: false };
+    }
+
     await updateFindingStatus(row.id, FINDING_STATUS.Published);
   } catch (err) {
     logger.error(err, "[publishFinding] failed");
