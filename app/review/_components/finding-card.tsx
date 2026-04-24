@@ -97,8 +97,26 @@ function IgnoreButton({
 // Code snippet with collapsible overflow
 // ---------------------------------------------------------------------------
 
-const SNIPPET_COLLAPSE_THRESHOLD = 10;
-const SNIPPET_COLLAPSED_PX = 144; // ≈ 6 visible lines of text-xs code
+// ─── Code-snippet collapse sizing ─────────────────────────────────────────
+// Governed by six base values; everything else is derived so the math stays
+// consistent if any is tuned.
+const SNIPPET_COLLAPSED_VISIBLE_LINES = 6;
+const SNIPPET_DEAD_ZONE_LINES = 4; // extra lines past the preview before collapsing is worth a click
+// text-xs on the prose wrapper (12px) cascades into pre's font-size: 0.875em = 10.5px.
+// prose plugin then applies line-height ≈ 1.714 → 18px, and padding-top/bottom 0.857em → 9px each.
+const SNIPPET_LINE_HEIGHT_PX = 18;
+const SNIPPET_PADDING_TOP_PX = 9; // visible at the top of the <pre> in both states
+const SNIPPET_PADDING_BOTTOM_PX = 9; // only renders at the end of full content (expanded state)
+// Fade overlay sits above the peek line to hint at clipped content.
+// Matching line-height produces exactly one faded line past the clean preview.
+const SNIPPET_FADE_HEIGHT_PX = SNIPPET_LINE_HEIGHT_PX;
+
+const SNIPPET_COLLAPSE_THRESHOLD = SNIPPET_COLLAPSED_VISIBLE_LINES + SNIPPET_DEAD_ZONE_LINES;
+// Only padding-top counts here — padding-bottom isn't visible while the <pre> is clipped.
+const SNIPPET_COLLAPSED_PX =
+  SNIPPET_PADDING_TOP_PX +
+  SNIPPET_COLLAPSED_VISIBLE_LINES * SNIPPET_LINE_HEIGHT_PX +
+  SNIPPET_FADE_HEIGHT_PX;
 
 function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
   const lineCount = snippet.split("\n").length;
@@ -118,7 +136,10 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
   }, [snippet]);
 
   // Before measurement completes, estimate from line count to avoid jarring first expand.
-  const expandedHeight = contentHeight || lineCount * 20 + 32;
+  // Expanded state shows full <pre>, so both paddings are part of the rendered height.
+  const expandedHeight =
+    contentHeight ||
+    lineCount * SNIPPET_LINE_HEIGHT_PX + SNIPPET_PADDING_TOP_PX + SNIPPET_PADDING_BOTTOM_PX;
 
   return (
     <div className="overflow-hidden rounded-md border">
@@ -136,8 +157,9 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
         </div>
 
         <div
+          style={{ height: SNIPPET_FADE_HEIGHT_PX }}
           className={cn(
-            "from-muted pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t to-transparent transition-opacity duration-300",
+            "from-muted pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t to-transparent transition-opacity duration-300",
             collapsed ? "opacity-100" : "opacity-0",
           )}
         />
@@ -154,7 +176,9 @@ function CodeSnippetBlock({ snippet }: Readonly<{ snippet: string }>) {
           <ChevronDownIcon
             className={cn("size-3.5 transition-transform duration-300", expanded && "rotate-180")}
           />
-          {expanded ? "Show less" : `Show ${lineCount - 6} more lines`}
+          {expanded
+            ? "Show less"
+            : `Show ${lineCount - SNIPPET_COLLAPSED_VISIBLE_LINES} more lines`}
         </button>
       )}
     </div>
